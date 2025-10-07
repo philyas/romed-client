@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, isDevMode } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
@@ -66,7 +66,9 @@ export interface MitternachtsstatistikResponse {
 })
 export class Api {
   private http = inject(HttpClient);
-  private readonly baseUrl = 'http://localhost:3000';
+  private readonly baseUrl = isDevMode() 
+    ? 'http://localhost:3000' 
+    : 'https://romed-server.onrender.com';
 
   getSchemas(): Observable<{ schemas: SchemaDef[] }> {
     return this.http.get<{ schemas: SchemaDef[] }>(`${this.baseUrl}/schemas`);
