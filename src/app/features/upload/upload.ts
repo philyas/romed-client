@@ -112,7 +112,10 @@ export class Upload {
   onFileChange(event: Event) {
     const input = event.target as HTMLInputElement;
     if (!input.files) return;
-    this.addFiles(Array.from(input.files));
+    const filesArray = Array.from(input.files);
+    this.addFiles(filesArray);
+    // Reset input to allow selecting the same file again
+    input.value = '';
   }
 
   addFiles(newFiles: File[]) {
@@ -125,6 +128,10 @@ export class Upload {
 
     if (validFiles.length !== newFiles.length) {
       alert('Einige Dateien wurden ignoriert. Nur Excel-Dateien (.xlsx, .xls, .xlsm) und CSV-Dateien sind erlaubt.');
+      // If no valid files, don't continue
+      if (validFiles.length === 0) {
+        return;
+      }
     }
 
     // Check if schema allows multiple files
@@ -133,15 +140,18 @@ export class Upload {
     
     if (maxFiles.max === 1) {
       // Only allow one file for this schema
+      if (validFiles.length > 1) {
+        alert('Für dieses Schema kann nur eine Datei pro Upload hochgeladen werden. Bitte wählen Sie nur eine Datei aus.');
+        // Don't add any files
+        return;
+      }
+      
       if (currentFiles.length > 0 && validFiles.length > 0) {
         alert('Für dieses Schema kann nur eine Datei gleichzeitig hochgeladen werden. Die vorherige Auswahl wurde ersetzt.');
       }
-      // Replace existing file with the first new file
-      this.files.set(validFiles.length > 0 ? [validFiles[0]] : []);
       
-      if (validFiles.length > 1) {
-        alert('Es wurde nur die erste Datei ausgewählt. Für dieses Schema kann nur eine Datei pro Upload hochgeladen werden.');
-      }
+      // Replace existing file with the new file
+      this.files.set(validFiles.length > 0 ? [validFiles[0]] : []);
     } else {
       // Allow multiple files
       this.files.set([...currentFiles, ...validFiles]);
