@@ -1,0 +1,57 @@
+<div class="main-content">
+  <div class="dashboard">
+    
+    <!-- Reset Button -->
+    <div class="reset-section" *ngIf="(data()?.uploads?.length || 0) > 0 || (mitternachtsstatistikData()?.uploads?.length || 0) > 0">
+      <button mat-raised-button color="warn" (click)="openResetDialog()" class="reset-button">
+        <mat-icon>delete_forever</mat-icon>
+        Alle Daten zurücksetzen
+      </button>
+    </div>
+
+    <!-- Schema Charts Section - Direct Display -->
+    <!-- Temporarily hidden
+    <section class="schema-charts-section" *ngIf="(data()?.uploads?.length || 0) > 0">
+      <div class="global-selectors">
+        <div class="global-year-selector">
+          <app-year-selector 
+            [uploads]="data()?.uploads || []"
+            (yearChanged)="onGlobalYearChange($event)">
+          </app-year-selector>
+        </div>
+        <div class="global-station-selector">
+          <app-station-selector 
+            [uploads]="data()?.uploads || []"
+            (stationChanged)="onGlobalStationChange($event)">
+          </app-station-selector>
+        </div>
+      </div>
+      
+      <app-chart-overview 
+        [uploads]="data()?.uploads || []"
+        [statistics]="statistics()"
+        [selectedYear]="globalSelectedYear()"
+        [selectedStation]="globalSelectedStation()">
+      </app-chart-overview>
+    </section>
+    -->
+
+    <!-- Mitternachtsstatistik Charts Section -->
+    <section class="mitternachtsstatistik-charts-section" *ngIf="mitternachtsstatistikData() && mitternachtsstatistikData()!.uploads.length > 0">
+      <app-mitternachtsstatistik-charts 
+        [mitternachtsstatistikData]="mitternachtsstatistikData()">
+      </app-mitternachtsstatistik-charts>
+    </section>
+
+    <!-- CO Charts Section -->
+    <section class="co-charts-section" *ngIf="(data()?.uploads?.length || 0) > 0">
+      <app-co-charts 
+        [uploads]="data()?.uploads || []"
+        [statistics]="statistics()"
+        [schemaId]="'co_entlass_aufnahmezeiten'"
+        [selectedYear]="globalSelectedYear()">
+      </app-co-charts>
+    </section>
+
+  </div>
+</div>

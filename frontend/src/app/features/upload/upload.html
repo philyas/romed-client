@@ -1,0 +1,55 @@
+<div class="main-content">
+  <div class="upload">
+    <h2>Excel-Datei Upload</h2>
+    <p class="upload-subtitle">Laden Sie Excel-Dateien hoch und extrahieren Sie Daten basierend auf vordefinierten Schemata</p>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Wählen Sie ein Schema</mat-label>
+      <mat-select [ngModel]="selectedSchemaId()" (ngModelChange)="onSchemaChange($event)">
+        <mat-option *ngFor="let s of filteredSchemas" [value]="s.id">{{ s.name }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <div class="file-upload-section"
+         (click)="triggerFileSelect()"
+         (dragover)="onDragOver($event)"
+         (dragleave)="onDragLeave($event)"
+         (drop)="onDrop($event)"
+         [class.drag-over]="dragOver()">
+      <input #fileInput type="file" multiple (change)="onFileChange($event)" accept=".xls,.xlsx,.xlsm,.csv" style="display: none;" />
+      <div class="upload-placeholder">
+        <div class="upload-icon">📊</div>
+        <h3>{{ dragOver() ? 'Dateien hier ablegen' : 'Klicken Sie hier, um Excel-Dateien auszuwählen' }}</h3>
+        <p>{{ dragOver() ? 'Loslassen zum Hochladen' : 'Oder ziehen Sie Dateien hierher' }}</p>
+        <p class="file-types">Unterstützt: .xlsx, .xls, .xlsm, .csv</p>
+      </div>
+      <div class="upload-actions">
+        <button mat-raised-button color="primary" (click)="$event.stopPropagation(); doUpload()"
+                [disabled]="uploading() || !selectedSchemaId() || files().length===0">
+          <mat-spinner *ngIf="uploading()" diameter="20" class="upload-spinner"></mat-spinner>
+          <mat-icon *ngIf="!uploading()">cloud_upload</mat-icon>
+          {{ uploading() ? 'Wird hochgeladen...' : 'Dateien hochladen' }}
+        </button>
+        <button mat-stroked-button (click)="$event.stopPropagation(); clearFiles()" [disabled]="files().length===0">
+          <mat-icon>clear</mat-icon>
+          Zurücksetzen
+        </button>
+      </div>
+    </div>
+
+    <mat-list *ngIf="files().length" class="file-list">
+      <h3>Ausgewählte Dateien:</h3>
+      <mat-list-item *ngFor="let f of files()">
+        <div class="file-item">
+          <mat-icon>description</mat-icon>
+          <div class="file-info">
+            <span class="file-name">{{ f.name }}</span>
+            <span class="file-size">({{ (f.size / 1024) | number:'1.0-1' }} KB)</span>
+          </div>
+        </div>
+      </mat-list-item>
+    </mat-list>
+
+
+  </div>
+</div>

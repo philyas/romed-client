@@ -1,0 +1,231 @@
+.schema-chart {
+  width: 100%;
+  height: 100%;
+
+  .chart-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .chart-header {
+      padding-bottom: 0;
+      
+      .mat-mdc-card-title {
+        font-size: 1.1rem;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+        color: #1976d2;
+      }
+      
+      .mat-mdc-card-subtitle {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 1rem;
+        line-height: 1.4;
+      }
+
+      .chart-stats {
+        margin-top: 0.5rem;
+        
+        .mat-mdc-chip-set {
+          .mat-mdc-chip {
+            font-size: 0.75rem;
+            height: 24px;
+            
+            &.mat-mdc-chip-primary {
+              background-color: #e3f2fd;
+              color: #1976d2;
+            }
+          }
+        }
+      }
+    }
+
+    .chart-content {
+      flex: 1;
+      padding-top: 0;
+
+      .chart-tabs {
+        height: 100%;
+
+        .mat-mdc-tab-group {
+          height: 100%;
+
+          .mat-mdc-tab-body-wrapper {
+            height: calc(100% - 48px);
+          }
+        }
+
+        .tab-content {
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          padding: 1rem 0;
+
+          .chart-controls {
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+
+            .column-selector,
+            .year-selector {
+              min-width: 200px;
+              
+              .mat-mdc-form-field {
+                .mat-mdc-text-field-wrapper {
+                  .mat-mdc-form-field-flex {
+                    .mat-mdc-form-field-infix {
+                      .mat-mdc-select {
+                        .mat-mdc-select-value {
+                          font-size: 0.9rem;
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+
+            .year-selector {
+              min-width: 120px;
+            }
+          }
+
+          .chart-container {
+            flex: 1;
+            min-height: 300px;
+            position: relative;
+            padding: 1rem;
+            background: #fafafa;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+
+            canvas {
+              max-height: 100%;
+              width: 100% !important;
+              height: auto !important;
+            }
+          }
+
+          .data-summary {
+            height: 100%;
+            overflow-y: auto;
+
+            h4 {
+              margin: 0 0 1rem 0;
+              font-size: 1rem;
+              font-weight: 500;
+              color: #333;
+            }
+
+            .summary-grid {
+              display: grid;
+              gap: 0.75rem;
+
+              .summary-item {
+                background: #f8f9fa;
+                padding: 0.75rem;
+                border-radius: 8px;
+                border-left: 3px solid #1976d2;
+                display: grid;
+                grid-template-columns: 1fr auto auto;
+                gap: 1rem;
+                align-items: center;
+
+                .summary-date {
+                  font-weight: 500;
+                  color: #1976d2;
+                  font-size: 0.9rem;
+                }
+
+                .summary-files,
+                .summary-rows {
+                  font-size: 0.8rem;
+                  color: #666;
+                  background: #e3f2fd;
+                  padding: 0.25rem 0.5rem;
+                  border-radius: 4px;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .schema-chart {
+    .chart-card {
+      .chart-content {
+        .chart-tabs {
+          .tab-content {
+            .chart-controls {
+              flex-direction: column;
+              gap: 0.5rem;
+              
+              .column-selector,
+              .year-selector {
+                min-width: 150px;
+                width: 100%;
+              }
+            }
+
+            .chart-container {
+              min-height: 250px;
+              padding: 0.5rem;
+            }
+
+            .data-summary {
+              .summary-grid {
+                .summary-item {
+                  grid-template-columns: 1fr;
+                  gap: 0.5rem;
+                  text-align: center;
+
+                  .summary-date {
+                    font-size: 0.85rem;
+                  }
+
+                  .summary-files,
+                  .summary-rows {
+                    font-size: 0.75rem;
+                    justify-self: center;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .schema-chart {
+    .chart-card {
+      .chart-content {
+        .chart-tabs {
+          .tab-content {
+            .chart-container {
+              min-height: 200px;
+              padding: 0.25rem;
+            }
+          }
+        }
+      }
+    }
+  }
+}

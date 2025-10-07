@@ -1,0 +1,71 @@
+.year-selector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+
+  .year-select-field {
+    min-width: 140px;
+    max-width: 200px;
+
+    .mat-mdc-form-field {
+      .mat-mdc-text-field-wrapper {
+        .mat-mdc-form-field-flex {
+          .mat-mdc-form-field-infix {
+            min-height: 40px;
+            padding: 8px 0;
+
+            .mat-mdc-select {
+              .mat-mdc-select-value {
+                font-size: 14px;
+                font-weight: 500;
+                color: #1976d2;
+              }
+
+              .mat-mdc-select-placeholder {
+                color: #666;
+                font-size: 14px;
+              }
+            }
+          }
+        }
+      }
+
+      .mat-mdc-form-field-outline {
+        .mat-mdc-form-field-outline-start,
+        .mat-mdc-form-field-outline-end,
+        .mat-mdc-form-field-outline-gap {
+          border-color: #e3f2fd;
+          border-width: 1px;
+        }
+      }
+
+      &.mat-focused {
+        .mat-mdc-form-field-outline {
+          .mat-mdc-form-field-outline-start,
+          .mat-mdc-form-field-outline-end,
+          .mat-mdc-form-field-outline-gap {
+            border-color: #1976d2;
+            border-width: 2px;
+          }
+        }
+      }
+    }
+
+    .mat-mdc-form-field-label {
+      color: #1976d2;
+      font-weight: 500;
+      font-size: 13px;
+    }
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .year-selector {
+    .year-select-field {
+      min-width: 120px;
+      max-width: 160px;
+    }
+  }
+}

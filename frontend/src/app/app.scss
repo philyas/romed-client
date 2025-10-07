@@ -1,0 +1,10 @@
+/* App component specific styles */
+.main-container {
+  min-height: 100vh;
+  background: #f8f9fa;
+}
+
+.content-wrapper {
+  background: white;
+  min-height: calc(100vh - 60px);
+}

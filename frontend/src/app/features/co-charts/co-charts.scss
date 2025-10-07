@@ -1,0 +1,362 @@
+.co-charts {
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  margin-bottom: 32px;
+
+  .charts-header {
+    margin-bottom: 24px;
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+      gap: 16px;
+
+      h3 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #1976d2;
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+
+        mat-icon {
+          color: #1976d2;
+        }
+      }
+
+      .location-selector {
+        min-width: 200px;
+
+        mat-icon {
+          margin-right: 8px;
+        }
+      }
+    }
+
+    p {
+      color: #666;
+      margin: 0;
+      font-size: 0.95rem;
+    }
+  }
+
+  .charts-container {
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+  }
+
+  // Flip Card Styles
+  .flip-card {
+    background-color: transparent;
+    perspective: 1000px;
+    cursor: pointer;
+    min-height: 650px;
+    height: 100%;
+    position: relative;
+    transition: transform 0.2s ease;
+
+    // Hover-Effekt für bessere Erkennbarkeit
+    &:hover {
+      transform: scale(1.02);
+      
+      .metric-card {
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15) !important;
+      }
+      
+      .flip-icon {
+        animation: flipHint 0.6s ease-in-out;
+      }
+      
+      .flip-hint-text {
+        opacity: 1;
+      }
+    }
+
+    &.flipped .flip-card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .flip-card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: 650px;
+      text-align: center;
+      transition: transform 0.6s;
+      transform-style: preserve-3d;
+    }
+
+    .flip-card-front,
+    .flip-card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      min-height: 650px;
+      backface-visibility: hidden;
+      border-radius: 12px;
+      top: 0;
+      left: 0;
+    }
+
+    .flip-card-back {
+      transform: rotateY(180deg);
+    }
+    
+    .flip-card-front {
+      z-index: 2;
+    }
+
+    .metric-card {
+      height: 100%;
+      min-height: 650px;
+      border-radius: 12px !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+      border: 1px solid #e0e0e0 !important;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+
+      .metric-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #e0e0e0;
+        position: relative;
+
+        &.entlassungen-header {
+          background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%);
+          color: white;
+
+          mat-card-title {
+            color: white;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            .flip-icon {
+              color: white;
+              transition: transform 0.3s ease;
+              font-size: 24px;
+              width: 24px;
+              height: 24px;
+            }
+          }
+          
+          mat-card-subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.75rem;
+            margin-top: 4px;
+          }
+        }
+
+        &.aufnahmen-header {
+          background: linear-gradient(135deg, #4ECDC4 0%, #7EDDD8 100%);
+          color: white;
+
+          mat-card-title {
+            color: white;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            .flip-icon {
+              color: white;
+              transition: transform 0.3s ease;
+              font-size: 24px;
+              width: 24px;
+              height: 24px;
+            }
+          }
+          
+          mat-card-subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.75rem;
+            margin-top: 4px;
+          }
+        }
+        
+        .flip-hint-text {
+          position: absolute;
+          top: 50%;
+          right: 60px;
+          transform: translateY(-50%);
+          color: rgba(255, 255, 255, 0.85);
+          font-size: 0.75rem;
+          opacity: 0.7;
+          transition: opacity 0.3s ease;
+          pointer-events: none;
+          white-space: nowrap;
+        }
+      }
+
+      .chart-content {
+        padding: 20px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+
+        .chart-container {
+          flex: 1;
+          position: relative;
+          min-height: 400px;
+          height: 100%;
+        }
+
+        .chart-info {
+          margin-top: 16px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          align-items: center;
+
+          mat-chip-set {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            
+            .mat-mdc-chip {
+              border-radius: 16px !important;
+              font-weight: 500;
+              margin: 2px;
+            }
+          }
+
+          .total-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            
+            &.entlassungen-total {
+              background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%);
+              color: white;
+            }
+            
+            &.aufnahmen-total {
+              background: linear-gradient(135deg, #4ECDC4 0%, #7EDDD8 100%);
+              color: white;
+            }
+          }
+        }
+      }
+
+      .data-content {
+        padding: 20px;
+        flex: 1;
+        overflow-y: auto;
+        min-height: 0;
+
+        .data-summary {
+          h4 {
+            color: #333;
+            margin-bottom: 16px;
+            font-weight: 600;
+          }
+
+          .standort-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+
+            .standort-item {
+              background: #f8f9fa;
+              border-radius: 8px;
+              padding: 12px;
+              border: 1px solid #e9ecef;
+
+              .standort-name {
+                font-weight: 600;
+                color: #495057;
+                margin-bottom: 8px;
+              }
+
+              .standort-stats {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 4px;
+                margin-bottom: 4px;
+
+                .stat-label {
+                  font-size: 0.85rem;
+                  color: #6c757d;
+                  font-weight: 500;
+                }
+                
+                .stat-value {
+                  font-size: 0.85rem;
+                  color: #495057;
+                  font-weight: 600;
+                }
+              }
+              
+              .standort-total {
+                font-size: 0.9rem;
+                color: #212529;
+                font-weight: 700;
+                margin-top: 8px;
+                padding-top: 8px;
+                border-top: 1px solid #dee2e6;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Animation für Flip-Hint
+  @keyframes flipHint {
+    0%, 100% { transform: rotateY(0deg); }
+    50% { transform: rotateY(15deg); }
+  }
+
+  // Responsive design
+  @media (max-width: 768px) {
+    padding: 12px;
+
+    .charts-header {
+      .header-top {
+        flex-direction: column;
+        align-items: stretch;
+
+        h3 {
+          font-size: 1.25rem;
+          text-align: center;
+        }
+
+        .location-selector {
+          min-width: 100%;
+        }
+      }
+    }
+
+    .charts-container {
+      .charts-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+    }
+
+    .flip-card {
+      .metric-card {
+        .chart-content {
+          .chart-container {
+            min-height: 250px;
+          }
+        }
+      }
+    }
+  }
+}
