@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 export interface SchemaDef {
   id: string;
   name: string;
+  description?: string;
   columns: string[];
 }
 
@@ -69,6 +70,13 @@ export class Api {
   private readonly baseUrl = isDevMode() 
     ? 'http://localhost:3000' 
     : 'https://romed-server.onrender.com';
+
+  constructor() {
+    const mode = isDevMode() ? 'DEVELOPMENT' : 'PRODUCTION';
+    console.log(`🚀 API Service initialisiert`);
+    console.log(`📍 Modus: ${mode}`);
+    console.log(`🌐 Server: ${this.baseUrl}`);
+  }
 
   getSchemas(): Observable<{ schemas: SchemaDef[] }> {
     return this.http.get<{ schemas: SchemaDef[] }>(`${this.baseUrl}/schemas`);

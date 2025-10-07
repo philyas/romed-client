@@ -3,12 +3,22 @@
     <h2>Excel-Datei Upload</h2>
     <p class="upload-subtitle">Laden Sie Excel-Dateien hoch und extrahieren Sie Daten basierend auf vordefinierten Schemata</p>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Wählen Sie ein Schema</mat-label>
-      <mat-select [ngModel]="selectedSchemaId()" (ngModelChange)="onSchemaChange($event)">
-        <mat-option *ngFor="let s of filteredSchemas" [value]="s.id">{{ s.name }}</mat-option>
-      </mat-select>
-    </mat-form-field>
+    <div class="schema-selector-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Wählen Sie ein Schema</mat-label>
+        <mat-select [ngModel]="selectedSchemaId()" (ngModelChange)="onSchemaChange($event)">
+          <mat-option *ngFor="let s of filteredSchemas" [value]="s.id">{{ s.name }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      
+      <button mat-icon-button 
+              *ngIf="selectedSchemaId()" 
+              (click)="openSchemaInfoDialog()"
+              matTooltip="Schema-Informationen anzeigen"
+              class="info-button">
+        <mat-icon>info</mat-icon>
+      </button>
+    </div>
 
     <div class="file-upload-section"
          (click)="triggerFileSelect()"

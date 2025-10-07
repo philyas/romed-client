@@ -7,6 +7,37 @@
   line-height: 1.5;
 }
 
+/* Schema Selector Row */
+.schema-selector-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  
+  mat-form-field {
+    flex: 1;
+  }
+  
+  .info-button {
+    margin-top: -8px; // Align with mat-form-field
+    color: #0066cc;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      background: #e3f2fd;
+      transform: scale(1.1);
+      
+      mat-icon {
+        color: #004c99;
+      }
+    }
+    
+    mat-icon {
+      font-size: 28px;
+      width: 28px;
+      height: 28px;
+    }
+  }
+}
 
 .file-upload-section {
   margin: 24px 0;
