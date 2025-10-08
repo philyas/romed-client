@@ -76,6 +76,17 @@
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+    }
+
+    mat-icon {
+      margin-right: 8px;
+      vertical-align: middle;
+    }
   }
 }
 

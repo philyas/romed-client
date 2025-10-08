@@ -1,6 +1,17 @@
 <div class="main-content">
   <div class="dashboard">
     
+    <!-- Empty State -->
+    <div class="no-data" *ngIf="(data()?.uploads?.length || 0) === 0 && (mitternachtsstatistikData()?.uploads?.length || 0) === 0">
+      <mat-icon class="no-data-icon">insert_chart_outlined</mat-icon>
+      <h3>Noch keine Daten vorhanden</h3>
+      <p>Laden Sie Excel-Dateien hoch, um Charts und Statistiken zu visualisieren.</p>
+      <a mat-raised-button color="primary" routerLink="/upload">
+        <mat-icon>upload_file</mat-icon>
+        Dateien hochladen
+      </a>
+    </div>
+
     <!-- Reset Button -->
     <div class="reset-section" *ngIf="(data()?.uploads?.length || 0) > 0 || (mitternachtsstatistikData()?.uploads?.length || 0) > 0">
       <button mat-raised-button color="warn" (click)="openResetDialog()" class="reset-button">
