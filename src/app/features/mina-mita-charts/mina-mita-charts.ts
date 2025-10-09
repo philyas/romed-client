@@ -24,10 +24,26 @@ import { MinaMitaChart } from './mina-mita-chart.component';
     <div class="mina-mita-charts">
       <mat-card class="chart-card">
         <mat-card-header>
-          <mat-card-title>
-            <mat-icon>nights_stay</mat-icon>
-            MiNa/MiTa-Bestände (PPUGV)
-          </mat-card-title>
+          <div class="header-container">
+            <mat-card-title>
+              <mat-icon>nights_stay</mat-icon>
+              MiNa/MiTa-Bestände (PPUGV)
+            </mat-card-title>
+            <mat-form-field appearance="outline" class="location-selector" *ngIf="availableLocations().length > 0">
+              <mat-label>
+                <mat-icon>location_on</mat-icon>
+                Standort
+              </mat-label>
+              <mat-select 
+                [value]="selectedLocation()" 
+                (selectionChange)="onLocationChange($event.value)">
+                <mat-option value="all">Alle Standorte</mat-option>
+                <mat-option *ngFor="let location of availableLocations()" [value]="location">
+                  {{ locationNames[location] || location }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
         </mat-card-header>
         
         <mat-card-content>
@@ -35,6 +51,7 @@ import { MinaMitaChart } from './mina-mita-chart.component';
             <div class="upload-info">
               <p><strong>Datei:</strong> {{ upload()?.files?.[0]?.originalName }}</p>
               <p><strong>Hochgeladen:</strong> {{ formatDate(upload()?.createdAt) }}</p>
+              <p *ngIf="selectedLocation() !== 'all'"><strong>Standort:</strong> {{ locationNames[selectedLocation()] || selectedLocation() }}</p>
             </div>
 
             <div class="data-summary" *ngIf="metadata()">
@@ -50,7 +67,7 @@ import { MinaMitaChart } from './mina-mita-chart.component';
                 </div>
                 <div class="summary-item">
                   <span class="label">Stationen:</span>
-                  <span class="value">{{ metadata()?.totalStations }}</span>
+                  <span class="value">{{ filteredStationCount() }}</span>
                 </div>
                 <div class="summary-item">
                   <span class="label">Tagesdaten:</span>
@@ -61,7 +78,7 @@ import { MinaMitaChart } from './mina-mita-chart.component';
 
             <!-- Chart Section -->
             <div class="chart-section">
-              <app-mina-mita-chart [uploads]="uploads"></app-mina-mita-chart>
+              <app-mina-mita-chart [uploads]="uploads" [selectedLocation]="selectedLocation()"></app-mina-mita-chart>
             </div>
 
             <div class="averages-section" *ngIf="monthlyAverages().length > 0">
@@ -141,12 +158,30 @@ import { MinaMitaChart } from './mina-mita-chart.component';
       margin-bottom: 20px;
     }
 
+    .header-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      gap: 20px;
+    }
+
     mat-card-title {
       display: flex;
       align-items: center;
       gap: 12px;
       font-size: 24px;
       font-weight: 600;
+    }
+
+    .location-selector {
+      min-width: 250px;
+    }
+
+    .location-selector mat-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
     .info-section {
@@ -339,6 +374,17 @@ export class MinaMitaCharts {
   monthlyAverages = signal<any[]>([]);
   topStations = signal<any[]>([]);
   hausSummary = signal<any[]>([]);
+  selectedLocation = signal<string>('all');
+  availableLocations = signal<string[]>([]);
+  filteredStationCount = signal<number>(0);
+
+  readonly locationNames: Record<string, string> = {
+    'BAB': 'BAB',
+    'PRI': 'PRI',
+    'ROS': 'ROS',
+    'WAS': 'WAS',
+    'CO': 'CO'
+  };
 
   constructor() {
     effect(() => {
@@ -365,32 +411,16 @@ export class MinaMitaCharts {
             const averages = (file as any).monthlyAverages;
             this.monthlyAverages.set(averages);
 
-            // Calculate top stations
-            const top = [...averages]
-              .sort((a: any, b: any) => b.MiNa_Durchschnitt - a.MiNa_Durchschnitt)
-              .slice(0, 10);
-            this.topStations.set(top);
-
-            // Calculate haus summary
-            const byHaus: any = {};
+            // Extract available locations
+            const hausSet = new Set<string>();
             averages.forEach((row: any) => {
-              if (!byHaus[row.Haus]) {
-                byHaus[row.Haus] = { totalMiNa: 0, totalMiTa: 0, count: 0 };
-              }
-              byHaus[row.Haus].totalMiNa += row.MiNa_Durchschnitt;
-              byHaus[row.Haus].totalMiTa += row.MiTa_Durchschnitt;
-              byHaus[row.Haus].count++;
+              if (row.Haus) hausSet.add(String(row.Haus));
             });
+            const locations = Array.from(hausSet).sort();
+            this.availableLocations.set(locations);
 
-            const summary = Object.keys(byHaus).map(haus => ({
-              haus,
-              stationCount: byHaus[haus].count,
-              totalMiNa: byHaus[haus].totalMiNa,
-              totalMiTa: byHaus[haus].totalMiTa,
-              avgMiNa: byHaus[haus].totalMiNa / byHaus[haus].count,
-              avgMiTa: byHaus[haus].totalMiTa / byHaus[haus].count
-            }));
-            this.hausSummary.set(summary);
+            // Update filtered data based on selected location
+            this.updateFilteredData(averages);
           }
         }
       } else {
@@ -400,8 +430,59 @@ export class MinaMitaCharts {
         this.monthlyAverages.set([]);
         this.topStations.set([]);
         this.hausSummary.set([]);
+        this.availableLocations.set([]);
+        this.filteredStationCount.set(0);
       }
     });
+  }
+
+  private updateFilteredData(averages: any[]) {
+    const selectedLoc = this.selectedLocation();
+    
+    // Filter data based on selected location
+    const filteredAverages = selectedLoc === 'all' 
+      ? averages 
+      : averages.filter((row: any) => row.Haus === selectedLoc);
+
+    // Update filtered station count
+    this.filteredStationCount.set(filteredAverages.length);
+
+    // Calculate top stations (filtered)
+    const top = [...filteredAverages]
+      .sort((a: any, b: any) => b.MiNa_Durchschnitt - a.MiNa_Durchschnitt)
+      .slice(0, 10);
+    this.topStations.set(top);
+
+    // Calculate haus summary (filtered)
+    const byHaus: any = {};
+    filteredAverages.forEach((row: any) => {
+      if (!byHaus[row.Haus]) {
+        byHaus[row.Haus] = { totalMiNa: 0, totalMiTa: 0, count: 0 };
+      }
+      byHaus[row.Haus].totalMiNa += row.MiNa_Durchschnitt;
+      byHaus[row.Haus].totalMiTa += row.MiTa_Durchschnitt;
+      byHaus[row.Haus].count++;
+    });
+
+    const summary = Object.keys(byHaus).map(haus => ({
+      haus,
+      stationCount: byHaus[haus].count,
+      totalMiNa: byHaus[haus].totalMiNa,
+      totalMiTa: byHaus[haus].totalMiTa,
+      avgMiNa: byHaus[haus].totalMiNa / byHaus[haus].count,
+      avgMiTa: byHaus[haus].totalMiTa / byHaus[haus].count
+    }));
+    this.hausSummary.set(summary);
+  }
+
+  onLocationChange(location: string) {
+    this.selectedLocation.set(location);
+    
+    // Re-filter data based on new location
+    const averages = this.monthlyAverages();
+    if (averages.length > 0) {
+      this.updateFilteredData(averages);
+    }
   }
 
   formatDate(dateString: string | undefined): string {

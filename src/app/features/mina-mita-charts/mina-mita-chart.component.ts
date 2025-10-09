@@ -1,4 +1,4 @@
-import { Component, Input, signal, effect, Inject, OnInit } from '@angular/core';
+import { Component, Input, signal, effect, Inject, OnInit, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -102,8 +102,9 @@ interface ChartDataPoint {
     }
   `]
 })
-export class MinaMitaChart implements OnInit {
+export class MinaMitaChart implements OnInit, OnChanges {
   @Input() uploads: any[] = [];
+  @Input() selectedLocation: string = 'all';
   
   chartData = signal<ChartDataPoint[]>([]);
   chartOptions: ChartConfiguration['options'] = {};
@@ -119,6 +120,10 @@ export class MinaMitaChart implements OnInit {
   ngOnInit() {
     Chart.register(...registerables);
     this.setupChartOptions();
+    this.processChartData();
+  }
+
+  ngOnChanges() {
     this.processChartData();
   }
 
@@ -243,15 +248,21 @@ export class MinaMitaChart implements OnInit {
         
         if ((file as any).metadata && (file as any).monthlyAverages) {
           const metadata = (file as any).metadata;
-          const averages = (file as any).monthlyAverages;
+          let averages = (file as any).monthlyAverages;
+          
+          // Filter by selected location if not 'all'
+          if (this.selectedLocation !== 'all') {
+            averages = averages.filter((row: any) => row.Haus === this.selectedLocation);
+          }
           
           const monthNumber = metadata.month;
           const yearNumber = metadata.year || currentYear;
           
           if (monthNumber >= 1 && monthNumber <= 12) {
-            // Calculate total averages for the month
+            // Calculate total averages for the month (filtered by location)
             const totalMiNa = averages.reduce((sum: number, row: any) => sum + (row.MiNa_Durchschnitt || 0), 0);
             const totalMiTa = averages.reduce((sum: number, row: any) => sum + (row.MiTa_Durchschnitt || 0), 0);
+            const stationCount = averages.length;
             
             // Update the corresponding month
             const monthIndex = monthNumber - 1;
@@ -260,7 +271,7 @@ export class MinaMitaChart implements OnInit {
               year: yearNumber,
               minaAverage: totalMiNa,
               mitaAverage: totalMiTa,
-              totalStations: metadata.totalStations || 0,
+              totalStations: stationCount,
               totalDays: metadata.totalDays || 0
             };
           }
