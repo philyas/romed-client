@@ -83,5 +83,16 @@
       </app-co-charts>
     </section>
 
+    <!-- Pflegestufenstatistik Charts Section -->
+    <section 
+      id="pflegestufenstatistik"
+      class="pflegestufenstatistik-charts-section" 
+      [class.highlighted]="highlightedSchemaId() === 'pflegestufenstatistik'"
+      *ngIf="hasPflegestufenData()">
+      <app-pflegestufenstatistik-charts 
+        [uploads]="data()?.uploads || []">
+      </app-pflegestufenstatistik-charts>
+    </section>
+
   </div>
 </div>

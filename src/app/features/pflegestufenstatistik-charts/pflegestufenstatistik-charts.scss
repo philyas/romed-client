@@ -1,0 +1,205 @@
+.pflegestufenstatistik-charts {
+  padding: 20px 0;
+
+  .charts-header {
+    margin-bottom: 32px;
+    
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 16px;
+
+      h3 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 600;
+        color: #1a237e;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        mat-icon {
+          font-size: 32px;
+          width: 32px;
+          height: 32px;
+          color: #2196f3;
+        }
+      }
+
+      .selectors {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+
+        .selector {
+          min-width: 180px;
+
+          mat-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+
+            mat-icon {
+              font-size: 18px;
+              width: 18px;
+              height: 18px;
+            }
+          }
+        }
+      }
+    }
+
+    p {
+      margin: 0;
+      color: #666;
+      font-size: 14px;
+    }
+  }
+
+  .charts-container {
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+      gap: 24px;
+      
+      @media (max-width: 1200px) {
+        grid-template-columns: 1fr;
+      }
+
+      .metric-card {
+        height: 100%;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        overflow: visible;
+
+        &:hover {
+          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+          transform: translateY(-2px);
+        }
+
+        .metric-header {
+          padding: 20px 24px;
+          border-radius: 12px 12px 0 0;
+
+          &.pflegebedarf-header {
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+          }
+
+          &.einstufungen-header {
+            background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+          }
+
+          &.aufnahmen-header {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+          }
+
+          mat-card-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+            mat-icon {
+              font-size: 24px;
+              width: 24px;
+              height: 24px;
+            }
+          }
+
+          mat-card-subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            margin: 0;
+          }
+        }
+
+        .chart-content {
+          padding: 24px;
+
+          .chart-container {
+            position: relative;
+            height: 400px;
+            margin-bottom: 20px;
+          }
+
+          .chart-info {
+            display: flex;
+            justify-content: center;
+            padding-top: 12px;
+            border-top: 1px solid #e0e0e0;
+
+            mat-chip-set {
+              display: flex;
+              gap: 12px;
+              flex-wrap: wrap;
+              justify-content: center;
+
+              .info-chip {
+                background-color: #f5f5f5;
+                color: #333;
+                font-weight: 500;
+                padding: 8px 16px;
+                border-radius: 16px;
+                font-size: 14px;
+                
+                &:hover {
+                  background-color: #e0e0e0;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .pflegestufenstatistik-charts {
+    padding: 12px 0;
+
+    .charts-header {
+      .header-top {
+        flex-direction: column;
+        align-items: flex-start;
+
+        h3 {
+          font-size: 22px;
+        }
+
+        .selectors {
+          width: 100%;
+          flex-direction: column;
+
+          .selector {
+            width: 100%;
+          }
+        }
+      }
+    }
+
+    .charts-container {
+      .charts-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+
+        .metric-card {
+          .chart-content {
+            .chart-container {
+              height: 300px;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+

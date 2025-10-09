@@ -12,10 +12,11 @@ import { Api, ResultsResponse, UploadRecord, MitternachtsstatistikResponse, Sche
 import { MitternachtsstatistikCharts } from '../mitternachtsstatistik-charts/mitternachtsstatistik-charts';
 import { COCharts } from '../co-charts/co-charts';
 import { MinaMitaCharts } from '../mina-mita-charts/mina-mita-charts';
+import { PflegestufenstatistikCharts } from '../pflegestufenstatistik-charts/pflegestufenstatistik-charts';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule, NgIf, MatCardModule, MatChipsModule, MatIconModule, MatButtonModule, MatExpansionModule, MatDialogModule, RouterModule, MitternachtsstatistikCharts, COCharts, MinaMitaCharts],
+  imports: [CommonModule, NgIf, MatCardModule, MatChipsModule, MatIconModule, MatButtonModule, MatExpansionModule, MatDialogModule, RouterModule, MitternachtsstatistikCharts, COCharts, MinaMitaCharts, PflegestufenstatistikCharts],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss'
 })
@@ -40,6 +41,11 @@ export class Dashboard implements AfterViewInit {
   hasMinaMitaData = computed(() => {
     const uploads = this.data()?.uploads || [];
     return uploads.some(u => u.schemaId === 'ppugv_bestaende');
+  });
+
+  hasPflegestufenData = computed(() => {
+    const uploads = this.data()?.uploads || [];
+    return uploads.some(u => u.schemaId === 'pflegestufenstatistik');
   });
 
   constructor() {
