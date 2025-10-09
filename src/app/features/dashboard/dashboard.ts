@@ -1,4 +1,4 @@
-import { Component, inject, signal, Inject, computed } from '@angular/core';
+import { Component, inject, signal, Inject, computed, AfterViewInit } from '@angular/core';
 import { CommonModule, NgIf } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
@@ -7,7 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatDialogModule, MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { RouterModule } from '@angular/router';
+import { RouterModule, ActivatedRoute } from '@angular/router';
 import { Api, ResultsResponse, UploadRecord, MitternachtsstatistikResponse, SchemaStatistics } from '../../core/api';
 import { MitternachtsstatistikCharts } from '../mitternachtsstatistik-charts/mitternachtsstatistik-charts';
 import { COCharts } from '../co-charts/co-charts';
@@ -20,14 +20,16 @@ import { MinaMitaCharts } from '../mina-mita-charts/mina-mita-charts';
   styleUrl: './dashboard.scss'
 })
 
-export class Dashboard {
+export class Dashboard implements AfterViewInit {
   private api = inject(Api);
   private dialog = inject(MatDialog);
+  private route = inject(ActivatedRoute);
   data = signal<ResultsResponse | null>(null);
   statistics = signal<SchemaStatistics[]>([]);
   globalSelectedYear = signal<number>(new Date().getFullYear());
   globalSelectedStation = signal<string>('all');
   mitternachtsstatistikData = signal<MitternachtsstatistikResponse | null>(null);
+  highlightedSchemaId = signal<string | null>(null);
 
   // Computed signals for schema-specific data
   hasCOData = computed(() => {
@@ -42,6 +44,24 @@ export class Dashboard {
 
   constructor() {
     this.refresh();
+  }
+
+  ngAfterViewInit() {
+    // Listen to route changes and scroll to schema
+    this.route.fragment.subscribe(fragment => {
+      if (fragment) {
+        setTimeout(() => this.scrollToSchema(fragment), 500);
+      }
+    });
+
+    // Check for highlight query param
+    this.route.queryParams.subscribe(params => {
+      if (params['highlight']) {
+        this.highlightedSchemaId.set(params['highlight']);
+        // Remove highlight after 3 seconds
+        setTimeout(() => this.highlightedSchemaId.set(null), 3000);
+      }
+    });
   }
 
   refresh() {
@@ -62,6 +82,13 @@ export class Dashboard {
 
   onGlobalStationChange(station: string) {
     this.globalSelectedStation.set(station);
+  }
+
+  private scrollToSchema(schemaId: string) {
+    const element = document.getElementById(schemaId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }
 
   openResetDialog() {

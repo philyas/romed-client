@@ -48,21 +48,33 @@
     -->
 
     <!-- Mitternachtsstatistik Charts Section -->
-    <section class="mitternachtsstatistik-charts-section" *ngIf="mitternachtsstatistikData() && mitternachtsstatistikData()!.uploads.length > 0">
+    <section 
+      id="mitternachtsstatistik"
+      class="mitternachtsstatistik-charts-section" 
+      [class.highlighted]="highlightedSchemaId() === 'mitternachtsstatistik'"
+      *ngIf="mitternachtsstatistikData() && mitternachtsstatistikData()!.uploads.length > 0">
       <app-mitternachtsstatistik-charts 
         [mitternachtsstatistikData]="mitternachtsstatistikData()">
       </app-mitternachtsstatistik-charts>
     </section>
 
     <!-- MiNa/MiTa Charts Section -->
-    <section class="mina-mita-charts-section" *ngIf="hasMinaMitaData()">
+    <section 
+      id="ppugv_bestaende"
+      class="mina-mita-charts-section" 
+      [class.highlighted]="highlightedSchemaId() === 'ppugv_bestaende'"
+      *ngIf="hasMinaMitaData()">
       <app-mina-mita-charts 
         [uploads]="data()?.uploads || []">
       </app-mina-mita-charts>
     </section>
 
     <!-- CO Charts Section -->
-    <section class="co-charts-section" *ngIf="hasCOData()">
+    <section 
+      id="co_entlass_aufnahmezeiten"
+      class="co-charts-section" 
+      [class.highlighted]="highlightedSchemaId() === 'co_entlass_aufnahmezeiten'"
+      *ngIf="hasCOData()">
       <app-co-charts 
         [uploads]="data()?.uploads || []"
         [statistics]="statistics()"

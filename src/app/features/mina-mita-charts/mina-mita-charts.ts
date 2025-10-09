@@ -29,17 +29,17 @@ import { MinaMitaChart } from './mina-mita-chart.component';
               <mat-icon>nights_stay</mat-icon>
               MiNa/MiTa-Bestände (PPUGV)
             </mat-card-title>
-            <mat-form-field appearance="outline" class="location-selector" *ngIf="availableLocations().length > 0">
+            <mat-form-field appearance="outline" class="station-selector" *ngIf="availableStations().length > 0">
               <mat-label>
-                <mat-icon>location_on</mat-icon>
-                Standort
+                <mat-icon>meeting_room</mat-icon>
+                Station
               </mat-label>
               <mat-select 
-                [value]="selectedLocation()" 
-                (selectionChange)="onLocationChange($event.value)">
-                <mat-option value="all">Alle Standorte</mat-option>
-                <mat-option *ngFor="let location of availableLocations()" [value]="location">
-                  {{ locationNames[location] || location }}
+                [value]="selectedStation()" 
+                (selectionChange)="onStationChange($event.value)">
+                <mat-option value="all">Alle Stationen</mat-option>
+                <mat-option *ngFor="let station of availableStations()" [value]="station">
+                  {{ station }}
                 </mat-option>
               </mat-select>
             </mat-form-field>
@@ -48,7 +48,7 @@ import { MinaMitaChart } from './mina-mita-chart.component';
         
         <mat-card-content>
           <div class="chart-section" *ngIf="upload()">
-            <app-mina-mita-chart [uploads]="uploads" [selectedLocation]="selectedLocation()"></app-mina-mita-chart>
+            <app-mina-mita-chart [uploads]="uploads" [selectedStation]="selectedStation()"></app-mina-mita-chart>
           </div>
 
           <div class="no-data" *ngIf="!upload()">
@@ -88,11 +88,11 @@ import { MinaMitaChart } from './mina-mita-chart.component';
       font-weight: 600;
     }
 
-    .location-selector {
+    .station-selector {
       min-width: 250px;
     }
 
-    .location-selector mat-label {
+    .station-selector mat-label {
       display: flex;
       align-items: center;
       gap: 6px;
@@ -120,16 +120,8 @@ export class MinaMitaCharts {
   @Input() uploads: UploadRecord[] = [];
   
   upload = signal<UploadRecord | null>(null);
-  selectedLocation = signal<string>('all');
-  availableLocations = signal<string[]>([]);
-
-  readonly locationNames: Record<string, string> = {
-    'BAB': 'BAB',
-    'PRI': 'PRI',
-    'ROS': 'ROS',
-    'WAS': 'WAS',
-    'CO': 'CO'
-  };
+  selectedStation = signal<string>('all');
+  availableStations = signal<string[]>([]);
 
   constructor() {
     effect(() => {
@@ -141,28 +133,43 @@ export class MinaMitaCharts {
         if (latestUpload.files && latestUpload.files.length > 0) {
           const file = latestUpload.files[0];
           
-          // Extract monthly averages to get available locations
+          // Extract stations from monthly averages or raw values
+          const stationSet = new Set<string>();
+          
           if ((file as any).monthlyAverages) {
+            // Use pre-calculated monthly averages
             const averages = (file as any).monthlyAverages;
-
-            // Extract available locations
-            const hausSet = new Set<string>();
             averages.forEach((row: any) => {
-              if (row.Haus) hausSet.add(String(row.Haus));
+              if (row.Station) stationSet.add(String(row.Station));
             });
-            const locations = Array.from(hausSet).sort();
-            this.availableLocations.set(locations);
+          } else if ((file as any).values && Array.isArray((file as any).values)) {
+            // Fallback: Extract from raw values
+            const values = (file as any).values;
+            values.forEach((row: any) => {
+              if (row.Station) stationSet.add(String(row.Station));
+            });
           }
+          
+          const stations = Array.from(stationSet).sort((a, b) => {
+            // Sort by station name/number
+            const aNum = parseInt(a.replace(/\D/g, ''));
+            const bNum = parseInt(b.replace(/\D/g, ''));
+            if (!isNaN(aNum) && !isNaN(bNum)) {
+              return aNum - bNum;
+            }
+            return a.localeCompare(b);
+          });
+          this.availableStations.set(stations);
         }
       } else {
         this.upload.set(null);
-        this.availableLocations.set([]);
+        this.availableStations.set([]);
       }
     });
   }
 
-  onLocationChange(location: string) {
-    this.selectedLocation.set(location);
+  onStationChange(station: string) {
+    this.selectedStation.set(station);
   }
 }
 

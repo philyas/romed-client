@@ -46,7 +46,7 @@ interface ChartDataPoint {
                 <mat-icon class="flip-icon">flip</mat-icon>
               </mat-card-title>
               <mat-card-subtitle>
-                Monatlicher Vergleich aller Stationen
+                {{ selectedStation === 'all' ? 'Monatlicher Vergleich aller Stationen' : 'Station: ' + selectedStation }}
               </mat-card-subtitle>
             </mat-card-header>
             
@@ -371,7 +371,7 @@ interface ChartDataPoint {
 })
 export class MinaMitaChart implements OnInit, OnChanges {
   @Input() uploads: any[] = [];
-  @Input() selectedLocation: string = 'all';
+  @Input() selectedStation: string = 'all';
   
   chartData = signal<ChartDataPoint[]>([]);
   chartOptions: ChartConfiguration['options'] = {};
@@ -410,7 +410,9 @@ export class MinaMitaChart implements OnInit, OnChanges {
       plugins: {
         title: {
           display: true,
-          text: 'MiNa vs MiTa Durchschnitte',
+          text: this.selectedStation === 'all' 
+            ? 'MiNa vs MiTa Durchschnitte (Alle Stationen)' 
+            : `MiNa vs MiTa Durchschnitte - ${this.selectedStation}`,
           font: {
             size: 16,
             weight: 'bold'
@@ -513,7 +515,8 @@ export class MinaMitaChart implements OnInit, OnChanges {
         minaAverage: 0,
         mitaAverage: 0,
         totalStations: 0,
-        totalDays: 0
+        totalDays: 0,
+        stationDetails: []
       });
     }
 
@@ -522,20 +525,21 @@ export class MinaMitaChart implements OnInit, OnChanges {
       if (upload.files && upload.files.length > 0) {
         const file = upload.files[0];
         
+        // Check if we have pre-calculated monthlyAverages
         if ((file as any).metadata && (file as any).monthlyAverages) {
           const metadata = (file as any).metadata;
           let averages = (file as any).monthlyAverages;
           
-          // Filter by selected location if not 'all'
-          if (this.selectedLocation !== 'all') {
-            averages = averages.filter((row: any) => row.Haus === this.selectedLocation);
+          // Filter by selected station if not 'all'
+          if (this.selectedStation !== 'all') {
+            averages = averages.filter((row: any) => row.Station === this.selectedStation);
           }
           
           const monthNumber = metadata.month;
           const yearNumber = metadata.year || currentYear;
           
           if (monthNumber >= 1 && monthNumber <= 12) {
-            // Calculate total averages for the month (filtered by location)
+            // Calculate total averages for the month (filtered by station)
             const totalMiNa = averages.reduce((sum: number, row: any) => sum + (row.MiNa_Durchschnitt || 0), 0);
             const totalMiTa = averages.reduce((sum: number, row: any) => sum + (row.MiTa_Durchschnitt || 0), 0);
             const stationCount = averages.length;
@@ -548,7 +552,109 @@ export class MinaMitaChart implements OnInit, OnChanges {
               minaAverage: totalMiNa,
               mitaAverage: totalMiTa,
               totalStations: stationCount,
-              totalDays: metadata.totalDays || 0
+              totalDays: metadata.totalDays || 0,
+              stationDetails: averages
+            };
+          }
+        } 
+        // Fallback: Calculate from raw values if monthlyAverages not available
+        else if ((file as any).values && Array.isArray((file as any).values)) {
+          const values = (file as any).values;
+          
+          // Try to extract month from upload date or filename FIRST
+          // Filename format: "CO PpUGV MiNa_MiTa-Bestände RoMed_2025-08-31.xlsx"
+          let targetMonthNumber = new Date(upload.createdAt).getMonth() + 1;
+          let targetYearNumber = new Date(upload.createdAt).getFullYear();
+          
+          // Try to extract from first file if available
+          if (upload.files && upload.files.length > 0) {
+            const filename = upload.files[0].originalName || '';
+            const dateMatch = filename.match(/(\d{4})-(\d{2})/);
+            if (dateMatch) {
+              targetYearNumber = parseInt(dateMatch[1]);
+              targetMonthNumber = parseInt(dateMatch[2]);
+            }
+          }
+          
+          console.log(`Processing data for ${targetYearNumber}-${targetMonthNumber.toString().padStart(2, '0')}`);
+          
+          // Helper function to convert Excel date to JS date
+          const excelDateToJSDate = (excelDate: number): Date => {
+            const excelEpoch = new Date(1900, 0, 1);
+            return new Date(excelEpoch.getTime() + (excelDate - 2) * 86400000);
+          };
+          
+          // Group by station and calculate averages (ONLY for the target month)
+          const stationGroups: { [key: string]: { minaSum: number, mitaSum: number, count: number, station: string, haus: string } } = {};
+          
+          values.forEach((row: any) => {
+            if (!row.Station || !row.Datum) return;
+            
+            // Convert Excel date to JS date and check if it's in the target month
+            const jsDate = excelDateToJSDate(row.Datum);
+            const rowMonth = jsDate.getMonth() + 1;
+            const rowYear = jsDate.getFullYear();
+            
+            // Skip if not in target month/year
+            if (rowYear !== targetYearNumber || rowMonth !== targetMonthNumber) {
+              return;
+            }
+            
+            // Filter by selected station if not 'all'
+            if (this.selectedStation !== 'all' && row.Station !== this.selectedStation) {
+              return;
+            }
+            
+            const key = row.Station;
+            if (!stationGroups[key]) {
+              stationGroups[key] = {
+                station: row.Station,
+                haus: row.Haus,
+                minaSum: 0,
+                mitaSum: 0,
+                count: 0
+              };
+            }
+            
+            stationGroups[key].minaSum += Number(row.MiNa_Bestand) || 0;
+            stationGroups[key].mitaSum += Number(row.MiTa_Bestand) || 0;
+            stationGroups[key].count++;
+          });
+          
+          // Calculate totals
+          let totalMiNa = 0;
+          let totalMiTa = 0;
+          const stationCount = Object.keys(stationGroups).length;
+          const stationDetails: any[] = [];
+          
+          Object.values(stationGroups).forEach(group => {
+            const minaAvg = group.count > 0 ? group.minaSum / group.count : 0;
+            const mitaAvg = group.count > 0 ? group.mitaSum / group.count : 0;
+            
+            totalMiNa += minaAvg;
+            totalMiTa += mitaAvg;
+            
+            stationDetails.push({
+              Haus: group.haus,
+              Station: group.station,
+              MiNa_Durchschnitt: minaAvg,
+              MiTa_Durchschnitt: mitaAvg,
+              Anzahl_Tage: group.count
+            });
+          });
+          
+          console.log(`Found ${stationCount} stations with data in month ${targetMonthNumber}`);
+          
+          if (targetMonthNumber >= 1 && targetMonthNumber <= 12 && stationCount > 0) {
+            const monthIndex = targetMonthNumber - 1;
+            monthlyData[monthIndex] = {
+              month: targetMonthNumber,
+              year: targetYearNumber,
+              minaAverage: totalMiNa,
+              mitaAverage: totalMiTa,
+              totalStations: stationCount,
+              totalDays: stationCount > 0 ? Math.round(Object.values(stationGroups)[0].count) : 0,
+              stationDetails: stationDetails
             };
           }
         }
@@ -556,6 +662,13 @@ export class MinaMitaChart implements OnInit, OnChanges {
     });
 
     this.chartData.set(monthlyData);
+    
+    // Update chart title dynamically
+    if (this.chartOptions && this.chartOptions.plugins && this.chartOptions.plugins.title) {
+      this.chartOptions.plugins.title.text = this.selectedStation === 'all' 
+        ? 'MiNa vs MiTa Durchschnitte (Alle Stationen)' 
+        : `MiNa vs MiTa Durchschnitte - ${this.selectedStation}`;
+    }
   }
 
   getChartData(): ChartData<'line'> {

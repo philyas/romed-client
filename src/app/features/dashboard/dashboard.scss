@@ -288,11 +288,39 @@
   padding: 16px;
   position: relative;
   z-index: 100;
+  transition: all 0.5s ease;
+  scroll-margin-top: 20px;
+
+  &.highlighted {
+    box-shadow: 0 0 0 4px rgba(25, 118, 210, 0.3), 0 8px 24px rgba(0, 0, 0, 0.15);
+    animation: highlight-pulse 2s ease-in-out;
+  }
+}
+
+/* MiNa/MiTa Section */
+.mina-mita-charts-section {
+  margin-bottom: 32px;
+  transition: all 0.5s ease;
+  scroll-margin-top: 20px;
+
+  &.highlighted {
+    box-shadow: 0 0 0 4px rgba(25, 118, 210, 0.3), 0 8px 24px rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+    animation: highlight-pulse 2s ease-in-out;
+  }
 }
 
 /* CO Charts Section - Side by Side */
 .co-charts-section {
   margin-bottom: 32px;
+  transition: all 0.5s ease;
+  scroll-margin-top: 20px;
+
+  &.highlighted {
+    box-shadow: 0 0 0 4px rgba(25, 118, 210, 0.3), 0 8px 24px rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+    animation: highlight-pulse 2s ease-in-out;
+  }
 
   .co-charts-grid {
     display: grid;
@@ -302,6 +330,16 @@
     .co-chart-wrapper {
       min-width: 0; // Prevents grid overflow
     }
+  }
+}
+
+/* Highlight Animation */
+@keyframes highlight-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 4px rgba(25, 118, 210, 0.3), 0 8px 24px rgba(0, 0, 0, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(25, 118, 210, 0.5), 0 12px 32px rgba(0, 0, 0, 0.2);
   }
 }
 

@@ -1,6 +1,7 @@
 import { Component, inject, signal, ViewChild, ElementRef, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
@@ -21,6 +22,7 @@ import { Api, SchemaDef, UploadFileResult } from '../../core/api';
 export class Upload {
   private api = inject(Api);
   private dialog = inject(MatDialog);
+  private router = inject(Router);
 
   @ViewChild('fileInput', { static: false }) fileInput!: ElementRef<HTMLInputElement>;
 
@@ -234,12 +236,16 @@ export class Upload {
     const successfulFiles = response.files.filter(file => !file.error);
     const failedFiles = response.files.filter(file => file.error);
     
+    // Get the current schema ID
+    const currentSchemaId = this.selectedSchemaId();
+    
     // Show modal instead of snackbar
     const dialogRef = this.dialog.open(UploadResultDialog, {
       width: '600px',
       disableClose: false,
       data: {
         type: failedFiles.length === 0 ? 'success' : 'warning',
+        schemaId: currentSchemaId,
         summary: {
           totalFiles: response.files.length,
           successfulFiles: successfulFiles.length,
@@ -248,6 +254,15 @@ export class Upload {
         files: response.files,
         uploadId: response.uploadId
       }
+    });
+    
+    // Navigate to dashboard after dialog is closed
+    dialogRef.afterClosed().subscribe(() => {
+      // Navigate to dashboard with fragment to scroll to the uploaded schema
+      this.router.navigate(['/dashboard'], { 
+        fragment: currentSchemaId,
+        queryParams: { highlight: currentSchemaId }
+      });
     });
   }
 
