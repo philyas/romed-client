@@ -32,7 +32,7 @@ export class Upload {
   dragOver = signal<boolean>(false);
 
   // Nur diese Schemas sollen im Dropdown erscheinen
-  private allowedSchemas = ['mitternachtsstatistik', 'co_entlass_aufnahmezeiten'];
+  private allowedSchemas = ['mitternachtsstatistik', 'co_entlass_aufnahmezeiten', 'ppugv_bestaende'];
 
   // Gefilterte Schemas für das Dropdown
   get filteredSchemas(): SchemaDef[] {
@@ -54,6 +54,8 @@ export class Upload {
         return 'Die Excel-Datei sollte monatliche Mitternachtsstatistiken enthalten. Dateiname-Format: <strong>[Standort] [Monat]-[Jahr] Mitternachtsstatistik.xlsx</strong><br>Beispiel: <em>BAB 09-2025 Mitternachtsstatistik.xlsx</em>';
       case 'co_entlass_aufnahmezeiten':
         return 'Die Excel-Datei sollte Aufnahme- und Entlasszeiten enthalten. Dateiname-Format: <strong>CO Entlass- Aufnahmezeiten [Jahr]-[Monat].xlsx</strong><br>Beispiel: <em>CO Entlass- Aufnahmezeiten 2025-08.xlsx</em>';
+      case 'ppugv_bestaende':
+        return 'Die Excel-Datei sollte MiNa- und MiTa-Bestände enthalten (beide Tabs). Dateiname-Format: <strong>*[Jahr]-[Monat]-[Tag]*.xlsx</strong> oder <strong>*[Jahr]-[Monat]*.xlsx</strong><br>Beispiel: <em>CO PpUGV MiNa_MiTa-Bestände RoMed_2025-08-31.xlsx</em><br><br>📊 Das System erkennt automatisch das Datum im Dateinamen und berechnet:<br>✅ Tagesdaten für Detailanalysen<br>✅ Monatsdurchschnitte für Übersichtsberichte';
       default:
         return null;
     }
@@ -71,6 +73,11 @@ export class Upload {
         return {
           max: 1,
           description: 'Es kann nur eine Datei pro Upload hochgeladen werden, da die Daten monatlich überschrieben werden.'
+        };
+      case 'ppugv_bestaende':
+        return {
+          max: 1,
+          description: 'Es kann nur eine Datei pro Upload hochgeladen werden. Die Datei muss beide Tabs (MiNa und MiTa) enthalten. Bei erneutem Upload werden die vorherigen Daten überschrieben.'
         };
       default:
         return {

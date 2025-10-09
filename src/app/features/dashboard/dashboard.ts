@@ -1,4 +1,4 @@
-import { Component, inject, signal, Inject } from '@angular/core';
+import { Component, inject, signal, Inject, computed } from '@angular/core';
 import { CommonModule, NgIf } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
@@ -11,10 +11,11 @@ import { RouterModule } from '@angular/router';
 import { Api, ResultsResponse, UploadRecord, MitternachtsstatistikResponse, SchemaStatistics } from '../../core/api';
 import { MitternachtsstatistikCharts } from '../mitternachtsstatistik-charts/mitternachtsstatistik-charts';
 import { COCharts } from '../co-charts/co-charts';
+import { MinaMitaCharts } from '../mina-mita-charts/mina-mita-charts';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule, NgIf, MatCardModule, MatChipsModule, MatIconModule, MatButtonModule, MatExpansionModule, MatDialogModule, RouterModule, MitternachtsstatistikCharts, COCharts],
+  imports: [CommonModule, NgIf, MatCardModule, MatChipsModule, MatIconModule, MatButtonModule, MatExpansionModule, MatDialogModule, RouterModule, MitternachtsstatistikCharts, COCharts, MinaMitaCharts],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss'
 })
@@ -27,6 +28,17 @@ export class Dashboard {
   globalSelectedYear = signal<number>(new Date().getFullYear());
   globalSelectedStation = signal<string>('all');
   mitternachtsstatistikData = signal<MitternachtsstatistikResponse | null>(null);
+
+  // Computed signals for schema-specific data
+  hasCOData = computed(() => {
+    const uploads = this.data()?.uploads || [];
+    return uploads.some(u => u.schemaId === 'co_entlass_aufnahmezeiten');
+  });
+
+  hasMinaMitaData = computed(() => {
+    const uploads = this.data()?.uploads || [];
+    return uploads.some(u => u.schemaId === 'ppugv_bestaende');
+  });
 
   constructor() {
     this.refresh();
