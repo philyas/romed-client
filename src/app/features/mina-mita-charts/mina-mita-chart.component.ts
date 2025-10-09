@@ -4,6 +4,8 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialogModule, MatDialog, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatTableModule } from '@angular/material/table';
 import { BaseChartDirective } from 'ng2-charts';
 import { Chart, ChartConfiguration, ChartData, registerables } from 'chart.js';
 
@@ -14,6 +16,7 @@ interface ChartDataPoint {
   mitaAverage: number;
   totalStations: number;
   totalDays: number;
+  stationDetails?: any[]; // Store the raw station data for detailed view
 }
 
 @Component({
@@ -25,52 +28,219 @@ interface ChartDataPoint {
     MatButtonModule,
     MatIconModule,
     MatDialogModule,
+    MatTabsModule,
+    MatTableModule,
     BaseChartDirective
   ],
   template: `
-    <mat-card class="chart-card">
-      <mat-card-header>
-        <mat-card-title>
-          <mat-icon>show_chart</mat-icon>
-          MiNa/MiTa Durchschnitte über Zeit
-        </mat-card-title>
-        <mat-card-subtitle>
-          Monatlicher Vergleich aller Stationen
-        </mat-card-subtitle>
-      </mat-card-header>
-      
-      <mat-card-content>
-        <div class="chart-container" *ngIf="hasData()">
-          <canvas baseChart
-            [data]="getChartData()"
-            [options]="chartOptions"
-            [type]="'line'">
-          </canvas>
+    <div class="flip-card" [class.flipped]="isFlipped()" (click)="toggleFlip()">
+      <div class="flip-card-inner">
+        <!-- Front side: Chart -->
+        <div class="flip-card-front">
+          <mat-card class="chart-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>show_chart</mat-icon>
+                MiNa/MiTa Durchschnitte über Zeit
+                <span class="flip-hint-text">Klicken zum Umdrehen</span>
+                <mat-icon class="flip-icon">flip</mat-icon>
+              </mat-card-title>
+              <mat-card-subtitle>
+                Monatlicher Vergleich aller Stationen
+              </mat-card-subtitle>
+            </mat-card-header>
+            
+            <mat-card-content>
+              <div class="chart-container" *ngIf="hasData()">
+                <canvas baseChart
+                  [data]="getChartData()"
+                  [options]="chartOptions"
+                  [type]="'line'">
+                </canvas>
+              </div>
+              
+              <div class="no-data" *ngIf="!hasData()">
+                <mat-icon>info</mat-icon>
+                <p>Keine Chart-Daten verfügbar</p>
+                <p class="hint">Laden Sie PpUGV MiNa/MiTa-Bestände Dateien hoch, um die monatliche Entwicklung zu sehen.</p>
+              </div>
+            </mat-card-content>
+          </mat-card>
         </div>
         
-        <div class="no-data" *ngIf="!hasData()">
-          <mat-icon>info</mat-icon>
-          <p>Keine Chart-Daten verfügbar</p>
-          <p class="hint">Laden Sie PpUGV MiNa/MiTa-Bestände Dateien hoch, um die monatliche Entwicklung zu sehen.</p>
+        <!-- Back side: Tabs with data -->
+        <div class="flip-card-back">
+          <mat-card class="chart-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>table_chart</mat-icon>
+                MiNa/MiTa Detaildaten
+                <mat-icon class="flip-icon">flip</mat-icon>
+              </mat-card-title>
+            </mat-card-header>
+            
+            <mat-card-content>
+              <mat-tab-group (click)="$event.stopPropagation()" class="data-tabs">
+                <mat-tab label="🌙 MiNa (Mitternacht)">
+                  <div class="tab-content">
+                    <div class="table-container">
+                      <table mat-table [dataSource]="getMinaTableData()">
+                        <ng-container matColumnDef="month">
+                          <th mat-header-cell *matHeaderCellDef>Monat</th>
+                          <td mat-cell *matCellDef="let row">{{ row.month }}</td>
+                        </ng-container>
+                        <ng-container matColumnDef="value">
+                          <th mat-header-cell *matHeaderCellDef>MiNa Durchschnitt</th>
+                          <td mat-cell *matCellDef="let row">{{ row.value | number:'1.2-2' }}</td>
+                        </ng-container>
+                        <ng-container matColumnDef="stations">
+                          <th mat-header-cell *matHeaderCellDef>Stationen</th>
+                          <td mat-cell *matCellDef="let row">{{ row.stations }}</td>
+                        </ng-container>
+                        <tr mat-header-row *matHeaderRowDef="['month', 'value', 'stations']"></tr>
+                        <tr mat-row *matRowDef="let row; columns: ['month', 'value', 'stations']"></tr>
+                      </table>
+                    </div>
+                  </div>
+                </mat-tab>
+                <mat-tab label="☀️ MiTa (Mittag)">
+                  <div class="tab-content">
+                    <div class="table-container">
+                      <table mat-table [dataSource]="getMitaTableData()">
+                        <ng-container matColumnDef="month">
+                          <th mat-header-cell *matHeaderCellDef>Monat</th>
+                          <td mat-cell *matCellDef="let row">{{ row.month }}</td>
+                        </ng-container>
+                        <ng-container matColumnDef="value">
+                          <th mat-header-cell *matHeaderCellDef>MiTa Durchschnitt</th>
+                          <td mat-cell *matCellDef="let row">{{ row.value | number:'1.2-2' }}</td>
+                        </ng-container>
+                        <ng-container matColumnDef="stations">
+                          <th mat-header-cell *matHeaderCellDef>Stationen</th>
+                          <td mat-cell *matCellDef="let row">{{ row.stations }}</td>
+                        </ng-container>
+                        <tr mat-header-row *matHeaderRowDef="['month', 'value', 'stations']"></tr>
+                        <tr mat-row *matRowDef="let row; columns: ['month', 'value', 'stations']"></tr>
+                      </table>
+                    </div>
+                  </div>
+                </mat-tab>
+              </mat-tab-group>
+            </mat-card-content>
+          </mat-card>
         </div>
-      </mat-card-content>
-    </mat-card>
+      </div>
+    </div>
   `,
   styles: [`
+    .flip-card {
+      perspective: 1000px;
+      cursor: pointer;
+      height: 500px;
+      transition: transform 0.2s ease;
+      
+      &:hover {
+        transform: scale(1.01);
+        
+        .chart-card {
+          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15) !important;
+        }
+        
+        .flip-icon {
+          animation: flipHint 0.6s ease-in-out;
+        }
+        
+        .flip-hint-text {
+          opacity: 1;
+        }
+      }
+    }
+
+    .flip-card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.6s;
+      transform-style: preserve-3d;
+    }
+
+    .flip-card.flipped .flip-card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .flip-card-front,
+    .flip-card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+
+    .flip-card-back {
+      transform: rotateY(180deg);
+    }
+
     .chart-card {
       margin: 20px 0;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      height: 100%;
+      display: flex;
+      flex-direction: column;
     }
 
     mat-card-header {
       margin-bottom: 20px;
+      background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+      color: white;
+      padding: 16px;
     }
 
     mat-card-title {
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 12px;
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 600;
+      color: white;
+      margin: 0;
+    }
+
+    mat-card-subtitle {
+      color: rgba(255, 255, 255, 0.9);
+      margin: 4px 0 0 0;
+      font-size: 13px;
+    }
+
+    .flip-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+      opacity: 0.9;
+      transition: transform 0.3s ease;
+    }
+    
+    .flip-hint-text {
+      position: absolute;
+      right: 50px;
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 0.7rem;
+      opacity: 0.7;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    
+    @keyframes flipHint {
+      0%, 100% { transform: rotateY(0deg); }
+      50% { transform: rotateY(15deg); }
+    }
+
+    mat-card-content {
+      flex: 1;
+      overflow: hidden;
+      padding: 16px !important;
     }
 
     .chart-container {
@@ -100,6 +270,103 @@ interface ChartDataPoint {
       font-size: 13px;
       color: #999;
     }
+
+    .data-tabs {
+      height: 100%;
+    }
+
+    .data-tabs ::ng-deep .mat-mdc-tab-body-wrapper {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .data-tabs ::ng-deep .mat-mdc-tab-labels {
+      background: #f5f5f5;
+    }
+
+    .data-tabs ::ng-deep .mat-mdc-tab {
+      font-weight: 500;
+    }
+
+    .data-tabs ::ng-deep .mat-mdc-tab.mat-mdc-tab-active {
+      background: white;
+    }
+
+    .tab-content {
+      padding: 16px;
+      height: 100%;
+    }
+
+    .table-container {
+      max-height: 350px;
+      overflow-y: auto;
+      overflow-x: auto;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .table-container::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    .table-container::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+
+    .table-container::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 4px;
+    }
+
+    .table-container::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+
+    .table-container table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .table-container th {
+      background: #1976d2;
+      color: white;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 2px solid #1565c0;
+    }
+
+    .table-container td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .table-container tbody tr:nth-child(even) {
+      background: #fafafa;
+    }
+
+    .table-container tbody tr:hover {
+      background: #e3f2fd;
+      transition: background-color 0.2s ease;
+    }
+
+    @media (max-width: 768px) {
+      .flip-card {
+        height: auto;
+        min-height: 500px;
+      }
+
+      .table-container {
+        max-height: 300px;
+      }
+    }
   `]
 })
 export class MinaMitaChart implements OnInit, OnChanges {
@@ -108,13 +375,22 @@ export class MinaMitaChart implements OnInit, OnChanges {
   
   chartData = signal<ChartDataPoint[]>([]);
   chartOptions: ChartConfiguration['options'] = {};
+  isFlipped = signal<boolean>(false);
 
   private readonly monthLabels = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+  private readonly monthLabelsFull = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
 
   constructor(private dialog: MatDialog) {
     effect(() => {
       this.processChartData();
     });
+  }
+
+  toggleFlip(event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.isFlipped.set(!this.isFlipped());
   }
 
   ngOnInit() {
@@ -326,6 +602,24 @@ export class MinaMitaChart implements OnInit, OnChanges {
 
   padMonth(month: number): string {
     return month.toString().padStart(2, '0');
+  }
+
+  getMinaTableData() {
+    const data = this.chartData();
+    return data.map((point, index) => ({
+      month: this.monthLabelsFull[index],
+      value: point.minaAverage,
+      stations: point.totalStations
+    }));
+  }
+
+  getMitaTableData() {
+    const data = this.chartData();
+    return data.map((point, index) => ({
+      month: this.monthLabelsFull[index],
+      value: point.mitaAverage,
+      stations: point.totalStations
+    }));
   }
 }
 
