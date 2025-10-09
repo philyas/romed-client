@@ -75,64 +75,156 @@ interface PflegestufenData {
       <div class="charts-container">
         <div class="charts-grid">
           <!-- Pflegebedarf Chart -->
-          <mat-card class="metric-card">
-            <mat-card-header class="metric-header pflegebedarf-header">
-              <mat-card-title>
-                <mat-icon>timer</mat-icon>
-                Pflegebedarf in Minuten
-              </mat-card-title>
-              <mat-card-subtitle>Pro Station - {{ selectedStandort() }}</mat-card-subtitle>
-            </mat-card-header>
-            <mat-card-content class="chart-content">
-              <div class="chart-container">
-                <canvas baseChart
-                  [data]="getPflegebedarfChartData()"
-                  [options]="getPflegebedarfChartOptions()"
-                  [type]="'bar'">
-                </canvas>
+          <div class="flip-card" [class.flipped]="flippedCards()['pflegebedarf']" (click)="toggleFlip('pflegebedarf')">
+            <div class="flip-card-inner">
+              <div class="flip-card-front">
+                <mat-card class="metric-card">
+                  <mat-card-header class="metric-header pflegebedarf-header">
+                    <mat-card-title>
+                      <mat-icon>timer</mat-icon>
+                      Pflegebedarf in Minuten
+                      <span class="flip-hint-text">Klicken zum Umdrehen</span>
+                      <mat-icon class="flip-icon">flip</mat-icon>
+                    </mat-card-title>
+                    <mat-card-subtitle>Pro Station - {{ selectedStandort() }}</mat-card-subtitle>
+                  </mat-card-header>
+                  <mat-card-content class="chart-content">
+                    <div class="chart-container">
+                      <canvas baseChart
+                        [data]="getPflegebedarfChartData()"
+                        [options]="getPflegebedarfChartOptions()"
+                        [type]="'bar'">
+                      </canvas>
+                    </div>
+                    <div class="chart-info">
+                      <mat-chip-set>
+                        <mat-chip class="info-chip">
+                          Gesamt: {{ getTotalPflegebedarf() | number:'1.0-0' }} Min
+                        </mat-chip>
+                        <mat-chip class="info-chip">
+                          Stationen: {{ getFilteredData().length }}
+                        </mat-chip>
+                      </mat-chip-set>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
               </div>
-              <div class="chart-info">
-                <mat-chip-set>
-                  <mat-chip class="info-chip">
-                    Gesamt: {{ getTotalPflegebedarf() | number:'1.0-0' }} Min
-                  </mat-chip>
-                  <mat-chip class="info-chip">
-                    Stationen: {{ getFilteredData().length }}
-                  </mat-chip>
-                </mat-chip-set>
+              <div class="flip-card-back">
+                <mat-card class="metric-card">
+                  <mat-card-header class="metric-header pflegebedarf-header">
+                    <mat-card-title>
+                      Pflegebedarf Details
+                      <mat-icon class="flip-icon">flip</mat-icon>
+                    </mat-card-title>
+                  </mat-card-header>
+                  <mat-card-content class="data-content">
+                    <div class="data-table-container">
+                      <table class="data-table">
+                        <thead>
+                          <tr>
+                            <th>Station</th>
+                            <th>Pflegebedarf (Min)</th>
+                            <th>T.-Patienten</th>
+                            <th>Einstufungen</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let row of getFilteredData()">
+                            <td class="station-cell">{{ row.Station }}</td>
+                            <td class="number-cell">{{ row['Pfl.bedarf Minuten'] | number:'1.0-0' }}</td>
+                            <td class="number-cell">{{ row['T.-Patienten'] }}</td>
+                            <td class="number-cell">{{ row['Einstufungen absolut'] }}</td>
+                          </tr>
+                          <tr class="total-row">
+                            <td><strong>Gesamt</strong></td>
+                            <td class="number-cell"><strong>{{ getTotalPflegebedarf() | number:'1.0-0' }}</strong></td>
+                            <td class="number-cell"><strong>{{ getTotalTPatienten() }}</strong></td>
+                            <td class="number-cell"><strong>{{ getTotalEinstufungen() }}</strong></td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
               </div>
-            </mat-card-content>
-          </mat-card>
+            </div>
+          </div>
 
           <!-- Einstufungen Chart -->
-          <mat-card class="metric-card">
-            <mat-card-header class="metric-header einstufungen-header">
-              <mat-card-title>
-                <mat-icon>assessment</mat-icon>
-                Einstufungen absolut
-              </mat-card-title>
-              <mat-card-subtitle>Pro Station - {{ selectedStandort() }}</mat-card-subtitle>
-            </mat-card-header>
-            <mat-card-content class="chart-content">
-              <div class="chart-container">
-                <canvas baseChart
-                  [data]="getEinstufungenChartData()"
-                  [options]="getEinstufungenChartOptions()"
-                  [type]="'bar'">
-                </canvas>
+          <div class="flip-card" [class.flipped]="flippedCards()['einstufungen']" (click)="toggleFlip('einstufungen')">
+            <div class="flip-card-inner">
+              <div class="flip-card-front">
+                <mat-card class="metric-card">
+                  <mat-card-header class="metric-header einstufungen-header">
+                    <mat-card-title>
+                      <mat-icon>assessment</mat-icon>
+                      Einstufungen absolut
+                      <span class="flip-hint-text">Klicken zum Umdrehen</span>
+                      <mat-icon class="flip-icon">flip</mat-icon>
+                    </mat-card-title>
+                    <mat-card-subtitle>Pro Station - {{ selectedStandort() }}</mat-card-subtitle>
+                  </mat-card-header>
+                  <mat-card-content class="chart-content">
+                    <div class="chart-container">
+                      <canvas baseChart
+                        [data]="getEinstufungenChartData()"
+                        [options]="getEinstufungenChartOptions()"
+                        [type]="'bar'">
+                      </canvas>
+                    </div>
+                    <div class="chart-info">
+                      <mat-chip-set>
+                        <mat-chip class="info-chip">
+                          Gesamt: {{ getTotalEinstufungen() | number:'1.0-0' }}
+                        </mat-chip>
+                        <mat-chip class="info-chip">
+                          Ø pro Station: {{ getAverageEinstufungen() | number:'1.0-0' }}
+                        </mat-chip>
+                      </mat-chip-set>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
               </div>
-              <div class="chart-info">
-                <mat-chip-set>
-                  <mat-chip class="info-chip">
-                    Gesamt: {{ getTotalEinstufungen() | number:'1.0-0' }}
-                  </mat-chip>
-                  <mat-chip class="info-chip">
-                    Ø pro Station: {{ getAverageEinstufungen() | number:'1.0-0' }}
-                  </mat-chip>
-                </mat-chip-set>
+              <div class="flip-card-back">
+                <mat-card class="metric-card">
+                  <mat-card-header class="metric-header einstufungen-header">
+                    <mat-card-title>
+                      Einstufungen Details
+                      <mat-icon class="flip-icon">flip</mat-icon>
+                    </mat-card-title>
+                  </mat-card-header>
+                  <mat-card-content class="data-content">
+                    <div class="data-table-container">
+                      <table class="data-table">
+                        <thead>
+                          <tr>
+                            <th>Station</th>
+                            <th>Einstufungen absolut</th>
+                            <th>Pflegebedarf (Min)</th>
+                            <th>Ø Min/Einstufung</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let row of getFilteredData()">
+                            <td class="station-cell">{{ row.Station }}</td>
+                            <td class="number-cell">{{ row['Einstufungen absolut'] }}</td>
+                            <td class="number-cell">{{ row['Pfl.bedarf Minuten'] | number:'1.0-0' }}</td>
+                            <td class="number-cell">{{ (row['Pfl.bedarf Minuten'] / row['Einstufungen absolut']) | number:'1.0-0' }}</td>
+                          </tr>
+                          <tr class="total-row">
+                            <td><strong>Gesamt</strong></td>
+                            <td class="number-cell"><strong>{{ getTotalEinstufungen() }}</strong></td>
+                            <td class="number-cell"><strong>{{ getTotalPflegebedarf() | number:'1.0-0' }}</strong></td>
+                            <td class="number-cell"><strong>{{ (getTotalPflegebedarf() / getTotalEinstufungen()) | number:'1.0-0' }}</strong></td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
               </div>
-            </mat-card-content>
-          </mat-card>
+            </div>
+          </div>
 
         </div>
       </div>
@@ -148,6 +240,7 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
   selectedYear = signal<number>(new Date().getFullYear());
   
   pflegestufenData = signal<PflegestufenData[]>([]);
+  flippedCards = signal<{ [key: string]: boolean }>({});
   
   availableStandorte = computed(() => {
     const standorte = new Set<string>();
@@ -216,6 +309,14 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
 
   onMonthChange(month: number) {
     this.selectedMonth.set(month);
+  }
+
+  toggleFlip(cardType: string) {
+    const current = this.flippedCards();
+    this.flippedCards.set({
+      ...current,
+      [cardType]: !current[cardType]
+    });
   }
 
   getMonthName(month: number): string {
@@ -323,6 +424,10 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
   getAverageEinstufungen(): number {
     const data = this.getFilteredData();
     return data.length > 0 ? this.getTotalEinstufungen() / data.length : 0;
+  }
+
+  getTotalTPatienten(): number {
+    return this.getFilteredData().reduce((sum, d) => sum + d['T.-Patienten'], 0);
   }
 }
 
