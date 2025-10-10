@@ -20,6 +20,7 @@ export interface DataInfoItem {
   station?: string;
   rawData?: any[]; // Original data from the file
   schemaColumns?: string[]; // Column names from schema
+  fileCount?: number; // Number of files in this aggregated item (for multi-file uploads)
 }
 
 @Component({
@@ -46,7 +47,7 @@ export interface DataInfoItem {
           </mat-icon>
         </mat-panel-title>
         <mat-panel-description>
-          {{ dataItems.length }} {{ dataItems.length === 1 ? 'Datei' : 'Dateien' }} geladen
+          {{ getTotalFileCount() }} {{ getTotalFileCount() === 1 ? 'Datei' : 'Dateien' }} geladen
         </mat-panel-description>
       </mat-expansion-panel-header>
 
@@ -432,6 +433,13 @@ export class DataInfoPanel {
 
   hasWarnings(): boolean {
     return this.dataItems.some(item => item.status === 'warning' || item.status === 'error');
+  }
+
+  getTotalFileCount(): number {
+    // Sum up fileCount if available (for aggregated items), otherwise count items
+    return this.dataItems.reduce((total, item) => {
+      return total + (item.fileCount || 1);
+    }, 0);
   }
 
   getStatusIcon(status: string): string {

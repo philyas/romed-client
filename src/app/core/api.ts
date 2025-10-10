@@ -27,6 +27,7 @@ export interface UploadRecord {
   createdAt: string;
   files: UploadFileResult[];
   month?: string;
+  jahr?: number;
   locations?: string[];
   locationsData?: Record<string, UploadFileResult[]>;
 }

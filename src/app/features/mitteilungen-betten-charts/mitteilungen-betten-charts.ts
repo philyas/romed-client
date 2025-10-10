@@ -67,26 +67,31 @@ export class MitteilungenBettenCharts {
     this.flippedCards[cardName] = !this.flippedCards[cardName];
   }
 
-  // Extract all Betten data
+  // Extract all Betten data from locationsData (similar to mitternachtsstatistik)
   bettenData = computed(() => {
     const uploads = this.data?.uploads || [];
     const bettenUploads = uploads.filter(u => u.schemaId === 'mitteilungen_betten');
     
     const allData: BettenData[] = [];
     bettenUploads.forEach(upload => {
-      upload.files.forEach(file => {
-        if (file.values) {
-          file.values.forEach((value: any) => {
-            allData.push({
-              IK: value.IK || '',
-              Standort: value.Standort || '',
-              Station: value.Station || '',
-              Jahr: value.Jahr || new Date().getFullYear(),
-              Bettenanzahl: value.Bettenanzahl || 0
-            });
+      // Use locationsData structure (multiple files aggregated by location)
+      if (upload.locationsData) {
+        Object.values(upload.locationsData).forEach((locationFiles: any) => {
+          locationFiles.forEach((file: any) => {
+            if (file.values) {
+              file.values.forEach((value: any) => {
+                allData.push({
+                  IK: value.IK || '',
+                  Standort: value.Standort || '',
+                  Station: value.Station || '',
+                  Jahr: value.Jahr || upload.jahr || new Date().getFullYear(),
+                  Bettenanzahl: value.Bettenanzahl || 0
+                });
+              });
+            }
           });
-        }
-      });
+        });
+      }
     });
     
     return allData;
@@ -169,24 +174,42 @@ export class MitteilungenBettenCharts {
     return count > 0 ? (total / count).toFixed(1) : '0';
   });
 
-  // Data Info Items
+  // Data Info Items (similar to mitternachtsstatistik - show multiple files aggregated)
   dataInfoItems = computed(() => {
     const items: DataInfoItem[] = [];
     const uploads = this.data?.uploads || [];
     const bettenUploads = uploads.filter(u => u.schemaId === 'mitteilungen_betten');
     
     bettenUploads.forEach(upload => {
-      upload.files.forEach(file => {
-        items.push({
-          fileName: file.originalName || 'Unbekannt',
-          uploadDate: upload.createdAt,
-          dataYear: this.selectedYear(),
-          recordCount: file.values?.length || 0,
-          status: 'success',
-          rawData: file.values,
-          schemaColumns: ['IK', 'Standort', 'Station', 'Jahr', 'Bettenanzahl']
+      // Only show aggregated container with locationsData structure
+      if (upload.locationsData) {
+        let totalRecords = 0;
+        const allRawData: any[] = [];
+        const fileCount = upload.files?.length || 0;
+        const locations = upload.locations?.join(', ') || '';
+
+        // Collect all raw data from all locations
+        Object.values(upload.locationsData).forEach((locationFiles: any) => {
+          locationFiles.forEach((file: any) => {
+            if (file.values) {
+              totalRecords += file.values.length;
+              allRawData.push(...file.values);
+            }
+          });
         });
-      });
+
+        items.push({
+          fileName: `${upload.schemaName} (${fileCount} ${fileCount === 1 ? 'Datei' : 'Dateien'})`,
+          uploadDate: upload.createdAt,
+          dataYear: upload.jahr,
+          recordCount: totalRecords,
+          status: 'success' as const,
+          location: locations,
+          rawData: allRawData,
+          schemaColumns: ['IK', 'Standort', 'Station', 'Jahr', 'Bettenanzahl'],
+          fileCount: fileCount
+        });
+      }
     });
     
     return items;

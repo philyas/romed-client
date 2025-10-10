@@ -1183,7 +1183,8 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
         recordCount: totalRecords,
         status: 'success' as const,
         location: locations,
-        rawData: allRawData
+        rawData: allRawData,
+        fileCount: fileCount
       };
     });
 
