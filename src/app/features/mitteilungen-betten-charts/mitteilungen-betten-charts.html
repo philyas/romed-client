@@ -1,0 +1,220 @@
+<div class="mitteilungen-betten-charts">
+  <div class="charts-header">
+    <div class="header-top">
+      <h3>
+        <mat-icon>hotel</mat-icon>
+        Aufgestellte Betten - Jahresübersicht {{ selectedYear() }}
+      </h3>
+      <div class="selectors-container">
+        <mat-form-field appearance="outline" class="standort-selector">
+          <mat-label>
+            <mat-icon>location_on</mat-icon>
+            Standort
+          </mat-label>
+          <mat-select 
+            [value]="selectedStandort()" 
+            (selectionChange)="onStandortChange($event.value)">
+            <mat-option value="all">Alle Standorte</mat-option>
+            <mat-option *ngFor="let standort of standorte()" [value]="standort">
+              {{ standort }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+        
+        <mat-form-field appearance="outline" class="station-selector">
+          <mat-label>
+            <mat-icon>business</mat-icon>
+            Station
+          </mat-label>
+          <mat-select 
+            [value]="selectedStation()" 
+            (selectionChange)="onStationChange($event.value)"
+            [disabled]="selectedStandort() === 'all'">
+            <mat-option value="all">Alle Stationen</mat-option>
+            <mat-option *ngFor="let station of availableStations()" [value]="station">
+              {{ station }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
+    <p>
+      {{ selectedStation() !== 'all' ? 'Station: ' + selectedStation() : 
+         selectedStandort() !== 'all' ? 'Standort: ' + selectedStandort() + ' (Alle Stationen)' : 
+         'Alle Standorte und Stationen' }}
+    </p>
+  </div>
+
+  <!-- Data Info Panel -->
+  <app-data-info-panel 
+    *ngIf="dataInfoItems().length > 0"
+    [dataItems]="dataInfoItems()"
+    [expandedByDefault]="false">
+  </app-data-info-panel>
+
+  <!-- Charts -->
+  <div *ngIf="hasData()" class="charts-container">
+    <div class="charts-grid">
+      
+      <!-- Betten Chart -->
+      <div class="flip-card" [class.flipped]="flippedCards['betten']" (click)="toggleFlip('betten')">
+        <div class="flip-card-inner">
+          <!-- Front: Chart -->
+          <div class="flip-card-front">
+            <mat-card class="metric-card">
+              <mat-card-header class="metric-header">
+                <mat-card-title>
+                  {{ selectedStandort() === 'all' ? 'Betten pro Standort' : 
+                     selectedStation() !== 'all' ? 'Betten der Station' :
+                     'Betten pro Station' }}
+                  <span class="flip-hint-text">Klicken zum Umdrehen</span>
+                  <mat-icon class="flip-icon">flip</mat-icon>
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content class="chart-content">
+                <div class="chart-container">
+                  <canvas baseChart
+                    [data]="barChartData()"
+                    [options]="barChartOptions"
+                    [type]="'bar'">
+                  </canvas>
+                </div>
+                <div class="chart-info">
+                  <mat-chip-set>
+                    <mat-chip>Gesamt: {{ totalBetten() }}</mat-chip>
+                    <mat-chip>Stationen: {{ totalStations() }}</mat-chip>
+                    <mat-chip>Ø {{ avgBettenPerStation() }}</mat-chip>
+                  </mat-chip-set>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+          
+          <!-- Back: Data Table -->
+          <div class="flip-card-back">
+            <mat-card class="metric-card">
+              <mat-card-header class="metric-header">
+                <mat-card-title>
+                  Betten - Daten
+                  <mat-icon class="flip-icon">flip</mat-icon>
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content class="table-content">
+                <div class="table-container">
+                  <!-- Table for Standort view -->
+                  <table mat-table [dataSource]="getStandortTableData()" *ngIf="selectedStandort() === 'all'">
+                    <ng-container matColumnDef="standort">
+                      <th mat-header-cell *matHeaderCellDef>Standort</th>
+                      <td mat-cell *matCellDef="let row">{{ row.standort }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="stationCount">
+                      <th mat-header-cell *matHeaderCellDef>Stationen</th>
+                      <td mat-cell *matCellDef="let row">{{ row.stationCount }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="totalBetten">
+                      <th mat-header-cell *matHeaderCellDef>Betten</th>
+                      <td mat-cell *matCellDef="let row">{{ row.totalBetten }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="avgBetten">
+                      <th mat-header-cell *matHeaderCellDef>Ø Betten</th>
+                      <td mat-cell *matCellDef="let row">{{ row.avgBetten }}</td>
+                    </ng-container>
+                    <tr mat-header-row *matHeaderRowDef="['standort', 'stationCount', 'totalBetten', 'avgBetten']"></tr>
+                    <tr mat-row *matRowDef="let row; columns: ['standort', 'stationCount', 'totalBetten', 'avgBetten']"></tr>
+                  </table>
+
+                  <!-- Table for Station view -->
+                  <table mat-table [dataSource]="getStationTableData()" *ngIf="selectedStandort() !== 'all'">
+                    <ng-container matColumnDef="station">
+                      <th mat-header-cell *matHeaderCellDef>Station</th>
+                      <td mat-cell *matCellDef="let row">{{ row.station }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="betten">
+                      <th mat-header-cell *matHeaderCellDef>Betten</th>
+                      <td mat-cell *matCellDef="let row">{{ row.betten }}</td>
+                    </ng-container>
+                    <tr mat-header-row *matHeaderRowDef="['station', 'betten']"></tr>
+                    <tr mat-row *matRowDef="let row; columns: ['station', 'betten']"></tr>
+                  </table>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </div>
+      </div>
+
+      <!-- Verteilung Pie Chart (only when showing all standorte) -->
+      <div class="flip-card" [class.flipped]="flippedCards['verteilung']" (click)="toggleFlip('verteilung')" *ngIf="selectedStandort() === 'all'">
+        <div class="flip-card-inner">
+          <!-- Front: Pie Chart -->
+          <div class="flip-card-front">
+            <mat-card class="metric-card">
+              <mat-card-header class="metric-header">
+                <mat-card-title>
+                  Verteilung der Betten
+                  <span class="flip-hint-text">Klicken zum Umdrehen</span>
+                  <mat-icon class="flip-icon">flip</mat-icon>
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content class="chart-content">
+                <div class="chart-container">
+                  <canvas baseChart
+                    [data]="pieChartData()"
+                    [options]="pieChartOptions"
+                    [type]="'pie'">
+                  </canvas>
+                </div>
+                <div class="chart-info">
+                  <mat-chip-set>
+                    <mat-chip>{{ standorte().length }} Standorte</mat-chip>
+                    <mat-chip>{{ totalBetten() }} Betten</mat-chip>
+                  </mat-chip-set>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+          
+          <!-- Back: Percentage Table -->
+          <div class="flip-card-back">
+            <mat-card class="metric-card">
+              <mat-card-header class="metric-header">
+                <mat-card-title>
+                  Verteilung - Daten
+                  <mat-icon class="flip-icon">flip</mat-icon>
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content class="table-content">
+                <div class="table-container">
+                  <table mat-table [dataSource]="getStandortTableData()">
+                    <ng-container matColumnDef="standort">
+                      <th mat-header-cell *matHeaderCellDef>Standort</th>
+                      <td mat-cell *matCellDef="let row">{{ row.standort }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="totalBetten">
+                      <th mat-header-cell *matHeaderCellDef>Betten</th>
+                      <td mat-cell *matCellDef="let row">{{ row.totalBetten }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="percentage">
+                      <th mat-header-cell *matHeaderCellDef>Anteil</th>
+                      <td mat-cell *matCellDef="let row">{{ (row.totalBetten / totalBetten() * 100).toFixed(1) }}%</td>
+                    </ng-container>
+                    <tr mat-header-row *matHeaderRowDef="['standort', 'totalBetten', 'percentage']"></tr>
+                    <tr mat-row *matRowDef="let row; columns: ['standort', 'totalBetten', 'percentage']"></tr>
+                  </table>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- No Data Message -->
+  <div *ngIf="!hasData()" class="no-data">
+    <mat-icon>info</mat-icon>
+    <p>Keine Bettendaten verfügbar. Bitte laden Sie Mitteilungen gem. § 5 PpUGV Dateien hoch.</p>
+  </div>
+</div>
+

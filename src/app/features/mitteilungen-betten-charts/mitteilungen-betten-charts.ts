@@ -3,9 +3,13 @@ import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatTableModule } from '@angular/material/table';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartOptions, ChartType } from 'chart.js';
 import { ResultsResponse } from '../../core/api';
+import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel';
 
 interface BettenData {
   IK: string;
@@ -18,227 +22,29 @@ interface BettenData {
 @Component({
   selector: 'app-mitteilungen-betten-charts',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatChipsModule, MatIconModule, BaseChartDirective],
-  template: `
-    <mat-card class="chart-card" id="mitteilungen_betten">
-      <mat-card-header>
-        <mat-card-title class="chart-title">
-          <mat-icon>hotel</mat-icon>
-          Aufgestellte Betten nach Standort
-        </mat-card-title>
-      </mat-card-header>
-      
-      <mat-card-content>
-        @if (hasData()) {
-          <div class="year-selector">
-            <label>Jahr:</label>
-            <mat-chip-listbox [value]="selectedYear()" (change)="onYearChange($event)">
-              @for (year of availableYears(); track year) {
-                <mat-chip-option [value]="year">{{ year }}</mat-chip-option>
-              }
-            </mat-chip-listbox>
-          </div>
-
-          <div class="charts-container">
-            <!-- Bar Chart: Betten pro Standort -->
-            <div class="chart-wrapper">
-              <h3>Betten pro Standort ({{ selectedYear() }})</h3>
-              @if (barChartData().datasets[0].data.length > 0) {
-                <canvas baseChart
-                  [data]="barChartData()"
-                  [options]="barChartOptions"
-                  [type]="'bar'">
-                </canvas>
-              }
-            </div>
-
-            <!-- Pie Chart: Verteilung der Betten -->
-            <div class="chart-wrapper">
-              <h3>Verteilung der Betten ({{ selectedYear() }})</h3>
-              @if (pieChartData().datasets[0].data.length > 0) {
-                <canvas baseChart
-                  [data]="pieChartData()"
-                  [options]="pieChartOptions"
-                  [type]="'pie'">
-                </canvas>
-              }
-            </div>
-          </div>
-
-          <!-- Tabelle: Details pro Standort -->
-          <div class="table-container">
-            <h3>Details pro Standort ({{ selectedYear() }})</h3>
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Standort</th>
-                  <th>Anzahl Stationen</th>
-                  <th>Gesamt Betten</th>
-                  <th>Ø Betten pro Station</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (summary of standortSummaries(); track summary.standort) {
-                  <tr>
-                    <td><strong>{{ summary.standort }}</strong></td>
-                    <td>{{ summary.stationCount }}</td>
-                    <td>{{ summary.totalBetten }}</td>
-                    <td>{{ summary.avgBetten }}</td>
-                  </tr>
-                }
-              </tbody>
-              <tfoot>
-                <tr>
-                  <td><strong>Gesamt</strong></td>
-                  <td>{{ totalStations() }}</td>
-                  <td>{{ totalBetten() }}</td>
-                  <td>{{ avgBettenPerStation() }}</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-
-          <!-- Details pro Station -->
-          <div class="details-container">
-            <h3>Stationen nach Standort ({{ selectedYear() }})</h3>
-            @for (standort of standorte(); track standort) {
-              <div class="standort-section">
-                <h4>{{ standort }}</h4>
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th>Station</th>
-                      <th>Bettenanzahl</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (entry of getStationsByStandort(standort); track entry.Station) {
-                      <tr>
-                        <td>{{ entry.Station }}</td>
-                        <td>{{ entry.Bettenanzahl }}</td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-            }
-          </div>
-        } @else {
-          <div class="no-data">
-            <mat-icon>info</mat-icon>
-            <p>Keine Bettendaten verfügbar. Bitte laden Sie Mitteilungen gem. § 5 PpUGV Dateien hoch.</p>
-          </div>
-        }
-      </mat-card-content>
-    </mat-card>
-  `,
-  styles: [`
-    .chart-card {
-      margin: 20px 0;
-      padding: 20px;
-    }
-
-    .chart-title {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 24px;
-      margin-bottom: 20px;
-    }
-
-    .year-selector {
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .charts-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-      gap: 20px;
-      margin-bottom: 30px;
-    }
-
-    .chart-wrapper {
-      padding: 15px;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
-    }
-
-    .chart-wrapper h3 {
-      margin-top: 0;
-      margin-bottom: 15px;
-      color: #333;
-    }
-
-    .table-container {
-      margin: 30px 0;
-    }
-
-    .data-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-
-    .data-table th,
-    .data-table td {
-      padding: 12px;
-      text-align: left;
-      border-bottom: 1px solid #e0e0e0;
-    }
-
-    .data-table th {
-      background-color: #f5f5f5;
-      font-weight: 600;
-    }
-
-    .data-table tbody tr:hover {
-      background-color: #f9f9f9;
-    }
-
-    .data-table tfoot {
-      background-color: #f5f5f5;
-      font-weight: 600;
-    }
-
-    .details-container {
-      margin-top: 30px;
-    }
-
-    .standort-section {
-      margin-bottom: 30px;
-      padding: 15px;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
-    }
-
-    .standort-section h4 {
-      margin-top: 0;
-      margin-bottom: 15px;
-      color: #1976d2;
-    }
-
-    .no-data {
-      text-align: center;
-      padding: 40px;
-      color: #666;
-    }
-
-    .no-data mat-icon {
-      font-size: 48px;
-      width: 48px;
-      height: 48px;
-      color: #999;
-    }
-  `]
+  imports: [
+    CommonModule, 
+    MatCardModule, 
+    MatChipsModule, 
+    MatIconModule, 
+    BaseChartDirective, 
+    MatSelectModule, 
+    MatFormFieldModule,
+    MatTableModule,
+    DataInfoPanel
+  ],
+  templateUrl: './mitteilungen-betten-charts.html',
+  styleUrl: './mitteilungen-betten-charts.scss'
 })
 export class MitteilungenBettenCharts {
   @Input() data!: ResultsResponse | null;
   @Input() selectedYearInput?: number;
   
   selectedYear = signal<number>(new Date().getFullYear());
+  selectedStandort = signal<string>('all');
+  selectedStation = signal<string>('all');
+  
+  flippedCards: { [key: string]: boolean } = {};
   
   constructor() {
     // Update selected year when input changes
@@ -247,6 +53,18 @@ export class MitteilungenBettenCharts {
         this.selectedYear.set(this.selectedYearInput);
       }
     });
+
+    // Reset station when standort changes
+    effect(() => {
+      const standort = this.selectedStandort();
+      if (standort === 'all') {
+        this.selectedStation.set('all');
+      }
+    });
+  }
+
+  toggleFlip(cardName: string) {
+    this.flippedCards[cardName] = !this.flippedCards[cardName];
   }
 
   // Extract all Betten data
@@ -283,37 +101,63 @@ export class MitteilungenBettenCharts {
     return Array.from(years).sort((a, b) => b - a);
   });
 
-  // Filter data by selected year
+  // Filter data by selected year, standort, and station
   filteredData = computed(() => {
-    return this.bettenData().filter(d => d.Jahr === this.selectedYear());
+    let data = this.bettenData().filter(d => d.Jahr === this.selectedYear());
+    
+    // Filter by Standort
+    if (this.selectedStandort() !== 'all') {
+      data = data.filter(d => d.Standort === this.selectedStandort());
+    }
+    
+    // Filter by Station
+    if (this.selectedStation() !== 'all') {
+      data = data.filter(d => d.Station === this.selectedStation());
+    }
+    
+    return data;
   });
 
-  // Get unique standorte
+  // Get all unique standorte (without filter)
   standorte = computed(() => {
-    const standorte = new Set(this.filteredData().map(d => d.Standort));
+    const data = this.bettenData().filter(d => d.Jahr === this.selectedYear());
+    const standorte = new Set(data.map(d => d.Standort));
     return Array.from(standorte).sort();
+  });
+
+  // Get available stations for selected standort
+  availableStations = computed(() => {
+    const standort = this.selectedStandort();
+    if (standort === 'all') {
+      return [];
+    }
+    const data = this.bettenData()
+      .filter(d => d.Jahr === this.selectedYear() && d.Standort === standort);
+    const stations = new Set(data.map(d => d.Station));
+    return Array.from(stations).sort();
   });
 
   // Calculate summaries per Standort
   standortSummaries = computed(() => {
     const data = this.filteredData();
-    const summaries: { standort: string; stationCount: number; totalBetten: number; avgBetten: string }[] = [];
+    const summaryMap = new Map<string, { stationCount: number; totalBetten: number }>();
     
-    this.standorte().forEach(standort => {
-      const standortData = data.filter(d => d.Standort === standort);
-      const totalBetten = standortData.reduce((sum, d) => sum + d.Bettenanzahl, 0);
-      const stationCount = standortData.length;
-      const avgBetten = stationCount > 0 ? (totalBetten / stationCount).toFixed(1) : '0';
-      
-      summaries.push({
-        standort,
-        stationCount,
-        totalBetten,
-        avgBetten
-      });
+    data.forEach(row => {
+      const key = row.Standort;
+      if (!summaryMap.has(key)) {
+        summaryMap.set(key, { stationCount: 0, totalBetten: 0 });
+      }
+      const summary = summaryMap.get(key)!;
+      summary.stationCount++;
+      summary.totalBetten += row.Bettenanzahl;
     });
     
-    return summaries;
+    return Array.from(summaryMap.entries()).map(([standort, data]) => ({
+      standort,
+      stationCount: data.stationCount,
+      totalBetten: data.totalBetten,
+      avgBetten: (data.totalBetten / data.stationCount).toFixed(1)
+    })).sort((a, b) => a.standort.localeCompare(b.standort));
   });
 
   // Total statistics
@@ -325,8 +169,65 @@ export class MitteilungenBettenCharts {
     return count > 0 ? (total / count).toFixed(1) : '0';
   });
 
+  // Data Info Items
+  dataInfoItems = computed(() => {
+    const items: DataInfoItem[] = [];
+    const uploads = this.data?.uploads || [];
+    const bettenUploads = uploads.filter(u => u.schemaId === 'mitteilungen_betten');
+    
+    bettenUploads.forEach(upload => {
+      upload.files.forEach(file => {
+        items.push({
+          fileName: file.originalName || 'Unbekannt',
+          uploadDate: upload.createdAt,
+          dataYear: this.selectedYear(),
+          recordCount: file.values?.length || 0,
+          status: 'success',
+          rawData: file.values,
+          schemaColumns: ['IK', 'Standort', 'Station', 'Jahr', 'Bettenanzahl']
+        });
+      });
+    });
+    
+    return items;
+  });
+
   // Bar Chart Data
   barChartData = computed<ChartData<'bar'>>(() => {
+    const standort = this.selectedStandort();
+    const station = this.selectedStation();
+    
+    // Show specific station
+    if (station !== 'all') {
+      const data = this.filteredData();
+      return {
+        labels: data.map(d => d.Station),
+        datasets: [{
+          label: 'Anzahl Betten',
+          data: data.map(d => d.Bettenanzahl),
+          backgroundColor: '#1976d2',
+          borderColor: '#1565c0',
+          borderWidth: 1
+        }]
+      };
+    }
+    
+    // Show all stations in selected standort
+    if (standort !== 'all') {
+      const data = this.filteredData().sort((a, b) => b.Bettenanzahl - a.Bettenanzahl);
+      return {
+        labels: data.map(d => d.Station),
+        datasets: [{
+          label: 'Anzahl Betten',
+          data: data.map(d => d.Bettenanzahl),
+          backgroundColor: '#1976d2',
+          borderColor: '#1565c0',
+          borderWidth: 1
+        }]
+      };
+    }
+    
+    // Show all standorte
     const summaries = this.standortSummaries();
     return {
       labels: summaries.map(s => s.standort),
@@ -401,14 +302,36 @@ export class MitteilungenBettenCharts {
     }
   };
 
-  onYearChange(event: any) {
-    this.selectedYear.set(event.value);
+  // Table data for flip cards
+  getStandortTableData() {
+    return this.standortSummaries().map(s => ({
+      standort: s.standort,
+      stationCount: s.stationCount,
+      totalBetten: s.totalBetten,
+      avgBetten: s.avgBetten
+    }));
   }
 
-  getStationsByStandort(standort: string): BettenData[] {
+  getStationTableData() {
     return this.filteredData()
-      .filter(d => d.Standort === standort)
-      .sort((a, b) => a.Station.localeCompare(b.Station));
+      .sort((a, b) => b.Bettenanzahl - a.Bettenanzahl)
+      .map(d => ({
+        station: d.Station,
+        standort: d.Standort,
+        betten: d.Bettenanzahl
+      }));
+  }
+
+  onYearChange(year: number) {
+    this.selectedYear.set(year);
+  }
+
+  onStandortChange(standort: string) {
+    this.selectedStandort.set(standort);
+    this.selectedStation.set('all');
+  }
+
+  onStationChange(station: string) {
+    this.selectedStation.set(station);
   }
 }
-
