@@ -94,5 +94,16 @@
       </app-pflegestufenstatistik-charts>
     </section>
 
+    <!-- Salden Zeitkonten Charts Section -->
+    <section 
+      id="salden_zeitkonten"
+      class="salden-zeitkonten-charts-section" 
+      [class.highlighted]="highlightedSchemaId() === 'salden_zeitkonten'"
+      *ngIf="hasSaldenData()">
+      <app-salden-zeitkonten-charts 
+        [uploads]="data()?.uploads || []">
+      </app-salden-zeitkonten-charts>
+    </section>
+
   </div>
 </div>

@@ -13,10 +13,11 @@ import { MitternachtsstatistikCharts } from '../mitternachtsstatistik-charts/mit
 import { COCharts } from '../co-charts/co-charts';
 import { MinaMitaCharts } from '../mina-mita-charts/mina-mita-charts';
 import { PflegestufenstatistikCharts } from '../pflegestufenstatistik-charts/pflegestufenstatistik-charts';
+import { SaldenZeitkontenCharts } from '../salden-zeitkonten-charts/salden-zeitkonten-charts';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule, NgIf, MatCardModule, MatChipsModule, MatIconModule, MatButtonModule, MatExpansionModule, MatDialogModule, RouterModule, MitternachtsstatistikCharts, COCharts, MinaMitaCharts, PflegestufenstatistikCharts],
+  imports: [CommonModule, NgIf, MatCardModule, MatChipsModule, MatIconModule, MatButtonModule, MatExpansionModule, MatDialogModule, RouterModule, MitternachtsstatistikCharts, COCharts, MinaMitaCharts, PflegestufenstatistikCharts, SaldenZeitkontenCharts],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss'
 })
@@ -46,6 +47,11 @@ export class Dashboard implements AfterViewInit {
   hasPflegestufenData = computed(() => {
     const uploads = this.data()?.uploads || [];
     return uploads.some(u => u.schemaId === 'pflegestufenstatistik');
+  });
+
+  hasSaldenData = computed(() => {
+    const uploads = this.data()?.uploads || [];
+    return uploads.some(u => u.schemaId === 'salden_zeitkonten');
   });
 
   constructor() {

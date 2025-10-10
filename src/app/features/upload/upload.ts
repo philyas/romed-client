@@ -34,7 +34,7 @@ export class Upload {
   dragOver = signal<boolean>(false);
 
   // Nur diese Schemas sollen im Dropdown erscheinen
-  private allowedSchemas = ['mitternachtsstatistik', 'co_entlass_aufnahmezeiten', 'ppugv_bestaende', 'pflegestufenstatistik'];
+  private allowedSchemas = ['mitternachtsstatistik', 'co_entlass_aufnahmezeiten', 'ppugv_bestaende', 'pflegestufenstatistik', 'salden_zeitkonten'];
 
   // Gefilterte Schemas für das Dropdown
   get filteredSchemas(): SchemaDef[] {
@@ -60,6 +60,8 @@ export class Upload {
         return 'Die Excel-Datei sollte MiNa- und MiTa-Bestände enthalten (beide Tabs). Dateiname-Format: <strong>*[Jahr]-[Monat]-[Tag]*.xlsx</strong> oder <strong>*[Jahr]-[Monat]*.xlsx</strong><br>Beispiel: <em>CO PpUGV MiNa_MiTa-Bestände RoMed_2025-08-31.xlsx</em><br><br>📊 Das System erkennt automatisch das Datum im Dateinamen und berechnet:<br>✅ Tagesdaten für Detailanalysen<br>✅ Monatsdurchschnitte für Übersichtsberichte';
       case 'pflegestufenstatistik':
         return 'Die Excel-Datei sollte die WIPSREPO-Tabelle mit Pflegestufendaten enthalten. Dateiname-Format: <strong>[Standort] [Monat]-[Jahr] Pflegestufenstatistik.xlsx</strong><br>Beispiel: <em>BAB 08-2025 Pflegestufenstatistik.xlsx</em><br><br>📊 Das System verarbeitet:<br>✅ WIPSREPO-Tabelle automatisch<br>✅ Aggregiert alle Kategorien pro Station<br>✅ Pflegebedarf, Einstufungen, T.-Patienten';
+      case 'salden_zeitkonten':
+        return 'Die Excel-Datei sollte Salden Zeitkonten für den Pflegedienst enthalten. Dateiname-Format: <strong>[Jahr] [Monate] Salden Zeitkonten u Urlaub [Bereich].xlsx</strong><br>Beispiel: <em>2025 01-07 Salden Zeitkonten u Urlaub AIB-PD.xlsx</em><br><br>📊 Das System verarbeitet:<br>✅ Mehrarbeitszeit (Überstunden + Arbeitszeitkonto)<br>✅ Kostenstellen-Analysen<br>✅ Berufsgruppen und Funktionen';
       default:
         return null;
     }
@@ -87,6 +89,11 @@ export class Upload {
         return {
           max: 0, // 0 = unbegrenzt
           description: 'Sie können mehrere Dateien gleichzeitig hochladen (z.B. verschiedene Standorte oder Monate).'
+        };
+      case 'salden_zeitkonten':
+        return {
+          max: 0, // 0 = unbegrenzt
+          description: 'Sie können mehrere Dateien gleichzeitig hochladen (z.B. verschiedene Bereiche oder Zeiträume).'
         };
       default:
         return {
@@ -258,12 +265,25 @@ export class Upload {
     // Get the current schema ID
     const currentSchemaId = this.selectedSchemaId();
     
+    // Determine dialog type based on results
+    let dialogType: 'success' | 'warning' | 'error';
+    if (successfulFiles.length === 0) {
+      // All files failed
+      dialogType = 'error';
+    } else if (failedFiles.length === 0) {
+      // All files successful
+      dialogType = 'success';
+    } else {
+      // Some files failed
+      dialogType = 'warning';
+    }
+    
     // Show modal instead of snackbar
     const dialogRef = this.dialog.open(UploadResultDialog, {
       width: '600px',
       disableClose: false,
       data: {
-        type: failedFiles.length === 0 ? 'success' : 'warning',
+        type: dialogType,
         schemaId: currentSchemaId,
         summary: {
           totalFiles: response.files.length,
@@ -271,17 +291,24 @@ export class Upload {
           failedFiles: failedFiles.length
         },
         files: response.files,
-        uploadId: response.uploadId
+        uploadId: response.uploadId,
+        // Add error message if all files failed
+        errorMessage: dialogType === 'error' && failedFiles.length > 0 
+          ? failedFiles.map(file => file.error).join('\n\n') 
+          : undefined
       }
     });
     
-    // Navigate to dashboard after dialog is closed
+    // Navigate to dashboard after dialog is closed (only if at least one file was successful)
     dialogRef.afterClosed().subscribe(() => {
-      // Navigate to dashboard with fragment to scroll to the uploaded schema
-      this.router.navigate(['/dashboard'], { 
-        fragment: currentSchemaId,
-        queryParams: { highlight: currentSchemaId }
-      });
+      if (successfulFiles.length > 0) {
+        // Navigate to dashboard with fragment to scroll to the uploaded schema
+        this.router.navigate(['/dashboard'], { 
+          fragment: currentSchemaId,
+          queryParams: { highlight: currentSchemaId }
+        });
+      }
+      // If all files failed, stay on upload page so user can try again
     });
   }
 
@@ -399,6 +426,22 @@ export class Upload {
         <!-- Error Message -->
         <div *ngIf="data.type === 'error'" class="error-message">
           <div class="error-text">{{ data.errorMessage }}</div>
+          
+          <!-- Show file details for failed uploads -->
+          <div *ngIf="data.files.length > 0" class="file-details">
+            <h4>Datei-Details:</h4>
+            <mat-list class="file-list">
+              <mat-list-item *ngFor="let file of data.files">
+                <mat-icon class="error-icon">error</mat-icon>
+                <div class="file-info">
+                  <div class="file-name">{{ file.originalName }}</div>
+                  <div class="file-error" *ngIf="file.error">
+                    <span class="error-text">{{ file.error }}</span>
+                  </div>
+                </div>
+              </mat-list-item>
+            </mat-list>
+          </div>
         </div>
       </div>
     </mat-dialog-content>
