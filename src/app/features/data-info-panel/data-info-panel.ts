@@ -651,13 +651,14 @@ export class DataInfoPanel {
     mat-dialog-content {
       padding: 0 !important;
       margin: 0 !important;
-      overflow: hidden !important;
+      overflow-y: auto !important;
+      max-height: 70vh !important;
     }
 
     .data-preview {
       display: flex;
       flex-direction: column;
-      height: 100%;
+      min-height: 100%;
     }
 
     .preview-info {
@@ -681,9 +682,14 @@ export class DataInfoPanel {
     }
 
     .table-wrapper {
-      overflow: auto;
+      overflow-y: auto;
+      overflow-x: auto;
       flex: 1;
-      max-height: 60vh;
+      max-height: none;
+      min-height: 400px;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
     .data-table {
@@ -803,8 +809,8 @@ export class DataDetailModal {
       // Get columns from first row or from schema
       this.columns = this.data.schemaColumns || Object.keys(this.data.rawData[0]);
       
-      // Initially display first 50 rows
-      this.displayedRows = this.data.rawData.slice(0, 50);
+      // Initially display first 100 rows (or all if less than 100)
+      this.displayedRows = this.data.rawData.slice(0, Math.min(100, this.data.rawData.length));
     }
   }
 
