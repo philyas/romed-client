@@ -25,6 +25,18 @@ interface LocationChartData {
     verweildauer: number;
     stationCount: number;
   }[];
+  stations?: StationChartData[];
+}
+
+interface StationChartData {
+  stationName: string;
+  monthlyData: {
+    month: number;
+    pflegetage: number;
+    planbetten: number;
+    verweildauer: number;
+    stationsauslastung: number;
+  }[];
 }
 
 @Component({
@@ -49,21 +61,38 @@ interface LocationChartData {
             <mat-icon>analytics</mat-icon>
             Mitternachtsstatistik - Jahresübersicht {{ currentYear() }}
           </h3>
-          <mat-form-field appearance="outline" class="location-selector">
-            <mat-label>
-              <mat-icon>location_on</mat-icon>
-              Standort
-            </mat-label>
-            <mat-select 
-              [value]="selectedLocation()" 
-              (selectionChange)="onLocationChange($event.value)">
-              <mat-option *ngFor="let location of availableLocations()" [value]="location">
-                {{ locationNames[location] || location }}
-              </mat-option>
-            </mat-select>
-          </mat-form-field>
+          <div class="selectors-container">
+            <mat-form-field appearance="outline" class="location-selector">
+              <mat-label>
+                <mat-icon>location_on</mat-icon>
+                Standort
+              </mat-label>
+              <mat-select 
+                [value]="selectedLocation()" 
+                (selectionChange)="onLocationChange($event.value)">
+                <mat-option *ngFor="let location of availableLocations()" [value]="location">
+                  {{ locationNames[location] || location }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+            
+            <mat-form-field appearance="outline" class="station-selector">
+              <mat-label>
+                <mat-icon>business</mat-icon>
+                Station
+              </mat-label>
+              <mat-select 
+                [value]="selectedStation()" 
+                (selectionChange)="onStationChange($event.value)">
+                <mat-option value="all">Alle Stationen (Aggregiert)</mat-option>
+                <mat-option *ngFor="let station of availableStations()" [value]="station">
+                  {{ station }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
         </div>
-        <p>Monatliche Entwicklung der wichtigsten Kennzahlen</p>
+        <p>Monatliche Entwicklung der wichtigsten Kennzahlen {{ selectedStation() === 'all' ? '(Standort gesamt)' : '(Station: ' + selectedStation() + ')' }}</p>
       </div>
 
       <!-- Data Info Panel -->
@@ -301,11 +330,19 @@ interface LocationChartData {
       font-size: 12px;
     }
 
-    .location-selector {
-      width: 250px;
+    .selectors-container {
+      display: flex;
+      gap: 12px;
+      align-items: center;
     }
 
-    .location-selector mat-label {
+    .location-selector,
+    .station-selector {
+      width: 220px;
+    }
+
+    .location-selector mat-label,
+    .station-selector mat-label {
       display: flex;
       align-items: center;
       gap: 6px;
@@ -502,8 +539,15 @@ interface LocationChartData {
         grid-template-columns: 1fr;
       }
       
-      .location-selector {
-        width: 200px;
+      .selectors-container {
+        flex-direction: column;
+        gap: 8px;
+        align-items: stretch;
+      }
+      
+      .location-selector,
+      .station-selector {
+        width: 100%;
       }
     }
 
@@ -533,6 +577,8 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
   chartDataByLocation = signal<LocationChartData[]>([]);
   selectedLocation = signal<string>('BAB');
   availableLocations = signal<string[]>([]);
+  selectedStation = signal<string>('all'); // 'all' = alle Stationen (aggregiert)
+  availableStations = signal<string[]>([]);
   currentYear = signal<number>(new Date().getFullYear());
   dataInfoItems = signal<DataInfoItem[]>([]);
   
@@ -586,6 +632,7 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
 
     for (const location of locations) {
       const monthlyData: LocationChartData['monthlyData'] = [];
+      const stationDataMap = new Map<string, StationChartData>();
 
       // Initialize all 12 months with zero values
       for (let month = 1; month <= 12; month++) {
@@ -647,6 +694,41 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
               totalVerweildauer += verweildauer;
               verweildauerCount++;
             }
+
+            // Collect individual station data
+            const stationName = row['Station'].toString();
+            if (!stationDataMap.has(stationName)) {
+              // Initialize station with 12 months of zero values
+              const stationMonthlyData = [];
+              for (let m = 1; m <= 12; m++) {
+                stationMonthlyData.push({
+                  month: m,
+                  pflegetage: 0,
+                  planbetten: 0,
+                  verweildauer: 0,
+                  stationsauslastung: 0
+                });
+              }
+              stationDataMap.set(stationName, {
+                stationName,
+                monthlyData: stationMonthlyData
+              });
+            }
+
+            // Update station's monthly data
+            const stationData = stationDataMap.get(stationName)!;
+            const monthIndex = monthNumber - 1;
+            const kalendertage = new Date(year, monthNumber, 0).getDate();
+            const maxStationPflegetage = planbetten * kalendertage;
+            const stationAuslastung = maxStationPflegetage > 0 ? (pflegetage / maxStationPflegetage) * 100 : 0;
+            
+            stationData.monthlyData[monthIndex] = {
+              month: monthNumber,
+              pflegetage,
+              planbetten,
+              verweildauer,
+              stationsauslastung: stationAuslastung
+            };
           });
         });
 
@@ -673,7 +755,8 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
       locationData.push({
         location,
         locationName: this.locationNames[location] || location,
-        monthlyData
+        monthlyData,
+        stations: Array.from(stationDataMap.values()).sort((a, b) => a.stationName.localeCompare(b.stationName))
       });
     }
 
@@ -687,14 +770,54 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
     if (!this.selectedLocation() || !locations.includes(this.selectedLocation())) {
       this.selectedLocation.set(locations[0] || 'BAB');
     }
+    
+    // Update available stations for selected location
+    this.updateAvailableStations();
   }
 
   onLocationChange(location: string) {
     this.selectedLocation.set(location);
+    this.selectedStation.set('all'); // Reset station to "all" when location changes
+    this.updateAvailableStations();
+  }
+
+  onStationChange(station: string) {
+    this.selectedStation.set(station);
+  }
+
+  private updateAvailableStations() {
+    const locationData = this.chartDataByLocation().find(loc => loc.location === this.selectedLocation());
+    if (locationData && locationData.stations) {
+      const stations = locationData.stations.map(s => s.stationName).sort();
+      this.availableStations.set(stations);
+    } else {
+      this.availableStations.set([]);
+    }
   }
 
   getSelectedLocationData(): LocationChartData | null {
-    return this.chartDataByLocation().find(loc => loc.location === this.selectedLocation()) || null;
+    const locationData = this.chartDataByLocation().find(loc => loc.location === this.selectedLocation());
+    if (!locationData) return null;
+
+    // If a specific station is selected, return modified data with station's values
+    if (this.selectedStation() !== 'all') {
+      const stationData = locationData.stations?.find(s => s.stationName === this.selectedStation());
+      if (stationData) {
+        // Map station data to location data format
+        return {
+          ...locationData,
+          monthlyData: stationData.monthlyData.map(m => ({
+            month: m.month,
+            pflegetage: m.pflegetage,
+            stationsauslastung: m.stationsauslastung,
+            verweildauer: m.verweildauer,
+            stationCount: 1 // Single station
+          }))
+        };
+      }
+    }
+
+    return locationData;
   }
 
   private calculateSharedScales(locationData: LocationChartData[]) {
