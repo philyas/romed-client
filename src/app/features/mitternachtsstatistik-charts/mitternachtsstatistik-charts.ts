@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnChanges, signal } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
@@ -9,11 +9,19 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTableModule } from '@angular/material/table';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType, registerables } from 'chart.js';
-import { MitternachtsstatistikResponse } from '../../core/api';
+import { MitternachtsstatistikResponse, Api, ResultsResponse } from '../../core/api';
 import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel';
 
 // Register Chart.js components
 import Chart from 'chart.js/auto';
+
+interface AufgestellteBettenData {
+  IK: string;
+  Standort: string;
+  Station: string;
+  Jahr: number;
+  Bettenanzahl: number;
+}
 
 interface LocationChartData {
   location: string;
@@ -33,7 +41,7 @@ interface StationChartData {
   monthlyData: {
     month: number;
     pflegetage: number;
-    planbetten: number;
+    betten: number; // Aufgestellte Betten (aus mitteilungen_betten) oder Planbetten als Fallback
     verweildauer: number;
     stationsauslastung: number;
   }[];
@@ -204,17 +212,21 @@ interface StationChartData {
                   </mat-card-header>
                   <mat-card-content class="table-content">
                     <div class="table-container">
-                      <table mat-table [dataSource]="getTableData(locationData, 'stationsauslastung')">
+                      <table mat-table [dataSource]="getAuslastungTableData(locationData)">
                         <ng-container matColumnDef="month">
                           <th mat-header-cell *matHeaderCellDef>Monat</th>
                           <td mat-cell *matCellDef="let row">{{ row.month }}</td>
+                        </ng-container>
+                        <ng-container matColumnDef="betten">
+                          <th mat-header-cell *matHeaderCellDef>Betten</th>
+                          <td mat-cell *matCellDef="let row">{{ row.betten | number:'1.0-0' }}</td>
                         </ng-container>
                         <ng-container matColumnDef="value">
                           <th mat-header-cell *matHeaderCellDef>Auslastung (%)</th>
                           <td mat-cell *matCellDef="let row">{{ row.value | number:'1.1-1' }}%</td>
                         </ng-container>
-                        <tr mat-header-row *matHeaderRowDef="['month', 'value']"></tr>
-                        <tr mat-row *matRowDef="let row; columns: ['month', 'value']"></tr>
+                        <tr mat-header-row *matHeaderRowDef="['month', 'betten', 'value']"></tr>
+                        <tr mat-row *matRowDef="let row; columns: ['month', 'betten', 'value']"></tr>
                       </table>
                     </div>
                   </mat-card-content>
@@ -574,6 +586,8 @@ interface StationChartData {
 export class MitternachtsstatistikCharts implements OnInit, OnChanges {
   @Input() mitternachtsstatistikData: MitternachtsstatistikResponse | null = null;
 
+  private api = inject(Api);
+
   chartDataByLocation = signal<LocationChartData[]>([]);
   selectedLocation = signal<string>('BAB');
   availableLocations = signal<string[]>([]);
@@ -581,6 +595,7 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
   availableStations = signal<string[]>([]);
   currentYear = signal<number>(new Date().getFullYear());
   dataInfoItems = signal<DataInfoItem[]>([]);
+  aufgestellteBettenData = signal<AufgestellteBettenData[]>([]);
   
   // Track flipped state for each card
   flippedCards: { [key: string]: boolean } = {
@@ -607,11 +622,101 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
 
   ngOnInit() {
     Chart.register(...registerables);
+    this.loadAufgestellteBetten();
     this.processChartData();
   }
 
   ngOnChanges() {
     this.processChartData();
+  }
+
+  private loadAufgestellteBetten() {
+    this.api.getAufgestellteBetten().subscribe({
+      next: (response: ResultsResponse) => {
+        const bettenData: AufgestellteBettenData[] = [];
+        
+        response.uploads.forEach(upload => {
+          upload.files.forEach(file => {
+            if (file.values && Array.isArray(file.values)) {
+              file.values.forEach(row => {
+                bettenData.push({
+                  IK: row['IK'] as string,
+                  Standort: row['Standort'] as string,
+                  Station: row['Station'] as string,
+                  Jahr: row['Jahr'] as number,
+                  Bettenanzahl: row['Bettenanzahl'] as number
+                });
+              });
+            }
+          });
+        });
+        
+        this.aufgestellteBettenData.set(bettenData);
+        console.log(`✅ Aufgestellte Betten geladen: ${bettenData.length} Stationen`);
+        
+        // Reprocess chart data with new bed data
+        this.processChartData();
+      },
+      error: (err) => {
+        console.warn('⚠️ Konnte Aufgestellte Betten nicht laden:', err);
+      }
+    });
+  }
+
+  /**
+   * Findet die aufgestellten Betten für eine Station.
+   * Matching-Strategie:
+   * 1. Exakte Übereinstimmung (Station === AufgestellteBetten.Station)
+   * 2. Präfix-Match (AufgestellteBetten.Station startet mit Station)
+   * 3. Standort muss übereinstimmen
+   */
+  private findAufgestellteBetten(stationName: string, standort: string, year: number): number | null {
+    const bettenData = this.aufgestellteBettenData();
+    if (!bettenData || bettenData.length === 0) return null;
+
+    // Normalisiere Stationsnamen für Vergleich
+    const normalizedStation = stationName.trim().toUpperCase();
+
+    // Filter für den richtigen Standort und Jahr
+    const relevantData = bettenData.filter(
+      b => b.Standort === standort && b.Jahr === year
+    );
+
+    if (relevantData.length === 0) {
+      return null;
+    }
+
+    // 1. Versuche exakte Übereinstimmung
+    let match = relevantData.find(
+      b => b.Station.trim().toUpperCase() === normalizedStation
+    );
+
+    // 2. Versuche Präfix-Match (z.B. "PRNB1" matched "PRNB1 Station B1")
+    if (!match) {
+      match = relevantData.find(b => 
+        b.Station.trim().toUpperCase().startsWith(normalizedStation) ||
+        normalizedStation.startsWith(b.Station.trim().toUpperCase().split(' ')[0])
+      );
+    }
+
+    // 3. Spezialfall für ROS: Stationen können nur Nummern sein (z.B. "112")
+    if (!match && standort === 'ROS') {
+      // Extrahiere führende Ziffern
+      const stationNumber = normalizedStation.match(/^\d+/)?.[0];
+      if (stationNumber) {
+        match = relevantData.find(b => 
+          b.Station.trim().startsWith(stationNumber + ' ')
+        );
+      }
+    }
+
+    if (match) {
+      console.log(`📊 Matched Station "${stationName}" -> "${match.Station}" (${match.Bettenanzahl} Betten)`);
+      return match.Bettenanzahl;
+    }
+
+    console.warn(`⚠️ Keine aufgestellten Betten gefunden für Station "${stationName}" in ${standort}`);
+    return null;
   }
 
   private processChartData() {
@@ -670,7 +775,7 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
 
         const locationFiles = upload.locationsData[location];
         let totalPflegetage = 0;
-        let totalPlanbetten = 0;
+        let totalBetten = 0; // Aufgestellte Betten (aus mitteilungen_betten) oder Planbetten als Fallback
         let totalStations = 0;
         let totalVerweildauer = 0;
         let verweildauerCount = 0;
@@ -686,8 +791,13 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
             const pflegetage = Number(row['Pflegetage']) || 0;
             totalPflegetage += pflegetage;
 
+            const stationName = row['Station'].toString();
             const planbetten = Number(row['Planbetten']) || 0;
-            totalPlanbetten += planbetten;
+            
+            // Verwende aufgestellte Betten (aus Schema mitteilungen_betten) falls verfügbar, sonst Planbetten als Fallback
+            const aufgestellteBetten = this.findAufgestellteBetten(stationName, location, year);
+            const betten = aufgestellteBetten !== null ? aufgestellteBetten : planbetten;
+            totalBetten += betten;
 
             const verweildauer = Number(row['VD.inkl.']) || 0;
             if (verweildauer > 0) {
@@ -696,7 +806,6 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
             }
 
             // Collect individual station data
-            const stationName = row['Station'].toString();
             if (!stationDataMap.has(stationName)) {
               // Initialize station with 12 months of zero values
               const stationMonthlyData = [];
@@ -704,7 +813,7 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
                 stationMonthlyData.push({
                   month: m,
                   pflegetage: 0,
-                  planbetten: 0,
+                  betten: 0,
                   verweildauer: 0,
                   stationsauslastung: 0
                 });
@@ -719,13 +828,15 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
             const stationData = stationDataMap.get(stationName)!;
             const monthIndex = monthNumber - 1;
             const kalendertage = new Date(year, monthNumber, 0).getDate();
-            const maxStationPflegetage = planbetten * kalendertage;
+            
+            // Verwende bereits berechnete 'betten' Variable (aufgestellte Betten aus mitteilungen_betten oder Planbetten als Fallback)
+            const maxStationPflegetage = betten * kalendertage;
             const stationAuslastung = maxStationPflegetage > 0 ? (pflegetage / maxStationPflegetage) * 100 : 0;
             
             stationData.monthlyData[monthIndex] = {
               month: monthNumber,
               pflegetage,
-              planbetten,
+              betten, // Aufgestellte Betten oder Planbetten als Fallback
               verweildauer,
               stationsauslastung: stationAuslastung
             };
@@ -735,10 +846,10 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
         // Calculate averages
         const avgVerweildauer = verweildauerCount > 0 ? totalVerweildauer / verweildauerCount : 0;
         
-        // Stationsauslastung: Pflegetage / (Planbetten × Kalendertage) × 100
+        // Stationsauslastung: Pflegetage / (Aufgestellte Betten × Kalendertage) × 100
         // Kalendertage aus Monat/Jahr berechnen
         const kalendertage = new Date(year, monthNumber, 0).getDate(); // Tatsächliche Tage im Monat
-        const maxPflegetage = totalPlanbetten * kalendertage;
+        const maxPflegetage = totalBetten * kalendertage;
         const auslastung = maxPflegetage > 0 ? (totalPflegetage / maxPflegetage) * 100 : 0;
 
         // Update monthly data
@@ -811,7 +922,8 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
             pflegetage: m.pflegetage,
             stationsauslastung: m.stationsauslastung,
             verweildauer: m.verweildauer,
-            stationCount: 1 // Single station
+            stationCount: 1, // Single station
+            betten: m.betten // Preserve betten info for debugging
           }))
         };
       }
@@ -1117,6 +1229,44 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
       month: monthLabels[index],
       value: data[metric]
     }));
+  }
+
+  getAuslastungTableData(locationData: LocationChartData) {
+    const monthLabels = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+    
+    // Wenn eine einzelne Station ausgewählt ist, zeige deren Betten
+    if (this.selectedStation() !== 'all') {
+      const stationData = locationData.stations?.find(s => s.stationName === this.selectedStation());
+      if (stationData) {
+        return stationData.monthlyData.map((data, index) => ({
+          month: monthLabels[data.month - 1],
+          betten: data.betten,
+          value: data.stationsauslastung
+        }));
+      }
+    }
+    
+    // Für aggregierte Ansicht: Berechne Gesamtbetten für jeden Monat
+    return locationData.monthlyData.map((data, index) => {
+      // Berechne Gesamtbetten für diesen Monat aus allen Stationen
+      let totalBetten = 0;
+      const monthNumber = index + 1;
+      
+      if (locationData.stations) {
+        locationData.stations.forEach(station => {
+          const monthData = station.monthlyData.find(m => m.month === monthNumber);
+          if (monthData && monthData.betten > 0) {
+            totalBetten += monthData.betten;
+          }
+        });
+      }
+      
+      return {
+        month: monthLabels[index],
+        betten: totalBetten,
+        value: data.stationsauslastung
+      };
+    });
   }
 
   private prepareDataInfoItems() {
