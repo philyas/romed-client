@@ -34,7 +34,7 @@ export class Upload {
   dragOver = signal<boolean>(false);
 
   // Nur diese Schemas sollen im Dropdown erscheinen
-  private allowedSchemas = ['mitternachtsstatistik', 'co_entlass_aufnahmezeiten', 'ppugv_bestaende', 'pflegestufenstatistik', 'salden_zeitkonten'];
+  private allowedSchemas = ['mitternachtsstatistik', 'co_entlass_aufnahmezeiten', 'ppugv_bestaende', 'pflegestufenstatistik', 'salden_zeitkonten', 'mitteilungen_betten'];
 
   // Gefilterte Schemas für das Dropdown
   get filteredSchemas(): SchemaDef[] {
@@ -62,6 +62,8 @@ export class Upload {
         return 'Die Excel-Datei sollte die WIPSREPO-Tabelle mit Pflegestufendaten enthalten. Dateiname-Format: <strong>[Standort] [Monat]-[Jahr] Pflegestufenstatistik.xlsx</strong><br>Beispiel: <em>BAB 08-2025 Pflegestufenstatistik.xlsx</em><br><br>📊 Das System verarbeitet:<br>✅ WIPSREPO-Tabelle automatisch<br>✅ Aggregiert alle Kategorien pro Station<br>✅ Pflegebedarf, Einstufungen, T.-Patienten';
       case 'salden_zeitkonten':
         return 'Die Excel-Datei sollte Salden Zeitkonten für den Pflegedienst enthalten. Dateiname-Format: <strong>[Jahr] [Monate] Salden Zeitkonten u Urlaub [Bereich].xlsx</strong><br>Beispiel: <em>2025 01-07 Salden Zeitkonten u Urlaub AIB-PD.xlsx</em><br><br>📊 Das System verarbeitet:<br>✅ Mehrarbeitszeit (Überstunden + Arbeitszeitkonto)<br>✅ Kostenstellen-Analysen<br>✅ Berufsgruppen und Funktionen';
+      case 'mitteilungen_betten':
+        return 'Die Excel-Datei sollte Mitteilungen gem. § 5 Abs. 3 PpUGV enthalten. Dateiname-Format: <strong>Mitteilung+gem.+Paragraph+5+PpUGV_[IK-NUMMER].xlsx</strong><br>Beispiele: <em>Mitteilung+gem.+Paragraph+5+PpUGV_260911945.xlsx</em> (BAB), <em>260912194.xlsx</em> (WAS), <em>260910637.xlsx</em> (ROS/PRI)<br><br>📊 Das System extrahiert:<br>✅ Jahr aus der Datei<br>✅ Betten pro Station<br>✅ Standort-Zuordnung (IK-Nummer + Standortnummer)<br>✅ Aggregation für BAB, WAS, ROS und PRI';
       default:
         return null;
     }
@@ -94,6 +96,11 @@ export class Upload {
         return {
           max: 0, // 0 = unbegrenzt
           description: 'Sie können mehrere Dateien gleichzeitig hochladen (z.B. verschiedene Bereiche oder Zeiträume).'
+        };
+      case 'mitteilungen_betten':
+        return {
+          max: 0, // 0 = unbegrenzt
+          description: 'Sie können mehrere Dateien gleichzeitig hochladen (alle 3 IK-Nummern: BAB, WAS, ROS/PRI). Die Datei für IK 260910637 wird automatisch in ROS und PRI aufgeteilt.'
         };
       default:
         return {

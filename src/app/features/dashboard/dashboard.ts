@@ -14,10 +14,11 @@ import { COCharts } from '../co-charts/co-charts';
 import { MinaMitaCharts } from '../mina-mita-charts/mina-mita-charts';
 import { PflegestufenstatistikCharts } from '../pflegestufenstatistik-charts/pflegestufenstatistik-charts';
 import { SaldenZeitkontenCharts } from '../salden-zeitkonten-charts/salden-zeitkonten-charts';
+import { MitteilungenBettenCharts } from '../mitteilungen-betten-charts/mitteilungen-betten-charts';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule, NgIf, MatCardModule, MatChipsModule, MatIconModule, MatButtonModule, MatExpansionModule, MatDialogModule, RouterModule, MitternachtsstatistikCharts, COCharts, MinaMitaCharts, PflegestufenstatistikCharts, SaldenZeitkontenCharts],
+  imports: [CommonModule, NgIf, MatCardModule, MatChipsModule, MatIconModule, MatButtonModule, MatExpansionModule, MatDialogModule, RouterModule, MitternachtsstatistikCharts, COCharts, MinaMitaCharts, PflegestufenstatistikCharts, SaldenZeitkontenCharts, MitteilungenBettenCharts],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss'
 })
@@ -52,6 +53,11 @@ export class Dashboard implements AfterViewInit {
   hasSaldenData = computed(() => {
     const uploads = this.data()?.uploads || [];
     return uploads.some(u => u.schemaId === 'salden_zeitkonten');
+  });
+
+  hasMitteilungenBettenData = computed(() => {
+    const uploads = this.data()?.uploads || [];
+    return uploads.some(u => u.schemaId === 'mitteilungen_betten');
   });
 
   constructor() {

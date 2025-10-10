@@ -105,5 +105,17 @@
       </app-salden-zeitkonten-charts>
     </section>
 
+    <!-- Mitteilungen Betten Charts Section -->
+    <section 
+      id="mitteilungen_betten"
+      class="mitteilungen-betten-charts-section" 
+      [class.highlighted]="highlightedSchemaId() === 'mitteilungen_betten'"
+      *ngIf="hasMitteilungenBettenData()">
+      <app-mitteilungen-betten-charts 
+        [data]="data()"
+        [selectedYearInput]="globalSelectedYear()">
+      </app-mitteilungen-betten-charts>
+    </section>
+
   </div>
 </div>
