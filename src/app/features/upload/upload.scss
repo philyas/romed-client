@@ -93,6 +93,23 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  flex: 1;
+}
+
+.remove-file-button {
+  margin-left: auto;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: #ffebee;
+    transform: scale(1.1);
+  }
+  
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
 }
 
 .file-name {

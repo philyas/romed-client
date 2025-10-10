@@ -202,6 +202,18 @@ export class Upload {
     }
   }
 
+  removeFile(index: number) {
+    const currentFiles = this.files();
+    const updatedFiles = currentFiles.filter((_, i) => i !== index);
+    this.files.set(updatedFiles);
+    
+    // If no files left, also reset the input
+    if (updatedFiles.length === 0 && this.fileInput) {
+      this.fileInput.nativeElement.value = '';
+      this.clearUploadFeedback();
+    }
+  }
+
   clearFiles() {
     this.files.set([]);
     if (this.fileInput) {

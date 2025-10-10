@@ -49,13 +49,20 @@
 
     <mat-list *ngIf="files().length" class="file-list">
       <h3>Ausgewählte Dateien:</h3>
-      <mat-list-item *ngFor="let f of files()">
+      <mat-list-item *ngFor="let f of files(); let i = index">
         <div class="file-item">
           <mat-icon>description</mat-icon>
           <div class="file-info">
             <span class="file-name">{{ f.name }}</span>
             <span class="file-size">({{ (f.size / 1024) | number:'1.0-1' }} KB)</span>
           </div>
+          <button mat-icon-button 
+                  (click)="removeFile(i)" 
+                  class="remove-file-button"
+                  matTooltip="Datei entfernen"
+                  color="warn">
+            <mat-icon>close</mat-icon>
+          </button>
         </div>
       </mat-list-item>
     </mat-list>
