@@ -8,6 +8,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType, registerables } from 'chart.js';
 import { UploadRecord, SchemaStatistics } from '../../core/api';
+import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel';
 
 // Register Chart.js components
 import Chart from 'chart.js/auto';
@@ -41,7 +42,8 @@ interface COChartData {
     MatIconModule,
     MatSelectModule,
     MatFormFieldModule,
-    BaseChartDirective
+    BaseChartDirective,
+    DataInfoPanel
   ],
   template: `
     <div class="co-charts">
@@ -68,6 +70,13 @@ interface COChartData {
         </div>
         <p>Zwei separate Charts: Entlassungen und Aufnahmen nach Zeitfenstern (vor/nach 11 Uhr)</p>
       </div>
+
+      <!-- Data Info Panel -->
+      <app-data-info-panel 
+        *ngIf="dataInfoItems().length > 0"
+        [dataItems]="dataInfoItems()"
+        [expandedByDefault]="false">
+      </app-data-info-panel>
 
       <!-- Charts Container -->
       <div class="charts-container">
@@ -230,6 +239,7 @@ export class COCharts implements OnInit, OnChanges {
   chartData = signal<COChartData | null>(null);
   selectedStandort = signal<string>('AIB');
   flippedCards = signal<{ [key: string]: boolean }>({});
+  dataInfoItems = signal<DataInfoItem[]>([]);
 
   // Standort-Mapping: AIB = BAB
   standortNames: { [key: string]: string } = {
@@ -293,6 +303,7 @@ export class COCharts implements OnInit, OnChanges {
 
     this.chartData.set(chartData);
     this.parseCOData();
+    this.prepareDataInfoItems();
   }
 
   private parseCOData() {
@@ -517,5 +528,53 @@ export class COCharts implements OnInit, OnChanges {
     }
 
     return total;
+  }
+
+  private prepareDataInfoItems() {
+    const data = this.chartData();
+    if (!data || !data.uploads) {
+      this.dataInfoItems.set([]);
+      return;
+    }
+
+    const items: DataInfoItem[] = data.uploads.map(upload => {
+      let totalRecords = 0;
+      
+      // Count total records across all files
+      upload.files.forEach(file => {
+        if (file.values) {
+          totalRecords += file.values.length;
+        }
+      });
+
+      // Extract month from upload (if available)
+      let dataMonth = '';
+      if (upload.month) {
+        const monthNames = ['', 'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 
+                           'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+        const monthNum = parseInt(upload.month);
+        dataMonth = monthNames[monthNum] || upload.month;
+      }
+
+      // Collect all raw data
+      const allRawData: any[] = [];
+      upload.files.forEach(file => {
+        if (file.values) {
+          allRawData.push(...file.values);
+        }
+      });
+
+      return {
+        fileName: upload.files.map(f => f.originalName).join(', ') || `Upload ${upload.uploadId.substring(0, 8)}`,
+        uploadDate: upload.createdAt,
+        dataMonth,
+        dataYear: this.selectedYear,
+        recordCount: totalRecords,
+        status: 'success' as const,
+        rawData: allRawData
+      };
+    });
+
+    this.dataInfoItems.set(items);
   }
 }

@@ -7,6 +7,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { UploadRecord } from '../../core/api';
 import { MinaMitaChart } from './mina-mita-chart.component';
+import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel';
 
 @Component({
   selector: 'app-mina-mita-charts',
@@ -18,7 +19,8 @@ import { MinaMitaChart } from './mina-mita-chart.component';
     MatIconModule,
     MatSelectModule,
     MatFormFieldModule,
-    MinaMitaChart
+    MinaMitaChart,
+    DataInfoPanel
   ],
   template: `
     <div class="mina-mita-charts">
@@ -47,6 +49,13 @@ import { MinaMitaChart } from './mina-mita-chart.component';
         </mat-card-header>
         
         <mat-card-content>
+          <!-- Data Info Panel -->
+          <app-data-info-panel 
+            *ngIf="dataInfoItems().length > 0"
+            [dataItems]="dataInfoItems()"
+            [expandedByDefault]="false">
+          </app-data-info-panel>
+
           <div class="chart-section" *ngIf="upload()">
             <app-mina-mita-chart [uploads]="uploads" [selectedStation]="selectedStation()"></app-mina-mita-chart>
           </div>
@@ -122,6 +131,7 @@ export class MinaMitaCharts {
   upload = signal<UploadRecord | null>(null);
   selectedStation = signal<string>('all');
   availableStations = signal<string[]>([]);
+  dataInfoItems = signal<DataInfoItem[]>([]);
 
   constructor() {
     effect(() => {
@@ -161,15 +171,60 @@ export class MinaMitaCharts {
           });
           this.availableStations.set(stations);
         }
+
+        // Prepare data info items
+        this.prepareDataInfoItems(latestUpload);
       } else {
         this.upload.set(null);
         this.availableStations.set([]);
+        this.dataInfoItems.set([]);
       }
     });
   }
 
   onStationChange(station: string) {
     this.selectedStation.set(station);
+  }
+
+  private prepareDataInfoItems(upload: UploadRecord) {
+    if (!upload) {
+      this.dataInfoItems.set([]);
+      return;
+    }
+
+    const items: DataInfoItem[] = upload.files.map(file => {
+      let totalRecords = 0;
+      
+      // Count records from values or monthlyAverages
+      if ((file as any).monthlyAverages) {
+        totalRecords = (file as any).monthlyAverages.length;
+      } else if (file.values) {
+        totalRecords = file.values.length;
+      }
+
+      // Extract month from upload
+      let dataMonth = '';
+      if (upload.month) {
+        const monthNames = ['', 'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 
+                           'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+        const monthNum = parseInt(upload.month);
+        dataMonth = monthNames[monthNum] || upload.month;
+      }
+
+      // Use monthlyAverages or raw values as rawData
+      const rawData = (file as any).monthlyAverages || file.values || [];
+
+      return {
+        fileName: file.originalName,
+        uploadDate: upload.createdAt,
+        dataMonth,
+        recordCount: totalRecords,
+        status: 'success' as const,
+        rawData: rawData
+      };
+    });
+
+    this.dataInfoItems.set(items);
   }
 }
 

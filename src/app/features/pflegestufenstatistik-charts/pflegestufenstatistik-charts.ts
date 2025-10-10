@@ -8,6 +8,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData } from 'chart.js';
 import { UploadRecord } from '../../core/api';
+import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel';
 
 interface PflegestufenData {
   Station: string;
@@ -28,7 +29,8 @@ interface PflegestufenData {
     MatIconModule,
     MatSelectModule,
     MatFormFieldModule,
-    BaseChartDirective
+    BaseChartDirective,
+    DataInfoPanel
   ],
   template: `
     <div class="pflegestufenstatistik-charts">
@@ -70,6 +72,13 @@ interface PflegestufenData {
         </div>
         <p>PPR-Pflegestufen: Pflegebedarf in Minuten pro Station</p>
       </div>
+
+      <!-- Data Info Panel -->
+      <app-data-info-panel 
+        *ngIf="dataInfoItems().length > 0"
+        [dataItems]="dataInfoItems()"
+        [expandedByDefault]="false">
+      </app-data-info-panel>
 
       <!-- Charts Container -->
       <div class="charts-container">
@@ -241,6 +250,7 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
   
   pflegestufenData = signal<PflegestufenData[]>([]);
   flippedCards = signal<{ [key: string]: boolean }>({});
+  dataInfoItems = signal<DataInfoItem[]>([]);
   
   availableStandorte = computed(() => {
     const standorte = new Set<string>();
@@ -268,8 +278,12 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
     const pflegeUploads = this.uploads.filter(u => u.schemaId === 'pflegestufenstatistik');
     if (pflegeUploads.length === 0) {
       this.pflegestufenData.set([]);
+      this.dataInfoItems.set([]);
       return;
     }
+
+    // Prepare data info items
+    this.prepareDataInfoItems(pflegeUploads);
 
     const allData: PflegestufenData[] = [];
     pflegeUploads.forEach(upload => {
@@ -428,6 +442,59 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
 
   getTotalTPatienten(): number {
     return this.getFilteredData().reduce((sum, d) => sum + d['T.-Patienten'], 0);
+  }
+
+  private prepareDataInfoItems(uploads: UploadRecord[]) {
+    const items: DataInfoItem[] = [];
+    
+    uploads.forEach(upload => {
+      upload.files.forEach(file => {
+        let totalRecords = 0;
+        
+        // Count records
+        if (file.values) {
+          totalRecords = file.values.length;
+        }
+
+        // Extract month and year from file values
+        let dataMonth = '';
+        let dataYear: number | undefined;
+        if (file.values && file.values.length > 0) {
+          const firstRow = file.values[0] as any;
+          if (firstRow.Monat) {
+            const monthNames = ['', 'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 
+                               'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+            const monthNum = parseInt(String(firstRow.Monat));
+            dataMonth = monthNames[monthNum] || String(firstRow.Monat);
+          }
+          if (firstRow.Jahr) {
+            dataYear = parseInt(String(firstRow.Jahr));
+          }
+        }
+
+        // Extract location/standort
+        let location = '';
+        if (file.values && file.values.length > 0) {
+          const firstRow = file.values[0] as any;
+          if (firstRow.Standort) {
+            location = String(firstRow.Standort);
+          }
+        }
+
+        items.push({
+          fileName: file.originalName,
+          uploadDate: upload.createdAt,
+          dataMonth,
+          dataYear,
+          recordCount: totalRecords,
+          status: 'success' as const,
+          location,
+          rawData: file.values || []
+        });
+      });
+    });
+
+    this.dataInfoItems.set(items);
   }
 }
 

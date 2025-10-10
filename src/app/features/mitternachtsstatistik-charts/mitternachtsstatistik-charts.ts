@@ -10,6 +10,7 @@ import { MatTableModule } from '@angular/material/table';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType, registerables } from 'chart.js';
 import { MitternachtsstatistikResponse } from '../../core/api';
+import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel';
 
 // Register Chart.js components
 import Chart from 'chart.js/auto';
@@ -37,7 +38,8 @@ interface LocationChartData {
     MatSelectModule,
     MatFormFieldModule,
     MatTableModule,
-    BaseChartDirective
+    BaseChartDirective,
+    DataInfoPanel
   ],
   template: `
     <div class="mitternachtsstatistik-charts">
@@ -63,6 +65,13 @@ interface LocationChartData {
         </div>
         <p>Monatliche Entwicklung der wichtigsten Kennzahlen</p>
       </div>
+
+      <!-- Data Info Panel -->
+      <app-data-info-panel 
+        *ngIf="dataInfoItems().length > 0"
+        [dataItems]="dataInfoItems()"
+        [expandedByDefault]="false">
+      </app-data-info-panel>
 
       <!-- Charts for selected location -->
       <div *ngIf="getSelectedLocationData() as locationData" class="charts-container">
@@ -525,6 +534,7 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
   selectedLocation = signal<string>('BAB');
   availableLocations = signal<string[]>([]);
   currentYear = signal<number>(new Date().getFullYear());
+  dataInfoItems = signal<DataInfoItem[]>([]);
   
   // Track flipped state for each card
   flippedCards: { [key: string]: boolean } = {
@@ -561,11 +571,15 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
   private processChartData() {
     if (!this.mitternachtsstatistikData || !this.mitternachtsstatistikData.uploads) {
       this.chartDataByLocation.set([]);
+      this.dataInfoItems.set([]);
       return;
     }
 
     // Extract current year from upload data
     this.extractCurrentYear();
+
+    // Prepare data info items
+    this.prepareDataInfoItems();
 
     const locations = ['BAB', 'PRI', 'ROS', 'WAS'];
     const locationData: LocationChartData[] = [];
@@ -980,6 +994,77 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
       month: monthLabels[index],
       value: data[metric]
     }));
+  }
+
+  private prepareDataInfoItems() {
+    if (!this.mitternachtsstatistikData?.uploads) {
+      this.dataInfoItems.set([]);
+      return;
+    }
+
+    const monthNames = ['', 'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 
+                       'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+
+    const items: DataInfoItem[] = this.mitternachtsstatistikData.uploads.map(upload => {
+      let dataMonth = '';
+      let dataYear: number | undefined;
+      let totalRecords = 0;
+
+      // Parse month/year
+      if (upload.month) {
+        if (upload.month.includes('-')) {
+          const [monthStr, yearStr] = upload.month.split('-');
+          const monthNum = parseInt(monthStr);
+          dataMonth = monthNames[monthNum] || monthStr;
+          dataYear = parseInt(yearStr);
+        } else {
+          const monthNum = parseInt(upload.month);
+          dataMonth = monthNames[monthNum] || upload.month;
+        }
+      }
+
+      // Count total records across all files and locations
+      if (upload.locationsData) {
+        Object.values(upload.locationsData).forEach(locationFiles => {
+          locationFiles.forEach(file => {
+            if (file.values) {
+              totalRecords += file.values.length;
+            }
+          });
+        });
+      }
+
+      // Get file count
+      const fileCount = upload.files?.length || 0;
+
+      // Get locations
+      const locations = upload.locations?.join(', ') || '';
+
+      // Collect all raw data from all locations
+      const allRawData: any[] = [];
+      if (upload.locationsData) {
+        Object.values(upload.locationsData).forEach(locationFiles => {
+          locationFiles.forEach(file => {
+            if (file.values) {
+              allRawData.push(...file.values);
+            }
+          });
+        });
+      }
+
+      return {
+        fileName: `${upload.schemaName} (${fileCount} ${fileCount === 1 ? 'Datei' : 'Dateien'})`,
+        uploadDate: upload.createdAt,
+        dataMonth,
+        dataYear,
+        recordCount: totalRecords,
+        status: 'success' as const,
+        location: locations,
+        rawData: allRawData
+      };
+    });
+
+    this.dataInfoItems.set(items);
   }
 }
 
