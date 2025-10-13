@@ -166,4 +166,41 @@ export class Api {
   getStationMitaAverage(station: string): Observable<{ station: string; mitaDurchschnitt: number | null; message?: string }> {
     return this.http.get<{ station: string; mitaDurchschnitt: number | null; message?: string }>(`${this.baseUrl}/manual-entry/station-mita-average/${encodeURIComponent(station)}`);
   }
+
+  // Manuelle Stundeneingabe NACHT API
+  getManualEntryNachtStations(): Observable<{ stations: string[] }> {
+    return this.http.get<{ stations: string[] }>(`${this.baseUrl}/manual-entry-nacht/stations`);
+  }
+
+  getManualEntryNachtData(station: string, jahr: number, monat: number, kategorie: string): Observable<{ data: any[] }> {
+    const params = new HttpParams()
+      .set('station', station)
+      .set('jahr', jahr.toString())
+      .set('monat', monat.toString())
+      .set('kategorie', kategorie);
+    return this.http.get<{ data: any[] }>(`${this.baseUrl}/manual-entry-nacht/data`, { params });
+  }
+
+  saveManualEntryNacht(station: string, jahr: number, monat: number, kategorie: string, entries: any[]): Observable<{ success: boolean; uploadId: string; message: string }> {
+    return this.http.post<{ success: boolean; uploadId: string; message: string }>(`${this.baseUrl}/manual-entry-nacht/save`, {
+      station,
+      jahr,
+      monat,
+      kategorie,
+      entries
+    });
+  }
+
+  deleteManualEntryNacht(station: string, jahr: number, monat: number, kategorie: string): Observable<{ success: boolean; message: string }> {
+    const params = new HttpParams()
+      .set('station', station)
+      .set('jahr', jahr.toString())
+      .set('monat', monat.toString())
+      .set('kategorie', kategorie);
+    return this.http.delete<{ success: boolean; message: string }>(`${this.baseUrl}/manual-entry-nacht/data`, { params });
+  }
+
+  getStationMinaAverage(station: string): Observable<{ station: string; minaDurchschnitt: number | null; message?: string }> {
+    return this.http.get<{ station: string; minaDurchschnitt: number | null; message?: string }>(`${this.baseUrl}/manual-entry-nacht/station-mina-average/${encodeURIComponent(station)}`);
+  }
 }

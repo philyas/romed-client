@@ -14,5 +14,9 @@ export const routes: Routes = [
     path: 'manual-entry',
     loadComponent: () => import('./features/manual-entry/manual-entry').then(m => m.ManualEntry)
   },
+  {
+    path: 'manual-entry-nacht',
+    loadComponent: () => import('./features/manual-entry-nacht/manual-entry-nacht').then(m => m.ManualEntryNacht)
+  },
   { path: '**', redirectTo: 'dashboard' }
 ];

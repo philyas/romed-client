@@ -1,0 +1,260 @@
+<div class="manual-entry-container">
+  <mat-card class="header-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>nightlight</mat-icon>
+        Manuelle Stundeneingabe - Nachtschicht
+      </mat-card-title>
+      <mat-card-subtitle>
+        Erfassen Sie Arbeitsstunden der Nachtschicht manuell für Ihre Station
+      </mat-card-subtitle>
+    </mat-card-header>
+  </mat-card>
+
+  <!-- Station Selection / Creation -->
+  <mat-card class="selection-card">
+    <mat-card-content>
+      <div class="selection-row">
+        <!-- Station Dropdown -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Station auswählen</mat-label>
+          <mat-select [value]="selectedStation()" (selectionChange)="onStationChange($event.value)">
+            <mat-option value="">-- Bitte wählen --</mat-option>
+            <mat-option *ngFor="let station of stations()" [value]="station">
+              {{ station }}
+            </mat-option>
+          </mat-select>
+          <mat-icon matSuffix>business</mat-icon>
+          <mat-hint>Stationen aus MiNa/MiTa-Bestände</mat-hint>
+        </mat-form-field>
+      </div>
+
+      <!-- Year and Month Selection -->
+      <div class="selection-row" *ngIf="selectedStation()">
+        <mat-form-field appearance="outline">
+          <mat-label>Jahr</mat-label>
+          <mat-select [value]="selectedYear()" (selectionChange)="onYearChange($event.value)">
+            <mat-option *ngFor="let year of availableYears()" [value]="year">
+              {{ year }}
+            </mat-option>
+          </mat-select>
+          <mat-icon matSuffix>calendar_today</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Monat</mat-label>
+          <mat-select [value]="selectedMonth()" (selectionChange)="onMonthChange($event.value)">
+            <mat-option *ngFor="let month of availableMonths" [value]="month.value">
+              {{ month.label }}
+            </mat-option>
+          </mat-select>
+          <mat-icon matSuffix>event</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <!-- Kategorie Selection (PFK/PHK) -->
+      <div class="kategorie-selection" *ngIf="selectedStation()">
+        <div class="kategorie-label">Kategorie:</div>
+        <div class="kategorie-buttons">
+          <button 
+            mat-raised-button 
+            *ngFor="let kat of kategorien"
+            [color]="selectedKategorie() === kat.value ? 'primary' : ''"
+            [class.active]="selectedKategorie() === kat.value"
+            (click)="onKategorieChange(kat.value)"
+            class="kategorie-btn">
+            <mat-icon>{{ kat.value === 'PFK' ? 'verified' : 'support' }}</mat-icon>
+            {{ kat.label }}
+          </button>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Statistics Card -->
+  <mat-card class="stats-card" *ngIf="selectedStation() && !loading()">
+    <mat-card-content>
+      <div class="stats-row">
+        <div class="stat-item">
+          <mat-icon>access_time</mat-icon>
+          <div class="stat-content">
+            <span class="stat-label">Gesamt</span>
+            <span class="stat-value">{{ getTotalHours() }} Stunden</span>
+          </div>
+        </div>
+        
+        <div class="stat-item">
+          <mat-icon>avg_pace</mat-icon>
+          <div class="stat-content">
+            <span class="stat-label">Durchschnitt {{ selectedKategorie() }}</span>
+            <span class="stat-value">{{ getAverageHoursPerDay() }} Stunden/Tag</span>
+          </div>
+        </div>
+
+        <div class="stat-item">
+          <mat-icon>calendar_month</mat-icon>
+          <div class="stat-content">
+            <span class="stat-label">Tage im Monat</span>
+            <span class="stat-value">{{ daysInMonth() }} Tage</span>
+          </div>
+        </div>
+
+        <div class="stat-item phk-stat" *ngIf="selectedKategorie() === 'PFK' && durchschnittPhkAnrechenbar() !== null">
+          <mat-icon>trending_up</mat-icon>
+          <div class="stat-content">
+            <span class="stat-label">⌀ PHK Anrechenbar</span>
+            <span class="stat-value highlight">{{ durchschnittPhkAnrechenbar()?.toFixed(2) }} h/Tag</span>
+          </div>
+        </div>
+
+        <div class="stat-item gesamt-stat" *ngIf="selectedKategorie() === 'PFK' && getGesamtAnrechenbar() !== null">
+          <mat-icon>calculate</mat-icon>
+          <div class="stat-content">
+            <span class="stat-label">⌀ Gesamt Anrechenbar</span>
+            <span class="stat-value gesamt-highlight">{{ getGesamtAnrechenbar() }} h/Tag</span>
+          </div>
+        </div>
+
+        <div class="stat-item exam-stat" *ngIf="selectedKategorie() === 'PFK' && getExamPflege() !== null">
+          <mat-icon>school</mat-icon>
+          <div class="stat-content">
+            <span class="stat-label">Exam. Pflege</span>
+            <span class="stat-value exam-highlight">{{ getExamPflegeFormatted() }}</span>
+          </div>
+        </div>
+
+        <div class="stat-item patienten-stat" *ngIf="selectedKategorie() === 'PFK' && getPatientenProPflegekraft() !== null">
+          <mat-icon>groups</mat-icon>
+          <div class="stat-content">
+            <span class="stat-label">Patienten/Pflegekraft</span>
+            <span class="stat-value patienten-highlight">{{ getPatientenProPflegekraft() }}</span>
+          </div>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Data Entry Table -->
+  <mat-card class="data-entry-card" *ngIf="selectedStation()">
+    <mat-card-header>
+      <div class="header-title-section">
+        <mat-card-title>
+          <mat-icon>grid_on</mat-icon>
+          {{ getMonthName(selectedMonth()) }} {{ selectedYear() }} - {{ selectedStation() }} ({{ selectedKategorie() }})
+        </mat-card-title>
+        
+        <!-- Berechnete Werte (nur bei PFK) -->
+        <div class="header-calculations" *ngIf="selectedKategorie() === 'PFK' && durchschnittPhkAnrechenbar() !== null">
+          <div class="calc-item">
+            <span class="calc-label">MiNa-Ø Station:</span>
+            <span class="calc-value konstante">{{ belegteBettenKonstante().toFixed(2) }}</span>
+          </div>
+          <div class="calc-separator">|</div>
+          <div class="calc-item">
+            <span class="calc-label">Exam. Pflege:</span>
+            <span class="calc-value">{{ getExamPflegeFormatted() }}</span>
+          </div>
+          <div class="calc-separator">|</div>
+          <div class="calc-item">
+            <span class="calc-label">Patienten/Pflegekraft:</span>
+            <span class="calc-value highlight">{{ getPatientenProPflegekraft() }}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="header-actions">
+        <button mat-button color="warn" (click)="clearAllEntries()">
+          <mat-icon>delete_sweep</mat-icon>
+          Alle löschen
+        </button>
+        <button mat-raised-button color="primary" (click)="saveData()" [disabled]="saving()">
+          <mat-icon>save</mat-icon>
+          {{ saving() ? 'Speichert...' : 'Manuell Speichern' }}
+        </button>
+      </div>
+    </mat-card-header>
+
+    <mat-card-content>
+      <div class="loading-spinner" *ngIf="loading()">
+        <mat-spinner></mat-spinner>
+        <p>Daten werden geladen...</p>
+      </div>
+
+      <div class="entry-table-container" *ngIf="!loading()">
+        <table class="entry-table">
+          <thead>
+            <tr>
+              <th>Tag</th>
+              <th>Stunden</th>
+              <th>Minuten</th>
+              <th>Gesamt</th>
+              <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">PFK Normal</th>
+              <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">Gesamt PFK+PHK</th>
+              <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">PHK End</th>
+              <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">PHK Anrechenbar</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let entry of dayEntries(); let i = index; trackBy: trackByTag" [class.even-row]="i % 2 === 0">
+              <td class="day-cell">
+                <mat-icon class="small-icon">event</mat-icon>
+                <strong>{{ entry.tag }}</strong>
+              </td>
+              <td class="input-cell">
+                <input 
+                  type="number" 
+                  min="0" 
+                  [value]="entry.stunden"
+                  (input)="updateEntry(i, 'stunden', $any($event.target).value)"
+                  placeholder="0"
+                  class="table-input">
+              </td>
+              <td class="input-cell">
+                <input 
+                  type="number" 
+                  min="0" 
+                  max="59" 
+                  [value]="entry.minuten"
+                  (input)="updateEntry(i, 'minuten', $any($event.target).value)"
+                  placeholder="0"
+                  class="table-input">
+              </td>
+              <td class="total-cell">
+                <span class="total-badge">
+                  {{ entry.stunden }}:{{ entry.minuten.toString().padStart(2, '0') }}h
+                </span>
+              </td>
+              <td *ngIf="selectedKategorie() === 'PFK'" class="phk-value-cell">
+                {{ getPhkValue(entry, 'pfkNormal') }}
+              </td>
+              <td *ngIf="selectedKategorie() === 'PFK'" class="phk-value-cell">
+                {{ getPhkValue(entry, 'gesamtPfkPhk') }}
+              </td>
+              <td *ngIf="selectedKategorie() === 'PFK'" class="phk-value-cell">
+                {{ getPhkValue(entry, 'phkEnd') }}
+              </td>
+              <td *ngIf="selectedKategorie() === 'PFK'" class="phk-value-cell highlight">
+                <strong>{{ getPhkValue(entry, 'phkAnrechenbar') }}h</strong>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="auto-save-indicator" *ngIf="saving()">
+        <mat-spinner diameter="16"></mat-spinner>
+        <span>Speichert...</span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Empty State -->
+  <mat-card class="empty-state" *ngIf="!selectedStation()">
+    <mat-card-content>
+      <mat-icon>business</mat-icon>
+      <h3>Keine Station ausgewählt</h3>
+      <p>Wählen Sie eine Station aus den MiNa/MiTa-Beständen aus, um mit der Nachtschicht-Stundeneingabe zu beginnen.</p>
+    </mat-card-content>
+  </mat-card>
+</div>
+
