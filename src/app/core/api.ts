@@ -129,4 +129,37 @@ export class Api {
   getAufgestellteBetten(): Observable<ResultsResponse> {
     return this.http.get<ResultsResponse>(`${this.baseUrl}/data?schemaId=mitteilungen_betten`);
   }
+
+  // Manuelle Stundeneingabe API
+  getManualEntryStations(): Observable<{ stations: string[] }> {
+    return this.http.get<{ stations: string[] }>(`${this.baseUrl}/manual-entry/stations`);
+  }
+
+  getManualEntryData(station: string, jahr: number, monat: number, kategorie: string): Observable<{ data: any[] }> {
+    const params = new HttpParams()
+      .set('station', station)
+      .set('jahr', jahr.toString())
+      .set('monat', monat.toString())
+      .set('kategorie', kategorie);
+    return this.http.get<{ data: any[] }>(`${this.baseUrl}/manual-entry/data`, { params });
+  }
+
+  saveManualEntry(station: string, jahr: number, monat: number, kategorie: string, entries: any[]): Observable<{ success: boolean; uploadId: string; message: string }> {
+    return this.http.post<{ success: boolean; uploadId: string; message: string }>(`${this.baseUrl}/manual-entry/save`, {
+      station,
+      jahr,
+      monat,
+      kategorie,
+      entries
+    });
+  }
+
+  deleteManualEntry(station: string, jahr: number, monat: number, kategorie: string): Observable<{ success: boolean; message: string }> {
+    const params = new HttpParams()
+      .set('station', station)
+      .set('jahr', jahr.toString())
+      .set('monat', monat.toString())
+      .set('kategorie', kategorie);
+    return this.http.delete<{ success: boolean; message: string }>(`${this.baseUrl}/manual-entry/data`, { params });
+  }
 }

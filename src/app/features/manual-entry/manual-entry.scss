@@ -1,0 +1,432 @@
+.manual-entry-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+
+  mat-card {
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+  }
+
+  .header-card {
+    background: linear-gradient(135deg, #0066cc 0%, #004c99 100%);
+    color: white;
+
+    mat-card-header {
+      padding: 24px;
+    }
+
+    mat-card-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 8px;
+
+      mat-icon {
+        font-size: 32px;
+        width: 32px;
+        height: 32px;
+      }
+    }
+
+    mat-card-subtitle {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 16px;
+      margin-left: 44px;
+    }
+  }
+
+  .selection-card {
+    mat-card-content {
+      padding: 24px;
+    }
+
+    .selection-row {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 16px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      mat-form-field {
+        flex: 1;
+
+        &.full-width {
+          flex: 2;
+        }
+      }
+
+      .toggle-btn, .add-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+      }
+    }
+
+    .kategorie-selection {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border: 2px solid #0066cc;
+      margin-top: 16px;
+
+      .kategorie-label {
+        font-weight: 600;
+        color: #333;
+        font-size: 16px;
+        white-space: nowrap;
+      }
+
+      .kategorie-buttons {
+        display: flex;
+        gap: 12px;
+        flex: 1;
+
+        .kategorie-btn {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 12px 24px;
+          font-size: 15px;
+          font-weight: 600;
+          transition: all 0.2s ease;
+
+          &:not(.active) {
+            background: white;
+            color: #666;
+            border: 2px solid #e0e0e0;
+
+            &:hover {
+              border-color: #0066cc;
+              color: #0066cc;
+              transform: translateY(-1px);
+              box-shadow: 0 2px 8px rgba(0, 102, 204, 0.15);
+            }
+          }
+
+          &.active {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+          }
+
+          mat-icon {
+            font-size: 20px;
+            width: 20px;
+            height: 20px;
+          }
+        }
+      }
+    }
+  }
+
+  .stats-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 2px solid #0066cc;
+
+    mat-card-content {
+      padding: 24px;
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 24px;
+      justify-content: space-around;
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex: 1;
+      padding: 16px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+
+      mat-icon {
+        font-size: 48px;
+        width: 48px;
+        height: 48px;
+        color: #0066cc;
+      }
+
+      .stat-content {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .stat-label {
+        font-size: 12px;
+        color: #666;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .stat-value {
+        font-size: 20px;
+        font-weight: 700;
+        color: #333;
+        margin-top: 4px;
+      }
+    }
+  }
+
+  .data-entry-card {
+    mat-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px;
+      background: #f8f9fa;
+      border-bottom: 2px solid #e9ecef;
+
+      mat-card-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 20px;
+        font-weight: 600;
+        margin: 0;
+
+        mat-icon {
+          color: #0066cc;
+        }
+      }
+
+      .header-actions {
+        display: flex;
+        gap: 12px;
+
+        button {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+      }
+    }
+
+    mat-card-content {
+      padding: 24px;
+      position: relative;
+    }
+
+    .loading-spinner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px;
+      gap: 16px;
+
+      p {
+        color: #666;
+        font-size: 16px;
+      }
+    }
+
+    .entry-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .entry-item {
+      padding: 16px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border: 2px solid #e9ecef;
+      transition: all 0.2s ease;
+
+      &:hover {
+        border-color: #0066cc;
+        box-shadow: 0 2px 8px rgba(0, 102, 204, 0.15);
+      }
+
+      .entry-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #dee2e6;
+
+        mat-icon {
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
+          color: #0066cc;
+        }
+
+        .day-label {
+          font-weight: 600;
+          color: #333;
+          font-size: 14px;
+        }
+      }
+
+      .entry-inputs {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        .time-input {
+          flex: 1;
+          
+          ::ng-deep .mat-mdc-text-field-wrapper {
+            padding: 0;
+          }
+
+          ::ng-deep .mat-mdc-form-field-infix {
+            padding: 8px 0;
+            min-height: 40px;
+          }
+
+          input {
+            text-align: center;
+            font-size: 16px;
+            font-weight: 600;
+          }
+        }
+
+        .time-separator {
+          font-size: 24px;
+          font-weight: 700;
+          color: #0066cc;
+          margin: 0 4px;
+        }
+      }
+
+      .entry-total {
+        margin-top: 8px;
+        text-align: center;
+        font-size: 14px;
+        font-weight: 600;
+        color: #0066cc;
+        padding: 4px;
+        background: white;
+        border-radius: 4px;
+      }
+    }
+
+    .auto-save-indicator {
+      position: absolute;
+      bottom: 16px;
+      right: 24px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(0, 102, 204, 0.1);
+      border-radius: 20px;
+      color: #0066cc;
+      font-size: 14px;
+      font-weight: 500;
+    }
+  }
+
+  .empty-state {
+    mat-card-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 64px;
+      text-align: center;
+
+      mat-icon {
+        font-size: 96px;
+        width: 96px;
+        height: 96px;
+        color: #ccc;
+        margin-bottom: 24px;
+      }
+
+      h3 {
+        font-size: 24px;
+        font-weight: 600;
+        color: #333;
+        margin: 0 0 12px 0;
+      }
+
+      p {
+        font-size: 16px;
+        color: #666;
+        max-width: 500px;
+        line-height: 1.6;
+        margin: 0;
+      }
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .manual-entry-container {
+    padding: 16px;
+
+    .selection-card {
+      .selection-row {
+        flex-direction: column;
+
+        mat-form-field, .toggle-btn, .add-btn {
+          width: 100%;
+        }
+      }
+
+      .kategorie-selection {
+        flex-direction: column;
+        align-items: stretch;
+
+        .kategorie-label {
+          text-align: center;
+        }
+
+        .kategorie-buttons {
+          flex-direction: column;
+
+          .kategorie-btn {
+            width: 100%;
+          }
+        }
+      }
+    }
+
+    .stats-card .stats-row {
+      flex-direction: column;
+    }
+
+    .data-entry-card {
+      .entry-grid {
+        grid-template-columns: 1fr;
+      }
+
+      mat-card-header {
+        flex-direction: column;
+        gap: 16px;
+
+        .header-actions {
+          width: 100%;
+          flex-direction: column;
+
+          button {
+            width: 100%;
+          }
+        }
+      }
+    }
+  }
+}
+

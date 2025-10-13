@@ -1,0 +1,204 @@
+<div class="manual-entry-container">
+  <mat-card class="header-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>edit_calendar</mat-icon>
+        Manuelle Stundeneingabe
+      </mat-card-title>
+      <mat-card-subtitle>
+        Erfassen Sie Arbeitsstunden manuell für Ihre Station
+      </mat-card-subtitle>
+    </mat-card-header>
+  </mat-card>
+
+  <!-- Station Selection / Creation -->
+  <mat-card class="selection-card">
+    <mat-card-content>
+      <div class="selection-row">
+        <!-- Station Dropdown -->
+        <mat-form-field appearance="outline" class="full-width" *ngIf="!isCreatingStation()">
+          <mat-label>Station auswählen</mat-label>
+          <mat-select [value]="selectedStation()" (selectionChange)="onStationChange($event.value)">
+            <mat-option value="">-- Bitte wählen --</mat-option>
+            <mat-option *ngFor="let station of stations()" [value]="station">
+              {{ station }}
+            </mat-option>
+          </mat-select>
+          <mat-icon matSuffix>business</mat-icon>
+        </mat-form-field>
+
+        <!-- New Station Input -->
+        <mat-form-field appearance="outline" class="full-width" *ngIf="isCreatingStation()">
+          <mat-label>Neue Station</mat-label>
+          <input matInput [(ngModel)]="newStationName" placeholder="z.B. Station A" (keyup.enter)="addStation()">
+          <mat-icon matSuffix>add_business</mat-icon>
+        </mat-form-field>
+
+        <!-- Toggle Button -->
+        <button mat-raised-button [color]="isCreatingStation() ? 'warn' : 'primary'" (click)="toggleCreateStation()" class="toggle-btn">
+          <mat-icon>{{ isCreatingStation() ? 'close' : 'add' }}</mat-icon>
+          {{ isCreatingStation() ? 'Abbrechen' : 'Neue Station' }}
+        </button>
+
+        <!-- Add Button (only visible when creating) -->
+        <button mat-raised-button color="accent" (click)="addStation()" *ngIf="isCreatingStation()" class="add-btn">
+          <mat-icon>check</mat-icon>
+          Erstellen
+        </button>
+      </div>
+
+      <!-- Year and Month Selection -->
+      <div class="selection-row" *ngIf="selectedStation()">
+        <mat-form-field appearance="outline">
+          <mat-label>Jahr</mat-label>
+          <mat-select [value]="selectedYear()" (selectionChange)="onYearChange($event.value)">
+            <mat-option *ngFor="let year of availableYears()" [value]="year">
+              {{ year }}
+            </mat-option>
+          </mat-select>
+          <mat-icon matSuffix>calendar_today</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Monat</mat-label>
+          <mat-select [value]="selectedMonth()" (selectionChange)="onMonthChange($event.value)">
+            <mat-option *ngFor="let month of availableMonths" [value]="month.value">
+              {{ month.label }}
+            </mat-option>
+          </mat-select>
+          <mat-icon matSuffix>event</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <!-- Kategorie Selection (PFK/PHK) -->
+      <div class="kategorie-selection" *ngIf="selectedStation()">
+        <div class="kategorie-label">Kategorie:</div>
+        <div class="kategorie-buttons">
+          <button 
+            mat-raised-button 
+            *ngFor="let kat of kategorien"
+            [color]="selectedKategorie() === kat.value ? 'primary' : ''"
+            [class.active]="selectedKategorie() === kat.value"
+            (click)="onKategorieChange(kat.value)"
+            class="kategorie-btn">
+            <mat-icon>{{ kat.value === 'PFK' ? 'verified' : 'support' }}</mat-icon>
+            {{ kat.label }}
+          </button>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Statistics Card -->
+  <mat-card class="stats-card" *ngIf="selectedStation() && !loading()">
+    <mat-card-content>
+      <div class="stats-row">
+        <div class="stat-item">
+          <mat-icon>access_time</mat-icon>
+          <div class="stat-content">
+            <span class="stat-label">Gesamt</span>
+            <span class="stat-value">{{ getTotalHours() }} Stunden</span>
+          </div>
+        </div>
+        
+        <div class="stat-item">
+          <mat-icon>avg_pace</mat-icon>
+          <div class="stat-content">
+            <span class="stat-label">Durchschnitt</span>
+            <span class="stat-value">{{ getAverageHoursPerDay() }} Stunden/Tag</span>
+          </div>
+        </div>
+
+        <div class="stat-item">
+          <mat-icon>calendar_month</mat-icon>
+          <div class="stat-content">
+            <span class="stat-label">Tage im Monat</span>
+            <span class="stat-value">{{ daysInMonth() }} Tage</span>
+          </div>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Data Entry Table -->
+  <mat-card class="data-entry-card" *ngIf="selectedStation()">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>grid_on</mat-icon>
+        {{ getMonthName(selectedMonth()) }} {{ selectedYear() }} - {{ selectedStation() }} ({{ selectedKategorie() }})
+      </mat-card-title>
+      <div class="header-actions">
+        <button mat-button color="warn" (click)="clearAllEntries()">
+          <mat-icon>delete_sweep</mat-icon>
+          Alle löschen
+        </button>
+        <button mat-raised-button color="primary" (click)="saveData()" [disabled]="saving()">
+          <mat-icon>save</mat-icon>
+          {{ saving() ? 'Speichert...' : 'Manuell Speichern' }}
+        </button>
+      </div>
+    </mat-card-header>
+
+    <mat-card-content>
+      <div class="loading-spinner" *ngIf="loading()">
+        <mat-spinner></mat-spinner>
+        <p>Daten werden geladen...</p>
+      </div>
+
+      <div class="entry-grid" *ngIf="!loading()">
+        <div class="entry-item" *ngFor="let entry of dayEntries(); let i = index; trackBy: trackByTag">
+          <div class="entry-header">
+            <mat-icon>event</mat-icon>
+            <span class="day-label">Tag {{ entry.tag }}</span>
+          </div>
+          <div class="entry-inputs">
+            <mat-form-field appearance="outline" class="time-input">
+              <mat-label>Stunden</mat-label>
+              <input 
+                matInput 
+                type="number" 
+                min="0" 
+                [value]="entry.stunden"
+                (input)="updateEntry(i, 'stunden', $any($event.target).value)"
+                placeholder="0">
+              <span matSuffix>h</span>
+            </mat-form-field>
+            
+            <span class="time-separator">:</span>
+            
+            <mat-form-field appearance="outline" class="time-input">
+              <mat-label>Minuten</mat-label>
+              <input 
+                matInput 
+                type="number" 
+                min="0" 
+                max="59" 
+                [value]="entry.minuten"
+                (input)="updateEntry(i, 'minuten', $any($event.target).value)"
+                placeholder="0">
+              <span matSuffix>m</span>
+            </mat-form-field>
+          </div>
+          <div class="entry-total" *ngIf="entry.stunden > 0 || entry.minuten > 0">
+            {{ entry.stunden }}:{{ entry.minuten.toString().padStart(2, '0') }} h
+          </div>
+        </div>
+      </div>
+
+      <div class="auto-save-indicator" *ngIf="saving()">
+        <mat-spinner diameter="16"></mat-spinner>
+        <span>Speichert...</span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Empty State -->
+  <mat-card class="empty-state" *ngIf="!selectedStation()">
+    <mat-card-content>
+      <mat-icon>add_circle_outline</mat-icon>
+      <h3>Keine Station ausgewählt</h3>
+      <p>Wählen Sie eine bestehende Station aus oder erstellen Sie eine neue Station, um mit der Eingabe zu beginnen.</p>
+    </mat-card-content>
+  </mat-card>
+</div>
+
