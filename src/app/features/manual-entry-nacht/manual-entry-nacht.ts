@@ -387,7 +387,7 @@ export class ManualEntryNacht {
     const phkAnrechenbar = this.durchschnittPhkAnrechenbar() || 0;
     const gesamtAnrechenbar = avgHoursPfk + phkAnrechenbar;
     
-    const examPflege = gesamtAnrechenbar / 16;
+    const examPflege = gesamtAnrechenbar / 8; // Nachtschicht: 8 Stunden (22-6 Uhr)
     
     return examPflege;
   }
