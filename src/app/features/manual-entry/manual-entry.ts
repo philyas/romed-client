@@ -17,6 +17,10 @@ interface DayEntry {
   tag: number;
   stunden: number;
   minuten: number;
+  pfkNormal?: number;
+  gesamtPfkPhk?: number;
+  phkEnd?: number;
+  phkAnrechenbar?: number;
 }
 
 @Component({
@@ -53,8 +57,14 @@ export class ManualEntry {
   loading = signal<boolean>(false);
   saving = signal<boolean>(false);
   
+  // Konstante für Patienten-Berechnung (Mitternachtsstatistik Tag / Belegte Betten)
+  belegteBettenKonstante = signal<number>(25); // Default-Wert
+  
   // Day entries for the selected month
   dayEntries = signal<DayEntry[]>([]);
+  
+  // Durchschnittswerte (aus Backend Tag=0)
+  durchschnittPhkAnrechenbar = signal<number | null>(null);
   
   // Available categories
   kategorien = [
@@ -134,6 +144,14 @@ export class ManualEntry {
     this.api.getManualEntryData(station, jahr, monat, kategorie).subscribe({
       next: (response) => {
         if (response.data.length > 0) {
+          // Lade Durchschnittswerte (Tag=0)
+          const durchschnitt = response.data.find(d => d.Tag === 0);
+          if (durchschnitt && durchschnitt.PHK_Anrechenbar_Stunden !== undefined) {
+            this.durchschnittPhkAnrechenbar.set(durchschnitt.PHK_Anrechenbar_Stunden);
+          } else {
+            this.durchschnittPhkAnrechenbar.set(null);
+          }
+          
           // Load existing data (filter out Durchschnitt entry with Tag=0)
           const dataEntries = response.data.filter(d => d.Tag > 0);
           const days = this.daysInMonth();
@@ -145,7 +163,11 @@ export class ManualEntry {
               entries.push({
                 tag: i,
                 stunden: existing.Stunden || 0,
-                minuten: existing.Minuten || 0
+                minuten: existing.Minuten || 0,
+                pfkNormal: existing.PFK_Normal,
+                gesamtPfkPhk: existing.Gesamt_PFK_PHK,
+                phkEnd: existing.PHK_End,
+                phkAnrechenbar: existing.PHK_Anrechenbar_Stunden
               });
             } else {
               entries.push({ tag: i, stunden: 0, minuten: 0 });
@@ -156,12 +178,14 @@ export class ManualEntry {
         } else {
           // No data exists, initialize empty
           this.initializeEmptyEntries();
+          this.durchschnittPhkAnrechenbar.set(null);
         }
         this.loading.set(false);
       },
       error: (err) => {
         console.error('Error loading data:', err);
         this.initializeEmptyEntries();
+        this.durchschnittPhkAnrechenbar.set(null);
         this.loading.set(false);
       }
     });
@@ -311,6 +335,106 @@ export class ManualEntry {
   // TrackBy function to prevent focus loss
   trackByTag(index: number, entry: DayEntry): number {
     return entry.tag;
+  }
+
+  getPhkValue(entry: DayEntry, field: 'pfkNormal' | 'gesamtPfkPhk' | 'phkEnd' | 'phkAnrechenbar'): string {
+    const value = entry[field];
+    if (value === undefined || value === null) {
+      return '-';
+    }
+    return value.toFixed(field === 'phkAnrechenbar' ? 2 : 4);
+  }
+
+  getGesamtAnrechenbar(): string | null {
+    if (this.selectedKategorie() !== 'PFK' || this.durchschnittPhkAnrechenbar() === null) {
+      return null;
+    }
+
+    // Durchschnitt PFK in Stunden umrechnen
+    const entries = this.dayEntries();
+    let totalMinutes = 0;
+    let daysWithData = 0;
+    
+    entries.forEach(entry => {
+      const dayMinutes = (entry.stunden * 60) + entry.minuten;
+      if (dayMinutes > 0) {
+        totalMinutes += dayMinutes;
+        daysWithData++;
+      }
+    });
+    
+    if (daysWithData === 0) return null;
+    
+    const avgMinutesPfk = totalMinutes / daysWithData;
+    const avgHoursPfk = avgMinutesPfk / 60;
+    
+    // Addiere PHK Anrechenbar
+    const phkAnrechenbar = this.durchschnittPhkAnrechenbar() || 0;
+    const gesamt = avgHoursPfk + phkAnrechenbar;
+    
+    // Konvertiere zurück zu Stunden:Minuten
+    const stunden = Math.floor(gesamt);
+    const minuten = Math.round((gesamt - stunden) * 60);
+    
+    return `${stunden}:${minuten.toString().padStart(2, '0')}`;
+  }
+
+  getExamPflege(): number | null {
+    if (this.selectedKategorie() !== 'PFK' || this.durchschnittPhkAnrechenbar() === null) {
+      return null;
+    }
+
+    // Durchschnitt PFK in Stunden umrechnen
+    const entries = this.dayEntries();
+    let totalMinutes = 0;
+    let daysWithData = 0;
+    
+    entries.forEach(entry => {
+      const dayMinutes = (entry.stunden * 60) + entry.minuten;
+      if (dayMinutes > 0) {
+        totalMinutes += dayMinutes;
+        daysWithData++;
+      }
+    });
+    
+    if (daysWithData === 0) return null;
+    
+    const avgMinutesPfk = totalMinutes / daysWithData;
+    const avgHoursPfk = avgMinutesPfk / 60;
+    
+    // Addiere PHK Anrechenbar
+    const phkAnrechenbar = this.durchschnittPhkAnrechenbar() || 0;
+    const gesamtAnrechenbar = avgHoursPfk + phkAnrechenbar;
+    
+    // Exam. Pflege = Gesamt Anrechenbar / 16
+    const examPflege = gesamtAnrechenbar / 16;
+    
+    return examPflege;
+  }
+
+  getExamPflegeFormatted(): string | null {
+    const examPflege = this.getExamPflege();
+    return examPflege !== null ? examPflege.toFixed(4) : null;
+  }
+
+  getPatientenProPflegekraft(): string | null {
+    const examPflege = this.getExamPflege();
+    if (examPflege === null) return null;
+    
+    const konstante = this.belegteBettenKonstante();
+    if (konstante === 0) return 'Division durch 0';
+    
+    // Patienten pro Pflegekraft = Exam. Pflege / Konstante
+    const patientenProPflegekraft = examPflege / konstante;
+    
+    return patientenProPflegekraft.toFixed(4);
+  }
+
+  onKonstanteChange(value: string) {
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue) && numValue >= 0) {
+      this.belegteBettenKonstante.set(numValue);
+    }
   }
 }
 

@@ -104,7 +104,7 @@
         <div class="stat-item">
           <mat-icon>avg_pace</mat-icon>
           <div class="stat-content">
-            <span class="stat-label">Durchschnitt</span>
+            <span class="stat-label">Durchschnitt {{ selectedKategorie() }}</span>
             <span class="stat-value">{{ getAverageHoursPerDay() }} Stunden/Tag</span>
           </div>
         </div>
@@ -115,6 +115,64 @@
             <span class="stat-label">Tage im Monat</span>
             <span class="stat-value">{{ daysInMonth() }} Tage</span>
           </div>
+        </div>
+
+        <div class="stat-item phk-stat" *ngIf="selectedKategorie() === 'PFK' && durchschnittPhkAnrechenbar() !== null">
+          <mat-icon>trending_up</mat-icon>
+          <div class="stat-content">
+            <span class="stat-label">⌀ PHK Anrechenbar</span>
+            <span class="stat-value highlight">{{ durchschnittPhkAnrechenbar()?.toFixed(2) }} h/Tag</span>
+          </div>
+        </div>
+
+        <div class="stat-item gesamt-stat" *ngIf="selectedKategorie() === 'PFK' && getGesamtAnrechenbar() !== null">
+          <mat-icon>calculate</mat-icon>
+          <div class="stat-content">
+            <span class="stat-label">⌀ Gesamt Anrechenbar</span>
+            <span class="stat-value gesamt-highlight">{{ getGesamtAnrechenbar() }} h/Tag</span>
+          </div>
+        </div>
+
+        <div class="stat-item exam-stat" *ngIf="selectedKategorie() === 'PFK' && getExamPflege() !== null">
+          <mat-icon>school</mat-icon>
+          <div class="stat-content">
+            <span class="stat-label">Exam. Pflege</span>
+            <span class="stat-value exam-highlight">{{ getExamPflegeFormatted() }}</span>
+          </div>
+        </div>
+
+        <div class="stat-item patienten-stat" *ngIf="selectedKategorie() === 'PFK' && getPatientenProPflegekraft() !== null">
+          <mat-icon>groups</mat-icon>
+          <div class="stat-content">
+            <span class="stat-label">Patienten/Pflegekraft</span>
+            <span class="stat-value patienten-highlight">{{ getPatientenProPflegekraft() }}</span>
+          </div>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Konstante Eingabe Card -->
+  <mat-card class="konstante-card" *ngIf="selectedStation() && selectedKategorie() === 'PFK'">
+    <mat-card-content>
+      <div class="konstante-input-row">
+        <mat-icon class="konstante-icon">settings</mat-icon>
+        <mat-form-field appearance="outline" class="konstante-field">
+          <mat-label>Belegte Betten (Konstante für Patienten-Berechnung)</mat-label>
+          <input 
+            matInput 
+            type="number" 
+            min="0" 
+            step="0.1"
+            [value]="belegteBettenKonstante()"
+            (input)="onKonstanteChange($any($event.target).value)"
+            placeholder="z.B. 25">
+          <mat-icon matSuffix>hotel</mat-icon>
+          <mat-hint>Mitternachtsstatistik Tag / Belegte Betten</mat-hint>
+        </mat-form-field>
+        <div class="konstante-info">
+          <mat-icon>info</mat-icon>
+          <span>Diese Konstante wird für die Berechnung von "Patienten/Pflegekraft" verwendet</span>
         </div>
       </div>
     </mat-card-content>
@@ -145,44 +203,65 @@
         <p>Daten werden geladen...</p>
       </div>
 
-      <div class="entry-grid" *ngIf="!loading()">
-        <div class="entry-item" *ngFor="let entry of dayEntries(); let i = index; trackBy: trackByTag">
-          <div class="entry-header">
-            <mat-icon>event</mat-icon>
-            <span class="day-label">Tag {{ entry.tag }}</span>
-          </div>
-          <div class="entry-inputs">
-            <mat-form-field appearance="outline" class="time-input">
-              <mat-label>Stunden</mat-label>
-              <input 
-                matInput 
-                type="number" 
-                min="0" 
-                [value]="entry.stunden"
-                (input)="updateEntry(i, 'stunden', $any($event.target).value)"
-                placeholder="0">
-              <span matSuffix>h</span>
-            </mat-form-field>
-            
-            <span class="time-separator">:</span>
-            
-            <mat-form-field appearance="outline" class="time-input">
-              <mat-label>Minuten</mat-label>
-              <input 
-                matInput 
-                type="number" 
-                min="0" 
-                max="59" 
-                [value]="entry.minuten"
-                (input)="updateEntry(i, 'minuten', $any($event.target).value)"
-                placeholder="0">
-              <span matSuffix>m</span>
-            </mat-form-field>
-          </div>
-          <div class="entry-total" *ngIf="entry.stunden > 0 || entry.minuten > 0">
-            {{ entry.stunden }}:{{ entry.minuten.toString().padStart(2, '0') }} h
-          </div>
-        </div>
+      <div class="entry-table-container" *ngIf="!loading()">
+        <table class="entry-table">
+          <thead>
+            <tr>
+              <th>Tag</th>
+              <th>Stunden</th>
+              <th>Minuten</th>
+              <th>Gesamt</th>
+              <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">PFK Normal</th>
+              <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">Gesamt PFK+PHK</th>
+              <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">PHK End</th>
+              <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">PHK Anrechenbar</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let entry of dayEntries(); let i = index; trackBy: trackByTag" [class.even-row]="i % 2 === 0">
+              <td class="day-cell">
+                <mat-icon class="small-icon">event</mat-icon>
+                <strong>{{ entry.tag }}</strong>
+              </td>
+              <td class="input-cell">
+                <input 
+                  type="number" 
+                  min="0" 
+                  [value]="entry.stunden"
+                  (input)="updateEntry(i, 'stunden', $any($event.target).value)"
+                  placeholder="0"
+                  class="table-input">
+              </td>
+              <td class="input-cell">
+                <input 
+                  type="number" 
+                  min="0" 
+                  max="59" 
+                  [value]="entry.minuten"
+                  (input)="updateEntry(i, 'minuten', $any($event.target).value)"
+                  placeholder="0"
+                  class="table-input">
+              </td>
+              <td class="total-cell">
+                <span class="total-badge">
+                  {{ entry.stunden }}:{{ entry.minuten.toString().padStart(2, '0') }}h
+                </span>
+              </td>
+              <td *ngIf="selectedKategorie() === 'PFK'" class="phk-value-cell">
+                {{ getPhkValue(entry, 'pfkNormal') }}
+              </td>
+              <td *ngIf="selectedKategorie() === 'PFK'" class="phk-value-cell">
+                {{ getPhkValue(entry, 'gesamtPfkPhk') }}
+              </td>
+              <td *ngIf="selectedKategorie() === 'PFK'" class="phk-value-cell">
+                {{ getPhkValue(entry, 'phkEnd') }}
+              </td>
+              <td *ngIf="selectedKategorie() === 'PFK'" class="phk-value-cell highlight">
+                <strong>{{ getPhkValue(entry, 'phkAnrechenbar') }}h</strong>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       <div class="auto-save-indicator" *ngIf="saving()">

@@ -140,9 +140,9 @@
     }
 
     .stats-row {
-      display: flex;
-      gap: 24px;
-      justify-content: space-around;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
     }
 
     .stat-item {
@@ -180,6 +180,125 @@
         font-weight: 700;
         color: #333;
         margin-top: 4px;
+
+        &.highlight {
+          color: #2e7d32;
+          font-size: 22px;
+        }
+      }
+
+      &.phk-stat {
+        background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        border: 2px solid #4caf50;
+
+        mat-icon {
+          color: #2e7d32;
+        }
+
+        .stat-label {
+          color: #1b5e20;
+        }
+      }
+
+      &.gesamt-stat {
+        background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+        border: 2px solid #ff9800;
+
+        mat-icon {
+          color: #f57c00;
+        }
+
+        .stat-label {
+          color: #e65100;
+        }
+
+        .stat-value.gesamt-highlight {
+          color: #e65100;
+          font-size: 24px;
+        }
+      }
+
+      &.exam-stat {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        border: 2px solid #2196f3;
+
+        mat-icon {
+          color: #1565c0;
+        }
+
+        .stat-label {
+          color: #0d47a1;
+        }
+
+        .stat-value.exam-highlight {
+          color: #0d47a1;
+          font-size: 24px;
+          font-weight: 800;
+        }
+      }
+
+      &.patienten-stat {
+        background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+        border: 2px solid #9c27b0;
+
+        mat-icon {
+          color: #7b1fa2;
+        }
+
+        .stat-label {
+          color: #4a148c;
+        }
+
+        .stat-value.patienten-highlight {
+          color: #4a148c;
+          font-size: 26px;
+          font-weight: 800;
+        }
+      }
+    }
+  }
+
+  .konstante-card {
+    background: linear-gradient(135deg, #fff9c4 0%, #fff59d 100%);
+    border: 2px solid #fbc02d;
+
+    mat-card-content {
+      padding: 20px 24px;
+    }
+
+    .konstante-input-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+
+      .konstante-icon {
+        font-size: 32px;
+        width: 32px;
+        height: 32px;
+        color: #f57f17;
+      }
+
+      .konstante-field {
+        flex: 1;
+        max-width: 500px;
+      }
+
+      .konstante-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 16px;
+        background: rgba(255, 255, 255, 0.7);
+        border-radius: 8px;
+        color: #f57f17;
+        font-size: 14px;
+        font-weight: 500;
+
+        mat-icon {
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
+        }
       }
     }
   }
@@ -237,87 +356,133 @@
       }
     }
 
-    .entry-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 16px;
+    .entry-table-container {
+      overflow-x: auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
-    .entry-item {
-      padding: 16px;
-      background: #f8f9fa;
-      border-radius: 8px;
-      border: 2px solid #e9ecef;
-      transition: all 0.2s ease;
+    .entry-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
 
-      &:hover {
-        border-color: #0066cc;
-        box-shadow: 0 2px 8px rgba(0, 102, 204, 0.15);
-      }
+      thead {
+        background: linear-gradient(135deg, #0066cc 0%, #004c99 100%);
+        color: white;
 
-      .entry-header {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 12px;
-        padding-bottom: 8px;
-        border-bottom: 1px solid #dee2e6;
-
-        mat-icon {
-          font-size: 20px;
-          width: 20px;
-          height: 20px;
-          color: #0066cc;
-        }
-
-        .day-label {
+        th {
+          padding: 16px 12px;
+          text-align: left;
           font-weight: 600;
-          color: #333;
-          font-size: 14px;
+          font-size: 13px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          white-space: nowrap;
+
+          &.phk-column {
+            background: rgba(255, 255, 255, 0.1);
+            border-left: 2px solid rgba(255, 255, 255, 0.3);
+          }
         }
       }
 
-      .entry-inputs {
-        display: flex;
-        align-items: center;
-        gap: 8px;
+      tbody {
+        tr {
+          transition: background-color 0.2s ease;
 
-        .time-input {
-          flex: 1;
-          
-          ::ng-deep .mat-mdc-text-field-wrapper {
-            padding: 0;
+          &:hover {
+            background-color: #f0f7ff;
           }
 
-          ::ng-deep .mat-mdc-form-field-infix {
-            padding: 8px 0;
-            min-height: 40px;
+          &.even-row {
+            background-color: #f8f9fa;
+
+            &:hover {
+              background-color: #e8f2ff;
+            }
           }
 
-          input {
-            text-align: center;
-            font-size: 16px;
-            font-weight: 600;
+          td {
+            padding: 12px;
+            border-bottom: 1px solid #e9ecef;
+            vertical-align: middle;
           }
-        }
-
-        .time-separator {
-          font-size: 24px;
-          font-weight: 700;
-          color: #0066cc;
-          margin: 0 4px;
         }
       }
 
-      .entry-total {
-        margin-top: 8px;
-        text-align: center;
-        font-size: 14px;
+      .day-cell {
         font-weight: 600;
         color: #0066cc;
-        padding: 4px;
-        background: white;
-        border-radius: 4px;
+        width: 80px;
+
+        .small-icon {
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+          vertical-align: middle;
+          margin-right: 8px;
+        }
+      }
+
+      .input-cell {
+        width: 100px;
+
+        .table-input {
+          width: 100%;
+          padding: 8px 12px;
+          border: 2px solid #e0e0e0;
+          border-radius: 4px;
+          font-size: 14px;
+          font-weight: 600;
+          text-align: center;
+          transition: all 0.2s ease;
+
+          &:focus {
+            outline: none;
+            border-color: #0066cc;
+            background-color: #f0f7ff;
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+          }
+
+          &:hover {
+            border-color: #0066cc;
+          }
+        }
+      }
+
+      .total-cell {
+        .total-badge {
+          display: inline-block;
+          padding: 6px 12px;
+          background: linear-gradient(135deg, #0066cc 0%, #004c99 100%);
+          color: white;
+          border-radius: 4px;
+          font-weight: 700;
+          font-size: 13px;
+          min-width: 70px;
+          text-align: center;
+        }
+      }
+
+      .phk-value-cell {
+        text-align: center;
+        font-family: 'Courier New', monospace;
+        color: #666;
+        font-size: 13px;
+        background: rgba(0, 102, 204, 0.02);
+        border-left: 1px solid #e0e0e0;
+
+        &.highlight {
+          background: rgba(76, 175, 80, 0.1);
+          color: #2e7d32;
+          font-weight: 700;
+
+          strong {
+            color: #1b5e20;
+          }
+        }
       }
     }
 
@@ -405,14 +570,31 @@
     }
 
     .stats-card .stats-row {
-      flex-direction: column;
+      grid-template-columns: 1fr;
+    }
+
+    .konstante-card {
+      .konstante-input-row {
+        flex-direction: column;
+        align-items: stretch;
+
+        .konstante-icon {
+          align-self: center;
+        }
+
+        .konstante-field {
+          width: 100%;
+          max-width: none;
+        }
+
+        .konstante-info {
+          text-align: center;
+          justify-content: center;
+        }
+      }
     }
 
     .data-entry-card {
-      .entry-grid {
-        grid-template-columns: 1fr;
-      }
-
       mat-card-header {
         flex-direction: column;
         gap: 16px;
@@ -423,6 +605,30 @@
 
           button {
             width: 100%;
+          }
+        }
+      }
+
+      .entry-table-container {
+        font-size: 12px;
+
+        .entry-table {
+          thead th {
+            padding: 12px 8px;
+            font-size: 11px;
+          }
+
+          tbody td {
+            padding: 8px 6px;
+          }
+
+          .table-input {
+            padding: 6px 8px;
+            font-size: 12px;
+          }
+
+          .phk-value-cell {
+            font-size: 11px;
           }
         }
       }
