@@ -50,7 +50,6 @@ export class ManualEntry {
   // State
   stations = signal<string[]>([]);
   selectedStation = signal<string>('');
-  newStationName = signal<string>('');
   selectedYear = signal<number>(new Date().getFullYear());
   selectedMonth = signal<number>(new Date().getMonth() + 1);
   selectedKategorie = signal<'PFK' | 'PHK'>('PFK');
@@ -95,9 +94,6 @@ export class ManualEntry {
     { value: 11, label: 'November' },
     { value: 12, label: 'Dezember' }
   ];
-
-  // Mode
-  isCreatingStation = signal<boolean>(false);
 
   constructor() {
     this.loadStations();
@@ -191,37 +187,27 @@ export class ManualEntry {
     });
   }
 
-  toggleCreateStation() {
-    this.isCreatingStation.update(v => !v);
-    if (this.isCreatingStation()) {
-      this.newStationName.set('');
-    }
-  }
-
-  addStation() {
-    const name = this.newStationName().trim();
-    if (!name) {
-      this.snackBar.open('Bitte geben Sie einen Stationsnamen ein', 'Schließen', { duration: 3000 });
-      return;
-    }
-
-    const existingStations = this.stations();
-    if (existingStations.includes(name)) {
-      this.snackBar.open('Diese Station existiert bereits', 'Schließen', { duration: 3000 });
-      return;
-    }
-
-    // Add station to list
-    this.stations.update(stations => [...stations, name].sort());
-    this.selectedStation.set(name);
-    this.isCreatingStation.set(false);
-    this.newStationName.set('');
-    
-    this.snackBar.open(`Station "${name}" wurde erstellt`, 'Schließen', { duration: 3000 });
-  }
-
   onStationChange(station: string) {
     this.selectedStation.set(station);
+    
+    // Lade MiTa-Durchschnitt für diese Station
+    if (station) {
+      this.api.getStationMitaAverage(station).subscribe({
+        next: (response) => {
+          if (response.mitaDurchschnitt !== null) {
+            this.belegteBettenKonstante.set(response.mitaDurchschnitt);
+            console.log(`✅ MiTa-Durchschnitt für ${station}: ${response.mitaDurchschnitt}`);
+          } else {
+            console.log(`⚠️ Kein MiTa-Durchschnitt für ${station} gefunden. Verwende Standard: 25`);
+            this.belegteBettenKonstante.set(25);
+          }
+        },
+        error: (err) => {
+          console.error('Error loading MiTa average:', err);
+          this.belegteBettenKonstante.set(25); // Fallback
+        }
+      });
+    }
   }
 
   onYearChange(year: number) {
@@ -424,17 +410,10 @@ export class ManualEntry {
     const konstante = this.belegteBettenKonstante();
     if (konstante === 0) return 'Division durch 0';
     
-    // Patienten pro Pflegekraft = Exam. Pflege / Konstante
+    // Patienten pro Pflegekraft = Exam. Pflege / Konstante (MiTa-Durchschnitt)
     const patientenProPflegekraft = examPflege / konstante;
     
     return patientenProPflegekraft.toFixed(4);
-  }
-
-  onKonstanteChange(value: string) {
-    const numValue = parseFloat(value);
-    if (!isNaN(numValue) && numValue >= 0) {
-      this.belegteBettenKonstante.set(numValue);
-    }
   }
 }
 

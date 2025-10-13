@@ -258,59 +258,18 @@
     }
   }
 
-  .konstante-card {
-    background: linear-gradient(135deg, #fff9c4 0%, #fff59d 100%);
-    border: 2px solid #fbc02d;
-
-    mat-card-content {
-      padding: 20px 24px;
-    }
-
-    .konstante-input-row {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-
-      .konstante-icon {
-        font-size: 32px;
-        width: 32px;
-        height: 32px;
-        color: #f57f17;
-      }
-
-      .konstante-field {
-        flex: 1;
-        max-width: 500px;
-      }
-
-      .konstante-info {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 12px 16px;
-        background: rgba(255, 255, 255, 0.7);
-        border-radius: 8px;
-        color: #f57f17;
-        font-size: 14px;
-        font-weight: 500;
-
-        mat-icon {
-          font-size: 20px;
-          width: 20px;
-          height: 20px;
-        }
-      }
-    }
-  }
-
   .data-entry-card {
     mat-card-header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
       padding: 24px;
       background: #f8f9fa;
       border-bottom: 2px solid #e9ecef;
+
+      .header-title-section {
+        flex: 1;
+      }
 
       mat-card-title {
         display: flex;
@@ -318,10 +277,65 @@
         gap: 12px;
         font-size: 20px;
         font-weight: 600;
-        margin: 0;
+        margin: 0 0 12px 0;
 
         mat-icon {
           color: #0066cc;
+        }
+      }
+
+      .header-calculations {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        padding: 12px 16px;
+        background: white;
+        border-radius: 8px;
+        border: 2px solid #0066cc;
+        box-shadow: 0 2px 4px rgba(0, 102, 204, 0.1);
+
+        .calc-item {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+
+          .calc-label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+            white-space: nowrap;
+          }
+
+          .calc-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0066cc;
+            font-family: 'Courier New', monospace;
+
+            &.konstante {
+              background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+              padding: 4px 10px;
+              border-radius: 4px;
+              color: #e65100;
+              border: 1px solid #ff9800;
+            }
+
+            &.highlight {
+              background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+              padding: 4px 10px;
+              border-radius: 4px;
+              color: #0d47a1;
+              border: 1px solid #2196f3;
+              font-size: 16px;
+            }
+          }
+        }
+
+        .calc-separator {
+          color: #ccc;
+          font-weight: 300;
+          font-size: 18px;
         }
       }
 
@@ -573,31 +587,28 @@
       grid-template-columns: 1fr;
     }
 
-    .konstante-card {
-      .konstante-input-row {
-        flex-direction: column;
-        align-items: stretch;
-
-        .konstante-icon {
-          align-self: center;
-        }
-
-        .konstante-field {
-          width: 100%;
-          max-width: none;
-        }
-
-        .konstante-info {
-          text-align: center;
-          justify-content: center;
-        }
-      }
-    }
-
     .data-entry-card {
       mat-card-header {
         flex-direction: column;
         gap: 16px;
+
+        .header-title-section {
+          width: 100%;
+        }
+
+        .header-calculations {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 8px;
+
+          .calc-item {
+            justify-content: space-between;
+          }
+
+          .calc-separator {
+            display: none;
+          }
+        }
 
         .header-actions {
           width: 100%;

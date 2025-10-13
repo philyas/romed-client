@@ -16,7 +16,7 @@
     <mat-card-content>
       <div class="selection-row">
         <!-- Station Dropdown -->
-        <mat-form-field appearance="outline" class="full-width" *ngIf="!isCreatingStation()">
+        <mat-form-field appearance="outline" class="full-width">
           <mat-label>Station auswählen</mat-label>
           <mat-select [value]="selectedStation()" (selectionChange)="onStationChange($event.value)">
             <mat-option value="">-- Bitte wählen --</mat-option>
@@ -25,26 +25,8 @@
             </mat-option>
           </mat-select>
           <mat-icon matSuffix>business</mat-icon>
+          <mat-hint>Stationen aus MiNa/MiTa-Bestände</mat-hint>
         </mat-form-field>
-
-        <!-- New Station Input -->
-        <mat-form-field appearance="outline" class="full-width" *ngIf="isCreatingStation()">
-          <mat-label>Neue Station</mat-label>
-          <input matInput [(ngModel)]="newStationName" placeholder="z.B. Station A" (keyup.enter)="addStation()">
-          <mat-icon matSuffix>add_business</mat-icon>
-        </mat-form-field>
-
-        <!-- Toggle Button -->
-        <button mat-raised-button [color]="isCreatingStation() ? 'warn' : 'primary'" (click)="toggleCreateStation()" class="toggle-btn">
-          <mat-icon>{{ isCreatingStation() ? 'close' : 'add' }}</mat-icon>
-          {{ isCreatingStation() ? 'Abbrechen' : 'Neue Station' }}
-        </button>
-
-        <!-- Add Button (only visible when creating) -->
-        <button mat-raised-button color="accent" (click)="addStation()" *ngIf="isCreatingStation()" class="add-btn">
-          <mat-icon>check</mat-icon>
-          Erstellen
-        </button>
       </div>
 
       <!-- Year and Month Selection -->
@@ -152,39 +134,34 @@
     </mat-card-content>
   </mat-card>
 
-  <!-- Konstante Eingabe Card -->
-  <mat-card class="konstante-card" *ngIf="selectedStation() && selectedKategorie() === 'PFK'">
-    <mat-card-content>
-      <div class="konstante-input-row">
-        <mat-icon class="konstante-icon">settings</mat-icon>
-        <mat-form-field appearance="outline" class="konstante-field">
-          <mat-label>Belegte Betten (Konstante für Patienten-Berechnung)</mat-label>
-          <input 
-            matInput 
-            type="number" 
-            min="0" 
-            step="0.1"
-            [value]="belegteBettenKonstante()"
-            (input)="onKonstanteChange($any($event.target).value)"
-            placeholder="z.B. 25">
-          <mat-icon matSuffix>hotel</mat-icon>
-          <mat-hint>Mitternachtsstatistik Tag / Belegte Betten</mat-hint>
-        </mat-form-field>
-        <div class="konstante-info">
-          <mat-icon>info</mat-icon>
-          <span>Diese Konstante wird für die Berechnung von "Patienten/Pflegekraft" verwendet</span>
-        </div>
-      </div>
-    </mat-card-content>
-  </mat-card>
-
   <!-- Data Entry Table -->
   <mat-card class="data-entry-card" *ngIf="selectedStation()">
     <mat-card-header>
-      <mat-card-title>
-        <mat-icon>grid_on</mat-icon>
-        {{ getMonthName(selectedMonth()) }} {{ selectedYear() }} - {{ selectedStation() }} ({{ selectedKategorie() }})
-      </mat-card-title>
+      <div class="header-title-section">
+        <mat-card-title>
+          <mat-icon>grid_on</mat-icon>
+          {{ getMonthName(selectedMonth()) }} {{ selectedYear() }} - {{ selectedStation() }} ({{ selectedKategorie() }})
+        </mat-card-title>
+        
+        <!-- Berechnete Werte (nur bei PFK) -->
+        <div class="header-calculations" *ngIf="selectedKategorie() === 'PFK' && durchschnittPhkAnrechenbar() !== null">
+          <div class="calc-item">
+            <span class="calc-label">MiTa-Ø Station:</span>
+            <span class="calc-value konstante">{{ belegteBettenKonstante().toFixed(2) }}</span>
+          </div>
+          <div class="calc-separator">|</div>
+          <div class="calc-item">
+            <span class="calc-label">Exam. Pflege:</span>
+            <span class="calc-value">{{ getExamPflegeFormatted() }}</span>
+          </div>
+          <div class="calc-separator">|</div>
+          <div class="calc-item">
+            <span class="calc-label">Patienten/Pflegekraft:</span>
+            <span class="calc-value highlight">{{ getPatientenProPflegekraft() }}</span>
+          </div>
+        </div>
+      </div>
+      
       <div class="header-actions">
         <button mat-button color="warn" (click)="clearAllEntries()">
           <mat-icon>delete_sweep</mat-icon>
@@ -274,9 +251,9 @@
   <!-- Empty State -->
   <mat-card class="empty-state" *ngIf="!selectedStation()">
     <mat-card-content>
-      <mat-icon>add_circle_outline</mat-icon>
+      <mat-icon>business</mat-icon>
       <h3>Keine Station ausgewählt</h3>
-      <p>Wählen Sie eine bestehende Station aus oder erstellen Sie eine neue Station, um mit der Eingabe zu beginnen.</p>
+      <p>Wählen Sie eine Station aus den MiNa/MiTa-Beständen aus, um mit der Stundeneingabe zu beginnen.</p>
     </mat-card-content>
   </mat-card>
 </div>

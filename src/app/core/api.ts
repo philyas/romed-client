@@ -162,4 +162,8 @@ export class Api {
       .set('kategorie', kategorie);
     return this.http.delete<{ success: boolean; message: string }>(`${this.baseUrl}/manual-entry/data`, { params });
   }
+
+  getStationMitaAverage(station: string): Observable<{ station: string; mitaDurchschnitt: number | null; message?: string }> {
+    return this.http.get<{ station: string; mitaDurchschnitt: number | null; message?: string }>(`${this.baseUrl}/manual-entry/station-mita-average/${encodeURIComponent(station)}`);
+  }
 }
