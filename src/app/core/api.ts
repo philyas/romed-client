@@ -63,6 +63,24 @@ export interface MitternachtsstatistikResponse {
   note?: string;
 }
 
+export interface GeleistetePhkStunden {
+  durchschnitt: number;
+  stunden: number;
+  minuten: number;
+  anzahlTageMitDaten: number;
+}
+
+export interface ManualEntryDataResponse {
+  data: any[];
+  geleistetePhkStunden?: GeleistetePhkStunden;
+  phkTageswerte?: Array<{
+    tag: number;
+    stunden: number;
+    minuten: number;
+    gesamtDezimal: number;
+  }>;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -135,13 +153,13 @@ export class Api {
     return this.http.get<{ stations: string[] }>(`${this.baseUrl}/manual-entry/stations`);
   }
 
-  getManualEntryData(station: string, jahr: number, monat: number, kategorie: string): Observable<{ data: any[] }> {
+  getManualEntryData(station: string, jahr: number, monat: number, kategorie: string): Observable<ManualEntryDataResponse> {
     const params = new HttpParams()
       .set('station', station)
       .set('jahr', jahr.toString())
       .set('monat', monat.toString())
       .set('kategorie', kategorie);
-    return this.http.get<{ data: any[] }>(`${this.baseUrl}/manual-entry/data`, { params });
+    return this.http.get<ManualEntryDataResponse>(`${this.baseUrl}/manual-entry/data`, { params });
   }
 
   saveManualEntry(station: string, jahr: number, monat: number, kategorie: string, entries: any[]): Observable<{ success: boolean; uploadId: string; message: string }> {

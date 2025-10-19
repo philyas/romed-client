@@ -130,6 +130,14 @@
             <span class="stat-value patienten-highlight">{{ getPatientenProPflegekraft() }}</span>
           </div>
         </div>
+
+        <div class="stat-item geleistete-phk-stat" *ngIf="selectedKategorie() === 'PFK' && geleistetePhkStunden() !== null">
+          <mat-icon>work</mat-icon>
+          <div class="stat-content">
+            <span class="stat-label">⌀ Geleistete AZ PHK</span>
+            <span class="stat-value geleistete-phk-highlight">{{ getGeleistetePhkStundenFormatted() }}</span>
+          </div>
+        </div>
       </div>
     </mat-card-content>
   </mat-card>
@@ -158,6 +166,11 @@
           <div class="calc-item">
             <span class="calc-label">Patienten/Pflegekraft:</span>
             <span class="calc-value highlight">{{ getPatientenProPflegekraft() }}</span>
+          </div>
+          <div class="calc-separator" *ngIf="geleistetePhkStunden() !== null">|</div>
+          <div class="calc-item" *ngIf="geleistetePhkStunden() !== null">
+            <span class="calc-label">Geleistete AZ PHK:</span>
+            <span class="calc-value geleistete-phk">{{ getGeleistetePhkStundenFormatted() }}</span>
           </div>
         </div>
       </div>
@@ -192,6 +205,7 @@
               <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">Gesamt PFK+PHK</th>
               <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">PHK End</th>
               <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">PHK Anrechenbar</th>
+              <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column geleistete-phk-column">Geleistete AZ PHK in Std</th>
             </tr>
           </thead>
           <tbody>
@@ -235,6 +249,11 @@
               </td>
               <td *ngIf="selectedKategorie() === 'PFK'" class="phk-value-cell highlight">
                 <strong>{{ getPhkValue(entry, 'phkAnrechenbar') }}h</strong>
+              </td>
+              <td *ngIf="selectedKategorie() === 'PFK'" class="phk-value-cell geleistete-phk-cell">
+                <span class="geleistete-phk-value">
+                  {{ getPhkStundenForTag(entry.tag) }}
+                </span>
               </td>
             </tr>
           </tbody>

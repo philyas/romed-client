@@ -255,6 +255,25 @@
           font-weight: 800;
         }
       }
+
+      &.geleistete-phk-stat {
+        background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+        border: 2px solid #ffc107;
+
+        mat-icon {
+          color: #f57f17;
+        }
+
+        .stat-label {
+          color: #e65100;
+        }
+
+        .stat-value.geleistete-phk-highlight {
+          color: #e65100;
+          font-size: 24px;
+          font-weight: 800;
+        }
+      }
     }
   }
 
@@ -329,6 +348,16 @@
               border: 1px solid #2196f3;
               font-size: 16px;
             }
+
+            &.geleistete-phk {
+              background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+              padding: 4px 10px;
+              border-radius: 4px;
+              color: #e65100;
+              border: 1px solid #ffc107;
+              font-size: 16px;
+              font-weight: 700;
+            }
           }
         }
 
@@ -398,6 +427,11 @@
           &.phk-column {
             background: rgba(255, 255, 255, 0.1);
             border-left: 2px solid rgba(255, 255, 255, 0.3);
+          }
+
+          &.geleistete-phk-column {
+            background: rgba(255, 193, 7, 0.2);
+            border-left: 2px solid rgba(255, 193, 7, 0.5);
           }
         }
       }
@@ -495,6 +529,24 @@
 
           strong {
             color: #1b5e20;
+          }
+        }
+
+        &.geleistete-phk-cell {
+          background: rgba(255, 193, 7, 0.1);
+          border-left: 1px solid rgba(255, 193, 7, 0.3);
+          color: #e65100;
+          font-weight: 600;
+
+          .geleistete-phk-value {
+            color: #e65100;
+            font-weight: 700;
+            font-size: 14px;
+          }
+
+          .no-data-text {
+            color: #999;
+            font-style: italic;
           }
         }
       }
