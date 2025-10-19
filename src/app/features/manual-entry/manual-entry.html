@@ -206,6 +206,7 @@
               <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">PHK End</th>
               <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">PHK Anrechenbar</th>
               <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column geleistete-phk-column">Geleistete AZ PHK in Std</th>
+              <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column tatsaechlich-column">tatsächl. Anrechenbar</th>
             </tr>
           </thead>
           <tbody>
@@ -253,6 +254,11 @@
               <td *ngIf="selectedKategorie() === 'PFK'" class="phk-value-cell geleistete-phk-cell">
                 <span class="geleistete-phk-value">
                   {{ getPhkStundenForTag(entry.tag) }}
+                </span>
+              </td>
+              <td *ngIf="selectedKategorie() === 'PFK'" class="phk-value-cell tatsaechlich-cell">
+                <span class="tatsaechlich-value">
+                  {{ getTatsaechlichAnrechenbarForTag(entry) }}
                 </span>
               </td>
             </tr>

@@ -23,6 +23,13 @@ interface DayEntry {
   phkAnrechenbar?: number;
 }
 
+interface GeleistetePhkStunden {
+  durchschnitt: number;
+  stunden: number;
+  minuten: number;
+  anzahlTageMitDaten: number;
+}
+
 @Component({
   selector: 'app-manual-entry-nacht',
   imports: [
@@ -64,6 +71,17 @@ export class ManualEntryNacht {
   
   // Durchschnittswerte (aus Backend Tag=0)
   durchschnittPhkAnrechenbar = signal<number | null>(null);
+  
+  // Geleistete PHK-Stunden (für PFK-Ansicht)
+  geleistetePhkStunden = signal<GeleistetePhkStunden | null>(null);
+  
+  // PHK-Tageswerte (für jeden Tag des Monats)
+  phkTageswerte = signal<Array<{
+    tag: number;
+    stunden: number;
+    minuten: number;
+    gesamtDezimal: number;
+  }> | null>(null);
   
   // Available categories
   kategorien = [
@@ -148,6 +166,20 @@ export class ManualEntryNacht {
             this.durchschnittPhkAnrechenbar.set(null);
           }
           
+          // Lade geleistete PHK-Stunden (nur bei PFK-Kategorie)
+          if (kategorie === 'PFK' && response.geleistetePhkStunden) {
+            this.geleistetePhkStunden.set(response.geleistetePhkStunden);
+          } else {
+            this.geleistetePhkStunden.set(null);
+          }
+          
+          // Lade PHK-Tageswerte (nur bei PFK-Kategorie)
+          if (kategorie === 'PFK' && response.phkTageswerte) {
+            this.phkTageswerte.set(response.phkTageswerte);
+          } else {
+            this.phkTageswerte.set(null);
+          }
+          
           // Load existing data (filter out Durchschnitt entry with Tag=0)
           const dataEntries = response.data.filter(d => d.Tag > 0);
           const days = this.daysInMonth();
@@ -175,6 +207,8 @@ export class ManualEntryNacht {
           // No data exists, initialize empty
           this.initializeEmptyEntries();
           this.durchschnittPhkAnrechenbar.set(null);
+          this.geleistetePhkStunden.set(null);
+          this.phkTageswerte.set(null);
         }
         this.loading.set(false);
       },
@@ -182,6 +216,8 @@ export class ManualEntryNacht {
         console.error('Error loading data:', err);
         this.initializeEmptyEntries();
         this.durchschnittPhkAnrechenbar.set(null);
+        this.geleistetePhkStunden.set(null);
+        this.phkTageswerte.set(null);
         this.loading.set(false);
       }
     });
@@ -407,6 +443,50 @@ export class ManualEntryNacht {
     const patientenProPflegekraft = examPflege / konstante;
     
     return patientenProPflegekraft.toFixed(4);
+  }
+
+  getGeleistetePhkStundenFormatted(): string | null {
+    const geleistetePhk = this.geleistetePhkStunden();
+    if (!geleistetePhk) return null;
+    
+    return `${geleistetePhk.stunden}:${geleistetePhk.minuten.toString().padStart(2, '0')}h`;
+  }
+
+  getGeleistetePhkStundenDezimal(): number | null {
+    const geleistetePhk = this.geleistetePhkStunden();
+    if (!geleistetePhk) return null;
+    
+    return geleistetePhk.durchschnitt;
+  }
+
+  getPhkStundenForTag(tag: number): string {
+    const phkTageswerte = this.phkTageswerte();
+    if (!phkTageswerte) return '-';
+    
+    const tagData = phkTageswerte.find(t => t.tag === tag);
+    if (!tagData) return '-';
+    
+    return `${tagData.stunden}:${tagData.minuten.toString().padStart(2, '0')}h`;
+  }
+
+  getTatsaechlichAnrechenbarForTag(entry: DayEntry): string {
+    // Finde die PHK-Stunden für diesen Tag
+    const phkTageswerte = this.phkTageswerte();
+    if (!phkTageswerte) return '-';
+    
+    const tagData = phkTageswerte.find(t => t.tag === entry.tag);
+    if (!tagData) return '-';
+    
+    // PHK Anrechenbar für diesen Tag
+    const phkAnrechenbar = entry.phkAnrechenbar || 0;
+    
+    // Tatsächliche PHK-Stunden für diesen Tag (in Dezimal)
+    const phkStundenDezimal = tagData.gesamtDezimal;
+    
+    // Regel: Wenn PHK-Stunden >= PHK Anrechenbar, dann nimm PHK Anrechenbar, sonst PHK-Stunden
+    const tatsaechlichAnrechenbar = phkStundenDezimal >= phkAnrechenbar ? phkAnrechenbar : phkStundenDezimal;
+    
+    return tatsaechlichAnrechenbar.toFixed(2) + 'h';
   }
 }
 

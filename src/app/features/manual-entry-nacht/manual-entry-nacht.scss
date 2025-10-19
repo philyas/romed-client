@@ -399,6 +399,16 @@
             background: rgba(255, 255, 255, 0.1);
             border-left: 2px solid rgba(255, 255, 255, 0.3);
           }
+
+          &.geleistete-phk-column {
+            background: rgba(255, 193, 7, 0.2);
+            border-left: 2px solid rgba(255, 193, 7, 0.5);
+          }
+
+          &.tatsaechlich-column {
+            background: rgba(76, 175, 80, 0.2);
+            border-left: 2px solid rgba(76, 175, 80, 0.5);
+          }
         }
       }
 
@@ -495,6 +505,37 @@
 
           strong {
             color: #1b5e20;
+          }
+        }
+
+        &.geleistete-phk-cell {
+          background: rgba(255, 193, 7, 0.1);
+          border-left: 1px solid rgba(255, 193, 7, 0.3);
+          color: #e65100;
+          font-weight: 600;
+
+          .geleistete-phk-value {
+            color: #e65100;
+            font-weight: 700;
+            font-size: 14px;
+          }
+
+          .no-data-text {
+            color: #999;
+            font-style: italic;
+          }
+        }
+
+        &.tatsaechlich-cell {
+          background: rgba(76, 175, 80, 0.1);
+          border-left: 1px solid rgba(76, 175, 80, 0.3);
+          color: #2e7d32;
+          font-weight: 600;
+
+          .tatsaechlich-value {
+            color: #1b5e20;
+            font-weight: 700;
+            font-size: 14px;
           }
         }
       }

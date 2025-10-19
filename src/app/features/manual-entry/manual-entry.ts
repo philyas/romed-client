@@ -368,7 +368,7 @@ export class ManualEntry {
   }
 
   getGesamtAnrechenbar(): string | null {
-    if (this.selectedKategorie() !== 'PFK' || this.durchschnittPhkAnrechenbar() === null) {
+    if (this.selectedKategorie() !== 'PFK' || this.phkTageswerte() === null) {
       return null;
     }
 
@@ -390,9 +390,28 @@ export class ManualEntry {
     const avgMinutesPfk = totalMinutes / daysWithData;
     const avgHoursPfk = avgMinutesPfk / 60;
     
-    // Addiere PHK Anrechenbar
-    const phkAnrechenbar = this.durchschnittPhkAnrechenbar() || 0;
-    const gesamt = avgHoursPfk + phkAnrechenbar;
+    // Berechne durchschnittliche tatsächlich anrechenbare PHK-Stunden
+    const phkTageswerte = this.phkTageswerte();
+    let totalTatsaechlichAnrechenbar = 0;
+    let daysWithPhkData = 0;
+    
+    entries.forEach(entry => {
+      const phkAnrechenbar = entry.phkAnrechenbar || 0;
+      const tagData = phkTageswerte?.find(t => t.tag === entry.tag);
+      
+      if (tagData) {
+        const phkStundenDezimal = tagData.gesamtDezimal;
+        // Regel: Wenn PHK-Stunden >= PHK Anrechenbar, dann nimm PHK Anrechenbar, sonst PHK-Stunden
+        const tatsaechlichAnrechenbar = phkStundenDezimal >= phkAnrechenbar ? phkAnrechenbar : phkStundenDezimal;
+        totalTatsaechlichAnrechenbar += tatsaechlichAnrechenbar;
+        daysWithPhkData++;
+      }
+    });
+    
+    if (daysWithPhkData === 0) return null;
+    
+    const avgTatsaechlichAnrechenbar = totalTatsaechlichAnrechenbar / daysWithPhkData;
+    const gesamt = avgHoursPfk + avgTatsaechlichAnrechenbar;
     
     // Konvertiere zurück zu Stunden:Minuten
     const stunden = Math.floor(gesamt);
@@ -402,7 +421,7 @@ export class ManualEntry {
   }
 
   getExamPflege(): number | null {
-    if (this.selectedKategorie() !== 'PFK' || this.durchschnittPhkAnrechenbar() === null) {
+    if (this.selectedKategorie() !== 'PFK' || this.phkTageswerte() === null) {
       return null;
     }
 
@@ -424,9 +443,28 @@ export class ManualEntry {
     const avgMinutesPfk = totalMinutes / daysWithData;
     const avgHoursPfk = avgMinutesPfk / 60;
     
-    // Addiere PHK Anrechenbar
-    const phkAnrechenbar = this.durchschnittPhkAnrechenbar() || 0;
-    const gesamtAnrechenbar = avgHoursPfk + phkAnrechenbar;
+    // Berechne durchschnittliche tatsächlich anrechenbare PHK-Stunden
+    const phkTageswerte = this.phkTageswerte();
+    let totalTatsaechlichAnrechenbar = 0;
+    let daysWithPhkData = 0;
+    
+    entries.forEach(entry => {
+      const phkAnrechenbar = entry.phkAnrechenbar || 0;
+      const tagData = phkTageswerte?.find(t => t.tag === entry.tag);
+      
+      if (tagData) {
+        const phkStundenDezimal = tagData.gesamtDezimal;
+        // Regel: Wenn PHK-Stunden >= PHK Anrechenbar, dann nimm PHK Anrechenbar, sonst PHK-Stunden
+        const tatsaechlichAnrechenbar = phkStundenDezimal >= phkAnrechenbar ? phkAnrechenbar : phkStundenDezimal;
+        totalTatsaechlichAnrechenbar += tatsaechlichAnrechenbar;
+        daysWithPhkData++;
+      }
+    });
+    
+    if (daysWithPhkData === 0) return null;
+    
+    const avgTatsaechlichAnrechenbar = totalTatsaechlichAnrechenbar / daysWithPhkData;
+    const gesamtAnrechenbar = avgHoursPfk + avgTatsaechlichAnrechenbar;
     
     // Exam. Pflege = Gesamt Anrechenbar / 16
     const examPflege = gesamtAnrechenbar / 16;
@@ -474,6 +512,26 @@ export class ManualEntry {
     if (!tagData) return '-';
     
     return `${tagData.stunden}:${tagData.minuten.toString().padStart(2, '0')}h`;
+  }
+
+  getTatsaechlichAnrechenbarForTag(entry: DayEntry): string {
+    // Finde die PHK-Stunden für diesen Tag
+    const phkTageswerte = this.phkTageswerte();
+    if (!phkTageswerte) return '-';
+    
+    const tagData = phkTageswerte.find(t => t.tag === entry.tag);
+    if (!tagData) return '-';
+    
+    // PHK Anrechenbar für diesen Tag
+    const phkAnrechenbar = entry.phkAnrechenbar || 0;
+    
+    // Tatsächliche PHK-Stunden für diesen Tag (in Dezimal)
+    const phkStundenDezimal = tagData.gesamtDezimal;
+    
+    // Regel: Wenn PHK-Stunden >= PHK Anrechenbar, dann nimm PHK Anrechenbar, sonst PHK-Stunden
+    const tatsaechlichAnrechenbar = phkStundenDezimal >= phkAnrechenbar ? phkAnrechenbar : phkStundenDezimal;
+    
+    return tatsaechlichAnrechenbar.toFixed(2) + 'h';
   }
 }
 
