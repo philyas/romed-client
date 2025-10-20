@@ -12,6 +12,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { Api } from '../../core/api';
+import { Router } from '@angular/router';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 
 interface DayEntry {
   tag: number;
@@ -44,13 +46,15 @@ interface GeleistetePhkStunden {
     MatChipsModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
-    MatDialogModule
+    MatDialogModule,
+    MatButtonToggleModule
   ],
   templateUrl: './manual-entry.html',
   styleUrl: './manual-entry.scss'
 })
 export class ManualEntry {
   private api = inject(Api);
+  private router = inject(Router);
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
 
@@ -129,6 +133,12 @@ export class ManualEntry {
         this.initializeEmptyEntries();
       }
     });
+  }
+
+  onShiftToggle(value: 'tag' | 'nacht') {
+    if (value === 'nacht') {
+      this.router.navigate(['/manual-entry-nacht']);
+    }
   }
 
   loadStations() {

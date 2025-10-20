@@ -48,6 +48,49 @@
       display: flex;
       gap: 16px;
       align-items: center;
+    }
+
+    // Tag/Nacht Toggle Styling
+    mat-button-toggle-group {
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      
+      mat-button-toggle {
+        min-width: 120px;
+        height: 48px;
+        border: none;
+        background: #f5f5f5;
+        color: #666;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        
+        mat-icon {
+          margin-right: 8px;
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
+        }
+        
+        &:hover {
+          background: #e0e0e0;
+          color: #333;
+        }
+        
+        &.mat-button-toggle-checked {
+          background: linear-gradient(135deg, #00acc1 0%, #0097a7 100%);
+          color: white;
+          font-weight: 600;
+          box-shadow: 0 2px 8px rgba(0, 172, 193, 0.3);
+          
+          mat-icon {
+            color: white;
+          }
+        }
+      }
+    }
+
+    .selection-row {
       margin-bottom: 16px;
 
       &:last-child {
@@ -98,33 +141,45 @@
           align-items: center;
           justify-content: center;
           gap: 8px;
-          padding: 12px 24px;
+          padding: 16px 24px;
           font-size: 15px;
           font-weight: 600;
-          transition: all 0.2s ease;
+          transition: all 0.3s ease;
+          border-radius: 8px;
+          min-height: 56px;
 
           &:not(.active) {
-            background: white;
+            background: #f5f5f5;
             color: #666;
             border: 2px solid #e0e0e0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 
             &:hover {
-              border-color: #0066cc;
-              color: #0066cc;
-              transform: translateY(-1px);
-              box-shadow: 0 2px 8px rgba(0, 102, 204, 0.15);
+              border-color: #00acc1;
+              color: #00acc1;
+              background: #f0f8ff;
+              transform: translateY(-2px);
+              box-shadow: 0 4px 12px rgba(0, 172, 193, 0.2);
             }
           }
 
           &.active {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+            background: linear-gradient(135deg, #00acc1 0%, #0097a7 100%);
+            color: white;
+            border: 2px solid #00acc1;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 16px rgba(0, 172, 193, 0.4);
+            font-weight: 700;
+
+            mat-icon {
+              color: white;
+            }
           }
 
           mat-icon {
-            font-size: 20px;
-            width: 20px;
-            height: 20px;
+            font-size: 22px;
+            width: 22px;
+            height: 22px;
           }
         }
       }

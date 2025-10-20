@@ -7,8 +7,7 @@
       <div class="nav-links">
         <a [routerLink]="['/dashboard']" routerLinkActive="active">Dashboard</a>
         <a [routerLink]="['/upload']" routerLinkActive="active">Upload</a>
-        <a [routerLink]="['/manual-entry']" routerLinkActive="active">Manuelle Eingabe Tag</a>
-        <a [routerLink]="['/manual-entry-nacht']" routerLinkActive="active">Manuelle Eingabe Nacht</a>
+        <a [routerLink]="['/manual-entry']" [class.active]="isManualEntryActive()">Manuelle Eingabe</a>
       </div>
     </div>
   </nav>
