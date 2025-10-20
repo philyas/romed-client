@@ -97,7 +97,7 @@ export class PatientenPflegekraftCharts implements OnInit {
   private api = inject(Api);
 
   stations = signal<string[]>([]);
-  selectedStation = signal<string>('');
+  selectedStation = signal<string>(''); // will default to BABBELEG if vorhanden
   selectedYear = signal<number>(new Date().getFullYear());
 
   availableYears = [2023, 2024, 2025, 2026, 2027];
@@ -146,10 +146,24 @@ export class PatientenPflegekraftCharts implements OnInit {
       this.api.getManualEntryNachtStations().toPromise()
     ]).then(([day, night]) => {
       const set = new Set<string>([...(day?.stations || []), ...(night?.stations || [])]);
-      this.stations.set(Array.from(set).sort());
+      const list = Array.from(set).sort();
+      this.stations.set(list);
+
+      // Default auswählen: BABBELEG, wenn vorhanden
+      if (!this.selectedStation() && list.includes('BABBELEG')) {
+        this.selectedStation.set('BABBELEG');
+        this.loadAveragesAndData();
+      }
     }).catch(() => {
       // Fallback: nur Tag
-      this.api.getManualEntryStations().subscribe(res => this.stations.set(res.stations));
+      this.api.getManualEntryStations().subscribe(res => {
+        const list = res.stations || [];
+        this.stations.set(list);
+        if (!this.selectedStation() && list.includes('BABBELEG')) {
+          this.selectedStation.set('BABBELEG');
+          this.loadAveragesAndData();
+        }
+      });
     });
   }
 

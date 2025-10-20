@@ -27,6 +27,20 @@
         </mat-button-toggle-group>
       </div>
 
+      <!-- Shift times (Tag/Nacht) -->
+      <div class="selection-row shift-times">
+        <mat-chip-set class="shift-chips">
+          <mat-chip>
+            <mat-icon>schedule</mat-icon>
+            Tag: 06:00–22:00 (16h)
+          </mat-chip>
+          <mat-chip color="primary" selected>
+            <mat-icon>schedule</mat-icon>
+            Nacht: 22:00–06:00 (8h)
+          </mat-chip>
+        </mat-chip-set>
+      </div>
+
       <div class="selection-row">
         <!-- Station Dropdown -->
         <mat-form-field appearance="outline" class="full-width">
@@ -109,6 +123,15 @@
           <div class="stat-content">
             <span class="stat-label">Tage im Monat</span>
             <span class="stat-value">{{ daysInMonth() }} Tage</span>
+          </div>
+        </div>
+
+        <!-- PHK-Anteil (nur PFK) -->
+        <div class="stat-item" *ngIf="selectedKategorie() === 'PFK'">
+          <mat-icon>percent</mat-icon>
+          <div class="stat-content">
+            <span class="stat-label">PHK-Anteil</span>
+            <span class="stat-value">90%</span>
           </div>
         </div>
 

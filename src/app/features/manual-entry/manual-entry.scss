@@ -49,6 +49,28 @@
       gap: 16px;
       align-items: center;
     }
+    // Shift times alignment
+    .shift-times {
+      .shift-chips {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      mat-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 36px;
+        line-height: 36px;
+
+        mat-icon {
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+        }
+      }
+    }
 
     // Tag/Nacht Toggle Styling
     mat-button-toggle-group {
