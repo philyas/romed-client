@@ -15,10 +15,11 @@ import { MinaMitaCharts } from '../mina-mita-charts/mina-mita-charts';
 import { PflegestufenstatistikCharts } from '../pflegestufenstatistik-charts/pflegestufenstatistik-charts';
 import { SaldenZeitkontenCharts } from '../salden-zeitkonten-charts/salden-zeitkonten-charts';
 import { MitteilungenBettenCharts } from '../mitteilungen-betten-charts/mitteilungen-betten-charts';
+import { PatientenPflegekraftCharts } from '../patienten-pflegekraft-charts/patienten-pflegekraft-charts';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule, NgIf, MatCardModule, MatChipsModule, MatIconModule, MatButtonModule, MatExpansionModule, MatDialogModule, RouterModule, MitternachtsstatistikCharts, COCharts, MinaMitaCharts, PflegestufenstatistikCharts, SaldenZeitkontenCharts, MitteilungenBettenCharts],
+  imports: [CommonModule, NgIf, MatCardModule, MatChipsModule, MatIconModule, MatButtonModule, MatExpansionModule, MatDialogModule, RouterModule, MitternachtsstatistikCharts, COCharts, MinaMitaCharts, PflegestufenstatistikCharts, SaldenZeitkontenCharts, MitteilungenBettenCharts, PatientenPflegekraftCharts],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss'
 })
