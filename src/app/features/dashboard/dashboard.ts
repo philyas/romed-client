@@ -34,6 +34,8 @@ export class Dashboard implements AfterViewInit {
   globalSelectedStation = signal<string>('all');
   mitternachtsstatistikData = signal<MitternachtsstatistikResponse | null>(null);
   highlightedSchemaId = signal<string | null>(null);
+  // Show PPK charts only when manual-entry data exists (day or night)
+  hasPatientenPflegekraftData = signal<boolean>(false);
 
   // Computed signals for schema-specific data
   hasCOData = computed(() => {
@@ -87,6 +89,16 @@ export class Dashboard implements AfterViewInit {
     this.api.getData().subscribe(res => this.data.set(res));
     this.api.getStatistics().subscribe(stats => this.statistics.set(stats.statistics));
     this.loadMitternachtsstatistik();
+    // Probe availability of manual-entry data (day or night)
+    Promise.all([
+      this.api.getManualEntryStations().toPromise().catch(() => ({ stations: [] })),
+      this.api.getManualEntryNachtStations().toPromise().catch(() => ({ stations: [] }))
+    ]).then(([day, night]) => {
+      const hasAny = (day?.stations?.length || 0) > 0 || (night?.stations?.length || 0) > 0;
+      this.hasPatientenPflegekraftData.set(hasAny);
+    }).catch(() => {
+      this.hasPatientenPflegekraftData.set(false);
+    });
   }
 
   loadMitternachtsstatistik() {

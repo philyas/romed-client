@@ -59,7 +59,9 @@
     </section>
 
     <!-- Patienten/Pflegekraft Charts Section -->
-    <section class="pp-charts-section">
+    <section 
+      class="pp-charts-section"
+      *ngIf="hasPatientenPflegekraftData()">
       <app-patienten-pflegekraft-charts></app-patienten-pflegekraft-charts>
     </section>
 
