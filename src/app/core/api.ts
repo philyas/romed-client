@@ -242,4 +242,31 @@ export class Api {
   getStationMinaAverage(station: string): Observable<{ station: string; minaDurchschnitt: number | null; message?: string }> {
     return this.http.get<{ station: string; minaDurchschnitt: number | null; message?: string }>(`${this.baseUrl}/manual-entry-nacht/station-mina-average/${encodeURIComponent(station)}`);
   }
+
+  // Kostenstellen Mapping
+  getKostenstellenMapping(): Observable<{ success: boolean; data: any[]; count: number }> {
+    return this.http.get<{ success: boolean; data: any[]; count: number }>(`${this.baseUrl}/kostenstellen`);
+  }
+
+  getKostenstelle(kostenstelle: string): Observable<{ success: boolean; data: any }> {
+    return this.http.get<{ success: boolean; data: any }>(`${this.baseUrl}/kostenstellen/${encodeURIComponent(kostenstelle)}`);
+  }
+
+  saveKostenstelle(data: { kostenstelle: string; stations: string[]; standorte: string[]; standortnummer?: number; ik?: number; paediatrie?: string }): Observable<{ success: boolean; message: string; data: any }> {
+    return this.http.post<{ success: boolean; message: string; data: any }>(`${this.baseUrl}/kostenstellen`, data);
+  }
+
+  deleteKostenstelle(kostenstelle: string): Observable<{ success: boolean; message: string; deleted: string }> {
+    return this.http.delete<{ success: boolean; message: string; deleted: string }>(`${this.baseUrl}/kostenstellen/${encodeURIComponent(kostenstelle)}`);
+  }
+
+  importKostenstellenFromFile(file: File): Observable<{ success: boolean; message: string; imported: number; total: number }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<{ success: boolean; message: string; imported: number; total: number }>(`${this.baseUrl}/kostenstellen/import`, formData);
+  }
+
+  importKostenstellenFromSample(): Observable<{ success: boolean; message: string; imported: number }> {
+    return this.http.post<{ success: boolean; message: string; imported: number }>(`${this.baseUrl}/kostenstellen/import-sample`, {});
+  }
 }

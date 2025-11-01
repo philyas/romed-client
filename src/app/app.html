@@ -4,11 +4,39 @@
       <div class="nav-brand">
         <img src="/assets/romed-logo-removebg-preview.png" alt="RoMed Logo" class="nav-logo">
       </div>
-      <div class="nav-links">
-        <a [routerLink]="['/dashboard']" routerLinkActive="active">Dashboard</a>
-        <a [routerLink]="['/upload']" routerLinkActive="active">Upload</a>
-        <a [routerLink]="['/manual-entry']" [class.active]="isManualEntryActive()">Manuelle Eingabe</a>
+      
+      <!-- Desktop Navigation -->
+      <div class="nav-links desktop-nav">
+        <a [routerLink]="['/dashboard']" routerLinkActive="active" (click)="closeMenu()">Dashboard</a>
+        <a [routerLink]="['/upload']" routerLinkActive="active" (click)="closeMenu()">Upload</a>
+        <a [routerLink]="['/manual-entry']" [class.active]="isManualEntryActive()" (click)="closeMenu()">Manuelle Eingabe</a>
+        <a [routerLink]="['/configuration']" routerLinkActive="active" (click)="closeMenu()">Konfiguration</a>
       </div>
+
+      <!-- Mobile Burger Menu Button -->
+      <button mat-icon-button class="burger-menu-button" (click)="toggleMenu()" aria-label="Menu">
+        <mat-icon>{{ menuOpen() ? 'close' : 'menu' }}</mat-icon>
+      </button>
+    </div>
+
+    <!-- Mobile Navigation Menu -->
+    <div class="mobile-nav" [class.open]="menuOpen()">
+      <a [routerLink]="['/dashboard']" routerLinkActive="active" (click)="closeMenu()">
+        <mat-icon>dashboard</mat-icon>
+        Dashboard
+      </a>
+      <a [routerLink]="['/upload']" routerLinkActive="active" (click)="closeMenu()">
+        <mat-icon>upload_file</mat-icon>
+        Upload
+      </a>
+      <a [routerLink]="['/manual-entry']" [class.active]="isManualEntryActive()" (click)="closeMenu()">
+        <mat-icon>edit</mat-icon>
+        Manuelle Eingabe
+      </a>
+      <a [routerLink]="['/configuration']" routerLinkActive="active" (click)="closeMenu()">
+        <mat-icon>settings</mat-icon>
+        Konfiguration
+      </a>
     </div>
   </nav>
 

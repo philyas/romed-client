@@ -132,6 +132,67 @@ nav {
       }
     }
   }
+
+  // Burger Menu Button (mobile only)
+  .burger-menu-button {
+    display: none;
+    color: $primary-teal;
+
+    mat-icon {
+      font-size: 28px;
+      width: 28px;
+      height: 28px;
+    }
+  }
+
+  // Mobile Navigation Menu
+  .mobile-nav {
+    display: none;
+    flex-direction: column;
+    background: $pure-white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 16px 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+
+    &.open {
+      max-height: 500px;
+      transition: max-height 0.3s ease-in;
+    }
+
+    a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 24px;
+      color: $primary-teal !important;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: all 0.2s ease;
+      border-left: 3px solid transparent;
+
+      mat-icon {
+        font-size: 24px;
+        width: 24px;
+        height: 24px;
+      }
+
+      &:hover {
+        background-color: rgba(0, 172, 193, 0.1);
+        border-left-color: $primary-teal;
+      }
+
+      &.active {
+        background-color: rgba(0, 172, 193, 0.15);
+        border-left-color: $primary-teal;
+        font-weight: 600;
+      }
+    }
+  }
 }
 
 // Main content area with medical styling
@@ -688,69 +749,75 @@ pre {
 
   nav {
     .nav-container {
-      flex-direction: column !important;
+      flex-direction: row !important;
       gap: 16px !important;
       padding: 16px !important;
+      justify-content: space-between;
     }
 
     .nav-brand {
-      text-align: center;
+      text-align: left;
       font-size: 22px;
       font-weight: 500;
-      flex-direction: column;
-      gap: 8px;
+      flex-direction: row;
+      gap: 12px;
 
       .nav-logo {
         height: 65px;
       }
     }
 
-    .nav-links {
-      justify-content: center;
-
-      a {
-        display: inline-block !important;
-        padding: 10px 16px !important;
-        font-size: 13px !important;
-      }
-    }
-  }
-
-  .upload {
-    padding: 24px 16px !important;
-    border-radius: 16px !important;
-
-    h2 {
-      font-size: 24px !important;
+    // Hide desktop navigation on mobile
+    .nav-links.desktop-nav {
+      display: none !important;
     }
 
-    .upload-subtitle {
-      font-size: 14px !important;
+    // Show burger menu button on mobile
+    .burger-menu-button {
+      display: block !important;
     }
-  }
 
-  .dashboard {
-    .dashboard-header {
+    // Show mobile navigation when open
+    .mobile-nav {
+      display: flex !important;
+    }
+
+    .upload {
       padding: 24px 16px !important;
+      border-radius: 16px !important;
 
       h2 {
-        font-size: 28px !important;
+        font-size: 24px !important;
       }
 
-      .dashboard-subtitle {
-        font-size: 16px !important;
+      .upload-subtitle {
+        font-size: 14px !important;
       }
     }
 
-    .no-data {
-      padding: 40px 16px !important;
+    .dashboard {
+      .dashboard-header {
+        padding: 24px 16px !important;
 
-      .no-data-icon {
-        font-size: 48px !important;
+        h2 {
+          font-size: 28px !important;
+        }
+
+        .dashboard-subtitle {
+          font-size: 16px !important;
+        }
       }
 
-      h3 {
-        font-size: 20px !important;
+      .no-data {
+        padding: 40px 16px !important;
+
+        .no-data-icon {
+          font-size: 48px !important;
+        }
+
+        h3 {
+          font-size: 20px !important;
+        }
       }
     }
   }

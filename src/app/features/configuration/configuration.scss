@@ -1,0 +1,246 @@
+.configuration-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+
+  .config-card {
+    mat-card-header {
+      background: linear-gradient(135deg, #00acc1 0%, #0097a7 100%);
+      color: white;
+      padding: 24px;
+      border-radius: 8px 8px 0 0;
+
+      mat-card-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 24px;
+        font-weight: 600;
+        margin: 0;
+
+        mat-icon {
+          font-size: 28px;
+          width: 28px;
+          height: 28px;
+        }
+      }
+    }
+
+    mat-card-content {
+      padding: 24px;
+    }
+
+    .tab-content {
+      padding: 24px 0;
+      
+      p {
+        color: #666;
+        font-size: 16px;
+        margin: 0;
+      }
+    }
+
+    .kostenstellen-tab {
+      .kostenstellen-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 2px solid #e0e0e0;
+
+        h3 {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin: 0;
+          font-size: 20px;
+          font-weight: 600;
+          color: #00acc1;
+
+          mat-icon {
+            font-size: 24px;
+            width: 24px;
+            height: 24px;
+          }
+        }
+
+        .header-actions {
+          display: flex;
+          gap: 12px;
+        }
+      }
+
+      .upload-section {
+        background: linear-gradient(135deg, #f0f7ff 0%, #e3f2fd 100%);
+        border-radius: 8px;
+        border: 2px dashed #00acc1;
+        padding: 20px;
+        margin-bottom: 24px;
+
+        h4 {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin: 0 0 12px 0;
+          font-size: 18px;
+          font-weight: 600;
+          color: #00acc1;
+
+          mat-icon {
+            font-size: 22px;
+            width: 22px;
+            height: 22px;
+          }
+        }
+
+        p {
+          color: #666;
+          font-size: 14px;
+          margin: 0 0 16px 0;
+        }
+
+        .upload-controls {
+          display: flex;
+          gap: 12px;
+          align-items: center;
+          flex-wrap: wrap;
+        }
+
+        .selected-file {
+          margin-top: 16px;
+          padding: 12px 16px;
+          background: white;
+          border-radius: 8px;
+          border: 2px solid #00acc1;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+
+          mat-icon {
+            color: #00acc1;
+          }
+
+          .file-size {
+            margin-left: auto;
+            color: #999;
+            font-size: 12px;
+          }
+        }
+      }
+
+      .table-section {
+        .table-header {
+          margin-bottom: 16px;
+
+          h4 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+
+            mat-icon {
+              font-size: 22px;
+              width: 22px;
+              height: 22px;
+            }
+          }
+        }
+
+        .loading-spinner {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 48px;
+          gap: 16px;
+
+          p {
+            color: #666;
+            font-size: 16px;
+          }
+        }
+
+        .table-container {
+          overflow-x: auto;
+          background: white;
+          border-radius: 8px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .kostenstellen-table {
+          width: 100%;
+          font-size: 14px;
+
+          th {
+            background: linear-gradient(135deg, #00acc1 0%, #0097a7 100%);
+            color: white;
+            font-weight: 600;
+            padding: 16px 12px;
+          }
+
+          td {
+            padding: 12px;
+            border-bottom: 1px solid #e9ecef;
+
+            strong {
+              color: #00acc1;
+              font-weight: 600;
+            }
+
+            mat-chip-set {
+              display: flex;
+              gap: 4px;
+              flex-wrap: wrap;
+
+              mat-chip {
+                font-size: 12px;
+                height: 24px;
+              }
+            }
+
+            .empty-text {
+              color: #999;
+              font-style: italic;
+            }
+          }
+
+          tr:hover {
+            background-color: #f0f7ff;
+          }
+        }
+
+        .empty-state {
+          text-align: center;
+          padding: 48px 24px;
+          background: #f8f9fa;
+          border-radius: 8px;
+          border: 2px dashed #ccc;
+
+          mat-icon {
+            font-size: 64px;
+            width: 64px;
+            height: 64px;
+            color: #ccc;
+            margin-bottom: 16px;
+          }
+
+          p {
+            color: #666;
+            font-size: 16px;
+            margin: 8px 0;
+
+            &.hint {
+              font-size: 14px;
+              color: #999;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+

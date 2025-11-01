@@ -1,0 +1,180 @@
+<div class="configuration-container">
+  <mat-card class="config-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>settings</mat-icon>
+        Konfiguration
+      </mat-card-title>
+    </mat-card-header>
+    
+    <mat-card-content>
+      <mat-tab-group>
+        <mat-tab label="Kostenstellenmapping">
+          <div class="tab-content kostenstellen-tab">
+            <div class="kostenstellen-header">
+              <h3>
+                <mat-icon>account_tree</mat-icon>
+                Kostenstellenmapping
+              </h3>
+              <div class="header-actions">
+                <button mat-raised-button color="primary" (click)="importFromSample()" [disabled]="loading()">
+                  <mat-icon>download</mat-icon>
+                  {{ loading() ? 'Lädt...' : 'Aus Beispieldatei importieren' }}
+                </button>
+              </div>
+            </div>
+
+            <!-- File Upload Section -->
+            <div class="upload-section">
+              <h4>
+                <mat-icon>upload_file</mat-icon>
+                Excel-Datei importieren
+              </h4>
+              <p>Importieren Sie eine Excel-Datei (.xlsx) mit Kostenstellenmapping-Daten</p>
+              
+              <div class="upload-controls">
+                <input 
+                  type="file" 
+                  accept=".xlsx,.xls" 
+                  (change)="onFileSelected($event)"
+                  style="display: none"
+                  #fileInput>
+                
+                <button mat-raised-button (click)="fileInput.click()">
+                  <mat-icon>attach_file</mat-icon>
+                  Datei auswählen
+                </button>
+                
+                <button 
+                  mat-raised-button 
+                  color="primary" 
+                  (click)="importFromFile()" 
+                  [disabled]="!selectedFile() || loading()">
+                  <mat-icon>upload</mat-icon>
+                  {{ loading() ? 'Importiert...' : 'Importieren' }}
+                </button>
+                
+                <button 
+                  mat-button 
+                  (click)="clearSelectedFile()" 
+                  *ngIf="selectedFile()">
+                  <mat-icon>close</mat-icon>
+                  Abbrechen
+                </button>
+              </div>
+
+              <div class="selected-file" *ngIf="selectedFile()">
+                <mat-icon>description</mat-icon>
+                <span>{{ selectedFile()?.name }}</span>
+                <span class="file-size">({{ (selectedFile()?.size || 0) / 1024 | number:'1.0-0' }} KB)</span>
+              </div>
+            </div>
+
+            <!-- Data Table -->
+            <div class="table-section">
+              <div class="table-header">
+                <h4>
+                  <mat-icon>table_chart</mat-icon>
+                  Kostenstellen ({{ kostenstellen().length }})
+                </h4>
+              </div>
+
+              <div class="loading-spinner" *ngIf="loading()">
+                <mat-spinner diameter="40"></mat-spinner>
+                <p>Daten werden geladen...</p>
+              </div>
+
+              <div class="table-container" *ngIf="!loading() && kostenstellen().length > 0">
+                <table mat-table [dataSource]="dataSource" class="kostenstellen-table">
+                  <!-- Kostenstelle Column -->
+                  <ng-container matColumnDef="kostenstelle">
+                    <th mat-header-cell *matHeaderCellDef>Kostenstelle</th>
+                    <td mat-cell *matCellDef="let item">
+                      <strong>{{ item.kostenstelle }}</strong>
+                    </td>
+                  </ng-container>
+
+                  <!-- Stations Column -->
+                  <ng-container matColumnDef="stations">
+                    <th mat-header-cell *matHeaderCellDef>Stationen</th>
+                    <td mat-cell *matCellDef="let item">
+                      <mat-chip-set>
+                        <mat-chip *ngFor="let station of item.stations">{{ station }}</mat-chip>
+                        <span *ngIf="item.stations.length === 0" class="empty-text">-</span>
+                      </mat-chip-set>
+                    </td>
+                  </ng-container>
+
+                  <!-- Standorte Column -->
+                  <ng-container matColumnDef="standorte">
+                    <th mat-header-cell *matHeaderCellDef>Standorte</th>
+                    <td mat-cell *matCellDef="let item">
+                      <mat-chip-set>
+                        <mat-chip *ngFor="let standort of item.standorte">{{ standort }}</mat-chip>
+                        <span *ngIf="item.standorte.length === 0" class="empty-text">-</span>
+                      </mat-chip-set>
+                    </td>
+                  </ng-container>
+
+                  <!-- Standortnummer Column -->
+                  <ng-container matColumnDef="standortnummer">
+                    <th mat-header-cell *matHeaderCellDef>Standortnummer</th>
+                    <td mat-cell *matCellDef="let item">
+                      {{ item.standortnummer || '-' }}
+                    </td>
+                  </ng-container>
+
+                  <!-- IK Column -->
+                  <ng-container matColumnDef="ik">
+                    <th mat-header-cell *matHeaderCellDef>IK</th>
+                    <td mat-cell *matCellDef="let item">
+                      {{ item.ik || '-' }}
+                    </td>
+                  </ng-container>
+
+                  <!-- Pädiatrie Column -->
+                  <ng-container matColumnDef="paediatrie">
+                    <th mat-header-cell *matHeaderCellDef>Pädiatrie</th>
+                    <td mat-cell *matCellDef="let item">
+                      {{ item.paediatrie || '-' }}
+                    </td>
+                  </ng-container>
+
+                  <!-- Actions Column -->
+                  <ng-container matColumnDef="actions">
+                    <th mat-header-cell *matHeaderCellDef>Aktionen</th>
+                    <td mat-cell *matCellDef="let item">
+                      <button 
+                        mat-icon-button 
+                        color="warn" 
+                        (click)="deleteKostenstelle(item.kostenstelle)"
+                        matTooltip="Löschen">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </td>
+                  </ng-container>
+
+                  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                  <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+                </table>
+              </div>
+
+              <div class="empty-state" *ngIf="!loading() && kostenstellen().length === 0">
+                <mat-icon>info</mat-icon>
+                <p>Keine Kostenstellen vorhanden</p>
+                <p class="hint">Importieren Sie eine Excel-Datei oder laden Sie die Beispieldatei</p>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+        
+        <mat-tab label="Allgemein">
+          <div class="tab-content">
+            <p>Allgemeine Konfigurationseinstellungen</p>
+            <!-- Hier können später Konfigurationen hinzugefügt werden -->
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </mat-card-content>
+  </mat-card>
+</div>
