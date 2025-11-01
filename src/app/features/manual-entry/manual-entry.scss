@@ -48,6 +48,19 @@
       display: flex;
       gap: 16px;
       align-items: center;
+      
+      .full-width {
+        flex: 1;
+      }
+      
+      .delete-all-station-btn {
+        white-space: nowrap;
+        flex-shrink: 0;
+        
+        mat-icon {
+          margin-right: 4px;
+        }
+      }
     }
     // Shift times alignment
     .shift-times {
@@ -112,27 +125,19 @@
       }
     }
 
-    .selection-row {
-      margin-bottom: 16px;
+    mat-form-field {
+      flex: 1;
 
-      &:last-child {
-        margin-bottom: 0;
+      &.full-width {
+        flex: 2;
       }
+    }
 
-      mat-form-field {
-        flex: 1;
-
-        &.full-width {
-          flex: 2;
-        }
-      }
-
-      .toggle-btn, .add-btn {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        white-space: nowrap;
-      }
+    .toggle-btn, .add-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
     }
 
     .kategorie-selection {
@@ -203,6 +208,76 @@
             width: 22px;
             height: 22px;
           }
+        }
+      }
+    }
+
+    .upload-section {
+      margin-top: 24px;
+      padding: 20px;
+      background: linear-gradient(135deg, #f0f7ff 0%, #e3f2fd 100%);
+      border-radius: 8px;
+      border: 2px dashed #0066cc;
+
+      .upload-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+
+        mat-icon {
+          color: #0066cc;
+          font-size: 28px;
+          width: 28px;
+          height: 28px;
+        }
+
+        h3 {
+          margin: 0;
+          font-size: 18px;
+          font-weight: 600;
+          color: #0066cc;
+        }
+      }
+
+      .upload-description {
+        margin: 0 0 16px 0;
+        color: #666;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .upload-controls {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+
+        button {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+      }
+
+      .selected-file {
+        margin-top: 16px;
+        padding: 12px 16px;
+        background: white;
+        border-radius: 8px;
+        border: 2px solid #0066cc;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        mat-icon {
+          color: #0066cc;
+        }
+
+        .file-size {
+          margin-left: auto;
+          color: #666;
+          font-size: 12px;
         }
       }
     }
@@ -448,11 +523,15 @@
       .header-actions {
         display: flex;
         gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
 
         button {
           display: flex;
           align-items: center;
           gap: 8px;
+          white-space: nowrap;
+          flex-shrink: 0;
         }
       }
     }
@@ -594,6 +673,24 @@
           min-width: 70px;
           text-align: center;
         }
+      }
+
+      .action-cell {
+        width: 60px;
+        text-align: center;
+
+        button {
+          transition: all 0.2s ease;
+
+          &:hover {
+            transform: scale(1.1);
+          }
+        }
+      }
+
+      .action-column {
+        width: 60px;
+        text-align: center;
       }
 
       .phk-value-cell {

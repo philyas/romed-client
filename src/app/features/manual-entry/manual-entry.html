@@ -54,6 +54,18 @@
           <mat-icon matSuffix>business</mat-icon>
           <mat-hint>Stationen aus MiNa/MiTa-Bestände</mat-hint>
         </mat-form-field>
+        
+        <!-- Button zum Löschen aller Daten für diese Station -->
+        <button 
+          mat-raised-button 
+          color="warn" 
+          (click)="clearAllMonthsForStation()" 
+          [disabled]="!selectedStation() || saving()"
+          class="delete-all-station-btn">
+          <mat-icon>delete_forever</mat-icon>
+          <span *ngIf="!saving()">Alle Monate zurücksetzen</span>
+          <span *ngIf="saving()">Löscht...</span>
+        </button>
       </div>
 
       <!-- Year and Month Selection -->
@@ -93,6 +105,54 @@
             <mat-icon>{{ kat.value === 'PFK' ? 'verified' : 'support' }}</mat-icon>
             {{ kat.label }}
           </button>
+        </div>
+      </div>
+
+      <!-- File Upload Section -->
+      <div class="upload-section">
+        <mat-divider style="margin: 20px 0;"></mat-divider>
+        <div class="upload-header">
+          <mat-icon>cloud_upload</mat-icon>
+          <h3>Dienstplan-Excel hochladen</h3>
+        </div>
+        <p class="upload-description">
+          Laden Sie eine Dienstplan-Excel-Datei (DP9) hoch, um Arbeitszeiten automatisch zu importieren.
+        </p>
+        <div class="upload-controls">
+          <input 
+            #fileInput 
+            type="file" 
+            accept=".xlsx,.xls" 
+            (change)="onFileSelected($event)"
+            style="display: none;">
+          <button 
+            mat-stroked-button 
+            (click)="triggerFileSelect()"
+            [disabled]="uploading()">
+            <mat-icon>folder_open</mat-icon>
+            Datei auswählen
+          </button>
+          <button 
+            mat-raised-button 
+            color="primary"
+            (click)="uploadDienstplan()"
+            [disabled]="!selectedFile() || uploading()">
+            <mat-spinner *ngIf="uploading()" diameter="20" style="display: inline-block; margin-right: 8px;"></mat-spinner>
+            <mat-icon *ngIf="!uploading()">upload</mat-icon>
+            {{ uploading() ? 'Wird hochgeladen...' : 'Dienstplan hochladen' }}
+          </button>
+          <button 
+            mat-icon-button 
+            *ngIf="selectedFile()"
+            (click)="clearSelectedFile()"
+            color="warn">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        <div class="selected-file" *ngIf="selectedFile()">
+          <mat-icon>description</mat-icon>
+          <span>{{ selectedFile()?.name }}</span>
+          <span class="file-size">({{ ((selectedFile()?.size || 0) / 1024) | number:'1.0-1' }} KB)</span>
         </div>
       </div>
     </mat-card-content>
@@ -212,9 +272,14 @@
       </div>
       
       <div class="header-actions">
-        <button mat-button color="warn" (click)="clearAllEntries()">
+        <button mat-button color="warn" (click)="clearAllEntries()" [disabled]="saving()">
           <mat-icon>delete_sweep</mat-icon>
-          Alle löschen
+          <span *ngIf="!saving()">Alle {{ selectedKategorie() }} zurücksetzen</span>
+          <span *ngIf="saving()">Löscht...</span>
+        </button>
+        <button mat-button color="warn" (click)="clearAllStationData()" [disabled]="saving()">
+          <mat-icon>delete_forever</mat-icon>
+          {{ saving() ? 'Löscht...' : 'Alle Stunden (PFK + PHK) löschen' }}
         </button>
         <button mat-raised-button color="primary" (click)="saveData()" [disabled]="saving()">
           <mat-icon>save</mat-icon>
@@ -237,6 +302,7 @@
               <th>Stunden</th>
               <th>Minuten</th>
               <th>Gesamt</th>
+              <th class="action-column">Reset</th>
               <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">PFK Normal</th>
               <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">Gesamt PFK+PHK</th>
               <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">PHK End</th>
@@ -274,6 +340,16 @@
                 <span class="total-badge">
                   {{ entry.stunden }}:{{ entry.minuten.toString().padStart(2, '0') }}h
                 </span>
+              </td>
+              <td class="action-cell">
+                <button 
+                  mat-icon-button 
+                  color="warn" 
+                  (click)="resetSingleDay(i)"
+                  matTooltip="Tag zurücksetzen"
+                  *ngIf="entry.stunden > 0 || entry.minuten > 0">
+                  <mat-icon>refresh</mat-icon>
+                </button>
               </td>
               <td *ngIf="selectedKategorie() === 'PFK'" class="phk-value-cell">
                 {{ getPhkValue(entry, 'pfkNormal') }}

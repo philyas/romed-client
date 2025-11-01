@@ -567,6 +567,24 @@
         }
       }
 
+      .action-cell {
+        width: 60px;
+        text-align: center;
+
+        button {
+          transition: all 0.2s ease;
+
+          &:hover {
+            transform: scale(1.1);
+          }
+        }
+      }
+
+      .action-column {
+        width: 60px;
+        text-align: center;
+      }
+
       .phk-value-cell {
         text-align: center;
         font-family: 'Courier New', monospace;

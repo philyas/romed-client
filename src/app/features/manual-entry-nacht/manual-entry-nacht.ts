@@ -11,6 +11,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { Api } from '../../core/api';
 import { Router } from '@angular/router';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -47,7 +48,8 @@ interface GeleistetePhkStunden {
     MatProgressSpinnerModule,
     MatSnackBarModule,
     MatDialogModule,
-    MatButtonToggleModule
+    MatButtonToggleModule,
+    MatTooltipModule
   ],
   templateUrl: './manual-entry-nacht.html',
   styleUrl: './manual-entry-nacht.scss'
@@ -358,10 +360,55 @@ export class ManualEntryNacht {
   }
 
   clearAllEntries() {
-    if (confirm('Möchten Sie wirklich alle Einträge für diesen Monat löschen?')) {
-      this.initializeEmptyEntries();
-      this.saveData();
+    const station = this.selectedStation();
+    const year = this.selectedYear();
+    const month = this.selectedMonth();
+    const kategorie = this.selectedKategorie();
+    
+    if (!station) {
+      this.snackBar.open('Bitte wählen Sie eine Station aus', 'Schließen', { duration: 3000 });
+      return;
     }
+    
+    const confirmMessage = `Möchten Sie wirklich alle ${kategorie}-Einträge für ${this.getMonthName(month)} ${year} (${station}) - Nachtschicht löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden!`;
+    
+    if (confirm(confirmMessage)) {
+      this.saving.set(true);
+      
+      // Delete data from server
+      this.api.deleteManualEntryNacht(station, year, month, kategorie).subscribe({
+        next: (response) => {
+          this.saving.set(false);
+          this.snackBar.open('Alle Einträge wurden gelöscht', 'Schließen', { duration: 2000 });
+          
+          // Reset local entries
+          this.initializeEmptyEntries();
+          
+          // Clear related data
+          this.durchschnittPhkAnrechenbar.set(null);
+          this.geleistetePhkStunden.set(null);
+          this.phkTageswerte.set(null);
+        },
+        error: (err) => {
+          this.saving.set(false);
+          console.error('Error deleting entries:', err);
+          const errorMessage = err.error?.error || err.message || 'Fehler beim Löschen';
+          this.snackBar.open(errorMessage, 'Schließen', { duration: 3000 });
+        }
+      });
+    }
+  }
+
+  resetSingleDay(dayIndex: number) {
+    this.dayEntries.update(entries => {
+      const newEntries = [...entries];
+      newEntries[dayIndex] = {
+        ...newEntries[dayIndex],
+        stunden: 0,
+        minuten: 0
+      };
+      return newEntries;
+    });
   }
 
   // TrackBy function to prevent focus loss

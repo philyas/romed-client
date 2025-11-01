@@ -181,8 +181,29 @@ export class Api {
     return this.http.delete<{ success: boolean; message: string }>(`${this.baseUrl}/manual-entry/data`, { params });
   }
 
+  deleteAllManualEntry(station: string, jahr: number, monat: number): Observable<{ success: boolean; message: string; deletedCount: number }> {
+    const params = new HttpParams()
+      .set('station', station)
+      .set('jahr', jahr.toString())
+      .set('monat', monat.toString());
+    return this.http.delete<{ success: boolean; message: string; deletedCount: number }>(`${this.baseUrl}/manual-entry/data/all`, { params });
+  }
+
+  deleteAllManualEntryForStation(station: string): Observable<{ success: boolean; message: string; deletedCount: number; station: string }> {
+    const params = new HttpParams()
+      .set('station', station);
+    return this.http.delete<{ success: boolean; message: string; deletedCount: number; station: string }>(`${this.baseUrl}/manual-entry/data/station-all`, { params });
+  }
+
   getStationMitaAverage(station: string): Observable<{ station: string; mitaDurchschnitt: number | null; message?: string }> {
     return this.http.get<{ station: string; mitaDurchschnitt: number | null; message?: string }>(`${this.baseUrl}/manual-entry/station-mita-average/${encodeURIComponent(station)}`);
+  }
+
+  uploadDienstplan(file: File): Observable<{ success: boolean; message: string; uploaded: any[]; totalEntries: number }> {
+    const form = new FormData();
+    form.append('file', file);
+    form.append('schicht', 'tag'); // Default to tag, can be changed if needed
+    return this.http.post<{ success: boolean; message: string; uploaded: any[]; totalEntries: number }>(`${this.baseUrl}/manual-entry/upload-dienstplan`, form);
   }
 
   // Manuelle Stundeneingabe NACHT API

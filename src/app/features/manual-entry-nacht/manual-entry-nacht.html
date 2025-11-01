@@ -199,9 +199,9 @@
       </div>
       
       <div class="header-actions">
-        <button mat-button color="warn" (click)="clearAllEntries()">
+        <button mat-button color="warn" (click)="clearAllEntries()" [disabled]="saving()">
           <mat-icon>delete_sweep</mat-icon>
-          Alle löschen
+          {{ saving() ? 'Löscht...' : 'Alle zurücksetzen' }}
         </button>
         <button mat-raised-button color="primary" (click)="saveData()" [disabled]="saving()">
           <mat-icon>save</mat-icon>
@@ -224,6 +224,7 @@
               <th>Stunden</th>
               <th>Minuten</th>
               <th>Gesamt</th>
+              <th class="action-column">Reset</th>
               <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">PFK Normal</th>
               <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">Gesamt PFK+PHK</th>
               <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">PHK End</th>
@@ -261,6 +262,16 @@
                 <span class="total-badge">
                   {{ entry.stunden }}:{{ entry.minuten.toString().padStart(2, '0') }}h
                 </span>
+              </td>
+              <td class="action-cell">
+                <button 
+                  mat-icon-button 
+                  color="warn" 
+                  (click)="resetSingleDay(i)"
+                  matTooltip="Tag zurücksetzen"
+                  *ngIf="entry.stunden > 0 || entry.minuten > 0">
+                  <mat-icon>refresh</mat-icon>
+                </button>
               </td>
               <td *ngIf="selectedKategorie() === 'PFK'" class="phk-value-cell">
                 {{ getPhkValue(entry, 'pfkNormal') }}

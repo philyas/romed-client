@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, effect } from '@angular/core';
+import { Component, inject, signal, computed, effect, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -11,6 +11,8 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { Api } from '../../core/api';
 import { Router } from '@angular/router';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -47,7 +49,9 @@ interface GeleistetePhkStunden {
     MatProgressSpinnerModule,
     MatSnackBarModule,
     MatDialogModule,
-    MatButtonToggleModule
+    MatButtonToggleModule,
+    MatDividerModule,
+    MatTooltipModule
   ],
   templateUrl: './manual-entry.html',
   styleUrl: './manual-entry.scss'
@@ -58,6 +62,8 @@ export class ManualEntry {
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
 
+  @ViewChild('fileInput', { static: false }) fileInput!: ElementRef<HTMLInputElement>;
+
   // State
   stations = signal<string[]>([]);
   selectedStation = signal<string>('');
@@ -66,6 +72,8 @@ export class ManualEntry {
   selectedKategorie = signal<'PFK' | 'PHK'>('PFK');
   loading = signal<boolean>(false);
   saving = signal<boolean>(false);
+  uploading = signal<boolean>(false);
+  selectedFile = signal<File | null>(null);
   
   // Konstante für Patienten-Berechnung (Mitternachtsstatistik Tag / Belegte Betten)
   belegteBettenKonstante = signal<number>(25); // Default-Wert
@@ -358,10 +366,131 @@ export class ManualEntry {
   }
 
   clearAllEntries() {
-    if (confirm('Möchten Sie wirklich alle Einträge für diesen Monat löschen?')) {
-      this.initializeEmptyEntries();
-      this.saveData();
+    const station = this.selectedStation();
+    const year = this.selectedYear();
+    const month = this.selectedMonth();
+    const kategorie = this.selectedKategorie();
+    
+    if (!station) {
+      this.snackBar.open('Bitte wählen Sie eine Station aus', 'Schließen', { duration: 3000 });
+      return;
     }
+    
+    const confirmMessage = `Möchten Sie wirklich alle ${kategorie}-Einträge für ${this.getMonthName(month)} ${year} (${station}) löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden!`;
+    
+    if (confirm(confirmMessage)) {
+      this.saving.set(true);
+      
+      // Delete data from server
+      this.api.deleteManualEntry(station, year, month, kategorie).subscribe({
+        next: (response) => {
+          this.saving.set(false);
+          this.snackBar.open('Alle Einträge wurden gelöscht', 'Schließen', { duration: 2000 });
+          
+          // Reset local entries
+          this.initializeEmptyEntries();
+          
+          // Clear related data
+          this.durchschnittPhkAnrechenbar.set(null);
+          this.geleistetePhkStunden.set(null);
+          this.phkTageswerte.set(null);
+        },
+        error: (err) => {
+          this.saving.set(false);
+          console.error('Error deleting entries:', err);
+          const errorMessage = err.error?.error || err.message || 'Fehler beim Löschen';
+          this.snackBar.open(errorMessage, 'Schließen', { duration: 3000 });
+        }
+      });
+    }
+  }
+
+  clearAllStationData() {
+    const station = this.selectedStation();
+    const year = this.selectedYear();
+    const month = this.selectedMonth();
+    
+    if (!station) {
+      this.snackBar.open('Bitte wählen Sie eine Station aus', 'Schließen', { duration: 3000 });
+      return;
+    }
+    
+    const confirmMessage = `Möchten Sie wirklich ALLE Stunden-Daten (PFK und PHK) für ${this.getMonthName(month)} ${year} (${station}) löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden!`;
+    
+    if (confirm(confirmMessage)) {
+      this.saving.set(true);
+      
+      // Delete ALL data from server (PFK and PHK)
+      this.api.deleteAllManualEntry(station, year, month).subscribe({
+        next: (response) => {
+          this.saving.set(false);
+          this.snackBar.open(response.message || `Alle Daten für ${station} wurden gelöscht`, 'Schließen', { duration: 3000 });
+          
+          // Reset local entries
+          this.initializeEmptyEntries();
+          
+          // Clear related data
+          this.durchschnittPhkAnrechenbar.set(null);
+          this.geleistetePhkStunden.set(null);
+          this.phkTageswerte.set(null);
+        },
+        error: (err) => {
+          this.saving.set(false);
+          console.error('Error deleting all station data:', err);
+          const errorMessage = err.error?.error || err.message || 'Fehler beim Löschen';
+          this.snackBar.open(errorMessage, 'Schließen', { duration: 3000 });
+        }
+      });
+    }
+  }
+
+  clearAllMonthsForStation() {
+    const station = this.selectedStation();
+    
+    if (!station) {
+      this.snackBar.open('Bitte wählen Sie eine Station aus', 'Schließen', { duration: 3000 });
+      return;
+    }
+    
+    const confirmMessage = `Möchten Sie wirklich ALLE Stunden-Daten (PFK und PHK) für ALLE Monate und Jahre für Station ${station} löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden!`;
+    
+    if (confirm(confirmMessage)) {
+      this.saving.set(true);
+      
+      // Delete ALL data from server for this station (all months and years)
+      this.api.deleteAllManualEntryForStation(station).subscribe({
+        next: (response) => {
+          this.saving.set(false);
+          this.snackBar.open(response.message || `Alle Daten für Station ${station} wurden gelöscht`, 'Schließen', { duration: 3000 });
+          
+          // Reset local entries
+          this.initializeEmptyEntries();
+          
+          // Clear related data
+          this.durchschnittPhkAnrechenbar.set(null);
+          this.geleistetePhkStunden.set(null);
+          this.phkTageswerte.set(null);
+        },
+        error: (err) => {
+          this.saving.set(false);
+          console.error('Error deleting all station data:', err);
+          const errorMessage = err.error?.error || err.message || 'Fehler beim Löschen';
+          this.snackBar.open(errorMessage, 'Schließen', { duration: 3000 });
+        }
+      });
+    }
+  }
+
+  resetSingleDay(dayIndex: number) {
+    this.dayEntries.update(entries => {
+      const newEntries = [...entries];
+      newEntries[dayIndex] = {
+        ...newEntries[dayIndex],
+        stunden: 0,
+        minuten: 0
+      };
+      return newEntries;
+    });
   }
 
   // TrackBy function to prevent focus loss
@@ -542,6 +671,77 @@ export class ManualEntry {
     const tatsaechlichAnrechenbar = phkStundenDezimal >= phkAnrechenbar ? phkAnrechenbar : phkStundenDezimal;
     
     return tatsaechlichAnrechenbar.toFixed(2) + 'h';
+  }
+
+  // File upload methods
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      // Validate file type
+      if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+        this.snackBar.open('Bitte wählen Sie eine Excel-Datei (.xlsx oder .xls)', 'Schließen', { duration: 3000 });
+        return;
+      }
+      this.selectedFile.set(file);
+    }
+  }
+
+  triggerFileSelect(): void {
+    if (this.fileInput) {
+      this.fileInput.nativeElement.click();
+    }
+  }
+
+  clearSelectedFile(): void {
+    this.selectedFile.set(null);
+    if (this.fileInput) {
+      this.fileInput.nativeElement.value = '';
+    }
+  }
+
+  uploadDienstplan(): void {
+    const file = this.selectedFile();
+    if (!file) {
+      this.snackBar.open('Bitte wählen Sie eine Datei aus', 'Schließen', { duration: 3000 });
+      return;
+    }
+
+    this.uploading.set(true);
+
+    this.api.uploadDienstplan(file).subscribe({
+      next: (response) => {
+        this.uploading.set(false);
+        this.snackBar.open(response.message || 'Dienstplan erfolgreich importiert', 'Schließen', { duration: 3000 });
+        
+        // Clear selected file
+        this.clearSelectedFile();
+        
+        // Reload data if station, year, month match
+        const station = this.selectedStation();
+        const year = this.selectedYear();
+        const month = this.selectedMonth();
+        const kategorie = this.selectedKategorie();
+        
+        if (station && year && month) {
+          // Check if uploaded data matches current selection
+          const matchingUpload = response.uploaded.find(u => 
+            u.station === station && u.jahr === year && u.monat === month
+          );
+          
+          if (matchingUpload) {
+            // Reload data for current selection
+            this.loadDataForPeriod(station, year, month, kategorie);
+          }
+        }
+      },
+      error: (err) => {
+        this.uploading.set(false);
+        console.error('Error uploading Dienstplan:', err);
+        const errorMessage = err.error?.error || err.message || 'Fehler beim Hochladen der Datei';
+        this.snackBar.open(errorMessage, 'Schließen', { duration: 5000 });
+      }
+    });
   }
 }
 
