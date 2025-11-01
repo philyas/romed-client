@@ -25,18 +25,24 @@
         }
       }
 
-      .year-selector {
-        min-width: 150px;
+      .selectors {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
 
-        mat-label {
-          display: flex;
-          align-items: center;
-          gap: 0.25rem;
+        .selector {
+          min-width: 200px;
 
-          mat-icon {
-            font-size: 1rem;
-            width: 1rem;
-            height: 1rem;
+          mat-label {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+
+            mat-icon {
+              font-size: 1rem;
+              width: 1rem;
+              height: 1rem;
+            }
           }
         }
       }
@@ -84,6 +90,51 @@
 
         .chart-content {
           padding: 1rem;
+
+          .chart-toggle {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 1rem;
+
+            mat-button-toggle-group {
+              border-radius: 24px;
+              overflow: hidden;
+              
+              mat-button-toggle {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                padding: 0.5rem 1rem;
+                font-size: 0.875rem;
+                border: none;
+
+                mat-icon {
+                  font-size: 1rem;
+                  width: 1rem;
+                  height: 1rem;
+                }
+
+                &:first-child {
+                  border-top-left-radius: 24px;
+                  border-bottom-left-radius: 24px;
+                }
+
+                &:last-child {
+                  border-top-right-radius: 24px;
+                  border-bottom-right-radius: 24px;
+                }
+
+                &.mat-button-toggle-checked {
+                  background-color: var(--mat-primary-color, #1976d2);
+                  color: white;
+                  
+                  mat-icon {
+                    color: white;
+                  }
+                }
+              }
+            }
+          }
 
           .chart-container {
             height: 300px;
