@@ -1,7 +1,7 @@
 <div class="main-content">
   <div class="upload">
-    <h2>Excel-Datei Upload</h2>
-    <p class="upload-subtitle">Laden Sie Excel-Dateien hoch und extrahieren Sie Daten basierend auf vordefinierten Schemata</p>
+    <h2>Datei Upload</h2>
+    <p class="upload-subtitle">Laden Sie Dateien hoch und extrahieren Sie Daten basierend auf vordefinierten Schemata</p>
 
     <div class="schema-selector-row">
       <mat-form-field appearance="outline">
@@ -26,12 +26,12 @@
          (dragleave)="onDragLeave($event)"
          (drop)="onDrop($event)"
          [class.drag-over]="dragOver()">
-      <input #fileInput type="file" multiple (change)="onFileChange($event)" accept=".xls,.xlsx,.xlsm,.csv" style="display: none;" />
+      <input #fileInput type="file" multiple (change)="onFileChange($event)" [accept]="getAcceptedFileTypes()" style="display: none;" />
       <div class="upload-placeholder">
         <div class="upload-icon">📊</div>
-        <h3>{{ dragOver() ? 'Dateien hier ablegen' : 'Klicken Sie hier, um Excel-Dateien auszuwählen' }}</h3>
+        <h3>{{ dragOver() ? 'Dateien hier ablegen' : 'Klicken Sie hier, um Dateien auszuwählen' }}</h3>
         <p>{{ dragOver() ? 'Loslassen zum Hochladen' : 'Oder ziehen Sie Dateien hierher' }}</p>
-        <p class="file-types">Unterstützt: .xlsx, .xls, .xlsm, .csv</p>
+        <p class="file-types">{{ getSupportedFileTypesText() }}</p>
       </div>
       <div class="upload-actions">
         <button mat-raised-button color="primary" (click)="$event.stopPropagation(); doUpload()"

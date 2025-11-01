@@ -124,5 +124,17 @@
       </app-mitteilungen-betten-charts>
     </section>
 
+    <!-- Ausfallstatistik Charts Section -->
+    <section 
+      id="ausfallstatistik"
+      class="ausfallstatistik-charts-section" 
+      [class.highlighted]="highlightedSchemaId() === 'ausfallstatistik'"
+      *ngIf="hasAusfallstatistikData()">
+      <app-ausfallstatistik-charts 
+        [uploads]="data()?.uploads || []"
+        [selectedYear]="globalSelectedYear()">
+      </app-ausfallstatistik-charts>
+    </section>
+
   </div>
 </div>

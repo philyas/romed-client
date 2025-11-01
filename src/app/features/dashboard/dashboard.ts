@@ -16,10 +16,11 @@ import { PflegestufenstatistikCharts } from '../pflegestufenstatistik-charts/pfl
 import { SaldenZeitkontenCharts } from '../salden-zeitkonten-charts/salden-zeitkonten-charts';
 import { MitteilungenBettenCharts } from '../mitteilungen-betten-charts/mitteilungen-betten-charts';
 import { PatientenPflegekraftCharts } from '../patienten-pflegekraft-charts/patienten-pflegekraft-charts';
+import { AusfallstatistikCharts } from '../ausfallstatistik-charts/ausfallstatistik-charts';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule, NgIf, MatCardModule, MatChipsModule, MatIconModule, MatButtonModule, MatExpansionModule, MatDialogModule, RouterModule, MitternachtsstatistikCharts, COCharts, MinaMitaCharts, PflegestufenstatistikCharts, SaldenZeitkontenCharts, MitteilungenBettenCharts, PatientenPflegekraftCharts],
+  imports: [CommonModule, NgIf, MatCardModule, MatChipsModule, MatIconModule, MatButtonModule, MatExpansionModule, MatDialogModule, RouterModule, MitternachtsstatistikCharts, COCharts, MinaMitaCharts, PflegestufenstatistikCharts, SaldenZeitkontenCharts, MitteilungenBettenCharts, PatientenPflegekraftCharts, AusfallstatistikCharts],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss'
 })
@@ -61,6 +62,11 @@ export class Dashboard implements AfterViewInit {
   hasMitteilungenBettenData = computed(() => {
     const uploads = this.data()?.uploads || [];
     return uploads.some(u => u.schemaId === 'mitteilungen_betten');
+  });
+
+  hasAusfallstatistikData = computed(() => {
+    const uploads = this.data()?.uploads || [];
+    return uploads.some(u => u.schemaId === 'ausfallstatistik');
   });
 
   constructor() {
