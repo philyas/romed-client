@@ -138,6 +138,7 @@ export class ManualEntryNacht {
   }
 
   onShiftToggle(value: 'tag' | 'nacht') {
+    //test commit
     if (value === 'tag') {
       this.router.navigate(['/manual-entry']);
     }
