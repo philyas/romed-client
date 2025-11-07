@@ -280,7 +280,7 @@
 /* Mitternachtsstatistik Section */
 .mitternachtsstatistik-charts-section {
   max-width: 90vw;
-  margin: 0 auto;
+  margin: 0 auto 32px;
   background: rgba(255, 255, 255, 0.95);
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -295,6 +295,32 @@
     box-shadow: 0 0 0 4px rgba(25, 118, 210, 0.3), 0 8px 24px rgba(0, 0, 0, 0.15);
     animation: highlight-pulse 2s ease-in-out;
   }
+}
+
+.pp-charts-section,
+.pflegestufenstatistik-charts-section,
+.salden-zeitkonten-charts-section,
+.mitteilungen-betten-charts-section,
+.ausfallstatistik-charts-section {
+  max-width: 90vw;
+  margin: 0 auto 32px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 16px;
+  position: relative;
+  z-index: 100;
+  transition: all 0.5s ease;
+  scroll-margin-top: 20px;
+}
+
+.pflegestufenstatistik-charts-section.highlighted,
+.salden-zeitkonten-charts-section.highlighted,
+.mitteilungen-betten-charts-section.highlighted,
+.ausfallstatistik-charts-section.highlighted {
+  box-shadow: 0 0 0 4px rgba(25, 118, 210, 0.3), 0 8px 24px rgba(0, 0, 0, 0.15);
+  animation: highlight-pulse 2s ease-in-out;
 }
 
 /* MiNa/MiTa Section */
