@@ -148,7 +148,7 @@ interface AusfallstatistikData {
                     Ist Gesamt: {{ totalIst() | number:'1.0-0' }}h
                   </mat-chip>
                   <mat-chip [class.warning]="erfuellungsgrad() < 95" [class.danger]="erfuellungsgrad() < 90">
-                    Erfüllungsgrad: {{ erfuellungsgrad() | number:'1.2-2' }}%
+                    Abdeckungsgrad: {{ erfuellungsgrad() | number:'1.2-2' }}%
                   </mat-chip>
                 </mat-chip-set>
               </div>
