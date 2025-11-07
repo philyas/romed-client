@@ -604,11 +604,23 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
     verweildauer: false
   };
 
-  // Shared Y-axis scales for visual comparison
-  private sharedScales = {
-    pflegetage: { min: 0, max: 0 },
-    stationsauslastung: { min: 0, max: 100 },
-    verweildauer: { min: 0, max: 0 }
+  // Shared Y-axis scales for visual comparison (separate for aggregated vs. stations)
+  private sharedScales: Record<'pflegetage' | 'stationsauslastung' | 'verweildauer', {
+    aggregated: { min: number; max: number };
+    station: { min: number; max: number };
+  }> = {
+    pflegetage: {
+      aggregated: { min: 0, max: 0 },
+      station: { min: 0, max: 0 }
+    },
+    stationsauslastung: {
+      aggregated: { min: 0, max: 100 },
+      station: { min: 0, max: 100 }
+    },
+    verweildauer: {
+      aggregated: { min: 0, max: 0 },
+      station: { min: 0, max: 0 }
+    }
   };
 
   readonly locationNames: Record<string, string> = {
@@ -934,20 +946,39 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
 
   private calculateSharedScales(locationData: LocationChartData[]) {
     // Calculate shared min/max for each metric across all locations
-    let maxPflegetage = 0;
-    let maxVerweildauer = 0;
+    let aggregatedMaxPflegetage = 0;
+    let stationMaxPflegetage = 0;
+    let aggregatedMaxVerweildauer = 0;
+    let stationMaxVerweildauer = 0;
 
     locationData.forEach(location => {
       location.monthlyData.forEach(month => {
-        if (month.pflegetage > maxPflegetage) maxPflegetage = month.pflegetage;
-        if (month.verweildauer > maxVerweildauer) maxVerweildauer = month.verweildauer;
+        if (month.pflegetage > aggregatedMaxPflegetage) aggregatedMaxPflegetage = month.pflegetage;
+        if (month.verweildauer > aggregatedMaxVerweildauer) aggregatedMaxVerweildauer = month.verweildauer;
+      });
+
+      location.stations?.forEach(station => {
+        station.monthlyData.forEach(month => {
+          if (month.pflegetage > stationMaxPflegetage) stationMaxPflegetage = month.pflegetage;
+          if (month.verweildauer > stationMaxVerweildauer) stationMaxVerweildauer = month.verweildauer;
+        });
       });
     });
 
-    // Add 10% padding to max values for better visualization
-    this.sharedScales.pflegetage.max = Math.ceil(maxPflegetage * 1.1);
-    this.sharedScales.verweildauer.max = Math.ceil(maxVerweildauer * 1.1);
-    this.sharedScales.stationsauslastung.max = 100; // Fixed at 100%
+    const addPadding = (value: number) => {
+      const padded = Math.ceil(value * 1.1);
+      return padded > 0 ? padded : 1; // Ensure chart always has a positive range
+    };
+
+    this.sharedScales.pflegetage.aggregated.max = addPadding(aggregatedMaxPflegetage);
+    this.sharedScales.pflegetage.station.max = addPadding(stationMaxPflegetage);
+
+    this.sharedScales.verweildauer.aggregated.max = addPadding(aggregatedMaxVerweildauer);
+    this.sharedScales.verweildauer.station.max = addPadding(stationMaxVerweildauer);
+
+    // Stationsauslastung is always represented as a percentage
+    this.sharedScales.stationsauslastung.aggregated.max = 100;
+    this.sharedScales.stationsauslastung.station.max = 100;
   }
 
   getPflegetageChartData(locationData: LocationChartData): ChartData<'line'> {
@@ -1055,8 +1086,9 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
 
     // Apply shared scale if metric is provided
     if (metric && this.sharedScales[metric]) {
-      yAxisConfig.min = this.sharedScales[metric].min;
-      yAxisConfig.max = this.sharedScales[metric].max;
+      const scaleMode = this.selectedStation() === 'all' ? 'aggregated' : 'station';
+      yAxisConfig.min = this.sharedScales[metric][scaleMode].min;
+      yAxisConfig.max = this.sharedScales[metric][scaleMode].max;
     }
 
     return {
