@@ -165,7 +165,7 @@ interface AusfallstatistikData {
               <mat-card-subtitle>
                 {{ selectedKostenstelle() === 'all' ? 'Alle Kostenstellen' : selectedKostenstelle() }} - 
                 KR (Krankenstand), FT (Urlaub/Feiertage), FB (Freizeitausgleich)
-                <span *ngIf="!showLohnartenPercentage()">(in Einheiten)</span>
+                <span *ngIf="!showLohnartenPercentage()">(in Stunden)</span>
                 <span *ngIf="showLohnartenPercentage()">(in Prozent)</span>
               </mat-card-subtitle>
             </mat-card-header>
@@ -176,8 +176,8 @@ interface AusfallstatistikData {
                   (change)="onLohnartenToggleChange($event.value === 'percent')"
                   appearance="legacy">
                   <mat-button-toggle value="units">
-                    <mat-icon>numbers</mat-icon>
-                    Einheiten
+                    <mat-icon>schedule</mat-icon>
+                    Stunden
                   </mat-button-toggle>
                   <mat-button-toggle value="percent">
                     <mat-icon>percent</mat-icon>
