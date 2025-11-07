@@ -529,33 +529,71 @@ export class MinaMitaChart implements OnInit, OnChanges {
         if ((file as any).metadata && (file as any).monthlyAverages) {
           const metadata = (file as any).metadata;
           let averages = (file as any).monthlyAverages;
-          
+
           // Filter by selected station if not 'all'
           if (this.selectedStation !== 'all') {
             averages = averages.filter((row: any) => row.Station === this.selectedStation);
           }
-          
-          const monthNumber = metadata.month;
-          const yearNumber = metadata.year || currentYear;
-          
-          if (monthNumber >= 1 && monthNumber <= 12) {
-            // Calculate total averages for the month (filtered by station)
-            const totalMiNa = averages.reduce((sum: number, row: any) => sum + (row.MiNa_Durchschnitt || 0), 0);
-            const totalMiTa = averages.reduce((sum: number, row: any) => sum + (row.MiTa_Durchschnitt || 0), 0);
-            const stationCount = averages.length;
-            
-            // Update the corresponding month
-            const monthIndex = monthNumber - 1;
-            monthlyData[monthIndex] = {
-              month: monthNumber,
-              year: yearNumber,
-              minaAverage: totalMiNa,
-              mitaAverage: totalMiTa,
-              totalStations: stationCount,
-              totalDays: metadata.totalDays || 0,
-              stationDetails: averages
+
+          const grouped = new Map<string, {
+            month: number;
+            year: number;
+            totalMiNa: number;
+            totalMiTa: number;
+            totalDays: number;
+            stationDetails: any[];
+          }>();
+
+          averages.forEach((row: any) => {
+            const monthNumber = Number(row.Monat ?? metadata.month);
+            const yearNumber = Number(row.Jahr ?? metadata.year ?? currentYear);
+
+            if (!monthNumber || monthNumber < 1 || monthNumber > 12) {
+              return;
+            }
+
+            const key = `${yearNumber}-${monthNumber}`;
+            if (!grouped.has(key)) {
+              grouped.set(key, {
+                month: monthNumber,
+                year: yearNumber,
+                totalMiNa: 0,
+                totalMiTa: 0,
+                totalDays: 0,
+                stationDetails: []
+              });
+            }
+
+            const group = grouped.get(key)!;
+            const normalizedRow = {
+              ...row,
+              Jahr: yearNumber,
+              Monat: monthNumber,
+              MiNa_Durchschnitt: Number(row.MiNa_Durchschnitt) || 0,
+              MiTa_Durchschnitt: Number(row.MiTa_Durchschnitt) || 0,
+              Anzahl_Tage: Number(row.Anzahl_Tage) || 0
             };
-          }
+
+            group.totalMiNa += normalizedRow.MiNa_Durchschnitt;
+            group.totalMiTa += normalizedRow.MiTa_Durchschnitt;
+            group.totalDays = Math.max(group.totalDays, normalizedRow.Anzahl_Tage);
+            group.stationDetails.push(normalizedRow);
+          });
+
+          grouped.forEach(group => {
+            if (group.month >= 1 && group.month <= 12) {
+              const monthIndex = group.month - 1;
+              monthlyData[monthIndex] = {
+                month: group.month,
+                year: group.year,
+                minaAverage: group.totalMiNa,
+                mitaAverage: group.totalMiTa,
+                totalStations: group.stationDetails.length,
+                totalDays: group.totalDays || metadata.totalDays || 0,
+                stationDetails: group.stationDetails
+              };
+            }
+          });
         } 
         // Fallback: Calculate from raw values if monthlyAverages not available
         else if ((file as any).values && Array.isArray((file as any).values)) {

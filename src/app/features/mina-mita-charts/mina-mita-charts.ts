@@ -202,12 +202,26 @@ export class MinaMitaCharts {
         totalRecords = file.values.length;
       }
 
-      // Extract month from upload
+      const monthNames = ['', 'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 
+                         'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+
       let dataMonth = '';
-      if (upload.month) {
-        const monthNames = ['', 'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 
-                           'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
-        const monthNum = parseInt(upload.month);
+      const metadata = (file as any).metadata;
+      if (metadata?.monthsInFile?.length) {
+        const formattedMonths = metadata.monthsInFile.map((entry: string) => {
+          const [year, month] = entry.split('-');
+          const monthIndex = parseInt(month, 10);
+          const label = monthNames[monthIndex] || entry;
+          return `${label} ${year}`;
+        });
+        dataMonth = formattedMonths.join(', ');
+      } else if (metadata?.month) {
+        const monthNum = Number(metadata.month);
+        const label = monthNames[monthNum] || metadata.month;
+        const yearLabel = metadata.year ? ` ${metadata.year}` : '';
+        dataMonth = `${label}${yearLabel}`.trim();
+      } else if (upload.month) {
+        const monthNum = parseInt(upload.month, 10);
         dataMonth = monthNames[monthNum] || upload.month;
       }
 
