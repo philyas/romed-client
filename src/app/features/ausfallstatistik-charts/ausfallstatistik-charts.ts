@@ -174,8 +174,8 @@ interface KostenstellenMappingItem {
               </mat-card-title>
               <mat-card-subtitle>
                 {{ selectedKostenstelleLabel() }} - 
-                K (Krankenstand), U. (Urlaub/Feiertage), Sonstige Ausfälle
-                <span *ngIf="!showLohnartenPercentage()">(in Stunden)</span>
+                K / U. / Sonstige Ausfälle
+                <span *ngIf="!showLohnartenPercentage()">(h)</span>
                 <span *ngIf="showLohnartenPercentage()">(in Prozent)</span>
               </mat-card-subtitle>
             </mat-card-header>
