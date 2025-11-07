@@ -164,7 +164,7 @@ interface AusfallstatistikData {
               </mat-card-title>
               <mat-card-subtitle>
                 {{ selectedKostenstelle() === 'all' ? 'Alle Kostenstellen' : selectedKostenstelle() }} - 
-                KR (Krankenstand), FT (Urlaub/Feiertage), FB (Freizeitausgleich)
+                K (Krankenstand), U (Urlaub/Feiertage), sonstige Ausfälle
                 <span *ngIf="!showLohnartenPercentage()">(in Stunden)</span>
                 <span *ngIf="showLohnartenPercentage()">(in Prozent)</span>
               </mat-card-subtitle>
@@ -196,15 +196,15 @@ interface AusfallstatistikData {
                 <mat-chip-set>
                   <mat-chip class="la1-chip">
                     <mat-icon>sick</mat-icon>
-                    KR (Krankenstand): {{ totalLA1() }}
+                    K (Krankenstand): {{ totalLA1() }}
                   </mat-chip>
                   <mat-chip class="la2-chip">
                     <mat-icon>beach_access</mat-icon>
-                    FT (Urlaub/Feiertage): {{ totalLA2() }}
+                    U (Urlaub/Feiertage): {{ totalLA2() }}
                   </mat-chip>
                   <mat-chip class="la3-chip">
                     <mat-icon>free_breakfast</mat-icon>
-                    FB (Freizeitausgleich): {{ totalLA3() }}
+                    sonstige Ausfälle: {{ totalLA3() }}
                   </mat-chip>
                 </mat-chip-set>
               </div>
@@ -581,7 +581,7 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
       labels: months.map(m => monthNames[m]),
       datasets: [
         {
-          label: isPercentage ? 'KR (Krankenstand) (%)' : 'KR (Krankenstand)',
+          label: isPercentage ? 'K (Krankenstand) (%)' : 'K (Krankenstand)',
           data: months.map(m => {
             const monthData = monthlyData.get(m)!;
             return isPercentage ? monthData.la1Percent : monthData.la1;
@@ -589,18 +589,18 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
           backgroundColor: 'rgba(255, 99, 132, 0.6)'
         },
         {
-          label: isPercentage ? 'FT (Urlaub/Feiertage) (%)' : 'FT (Urlaub/Feiertage)',
+          label: isPercentage ? 'U (Urlaub/Feiertage) (%)' : 'U (Urlaub/Feiertage)',
           data: months.map(m => {
-            const monthData = monthlyData.get(m)!;
-            return isPercentage ? monthData.la2Percent : monthData.la2;
+          const monthData = monthlyData.get(m)!;
+          return isPercentage ? monthData.la2Percent : monthData.la2;
           }),
           backgroundColor: 'rgba(54, 162, 235, 0.6)'
         },
         {
-          label: isPercentage ? 'FB (Freizeitausgleich) (%)' : 'FB (Freizeitausgleich)',
+          label: isPercentage ? 'Sonstige Ausfälle (%)' : 'Sonstige Ausfälle',
           data: months.map(m => {
-            const monthData = monthlyData.get(m)!;
-            return isPercentage ? monthData.la3Percent : monthData.la3;
+          const monthData = monthlyData.get(m)!;
+          return isPercentage ? monthData.la3Percent : monthData.la3;
           }),
           backgroundColor: 'rgba(255, 206, 86, 0.6)'
         }
