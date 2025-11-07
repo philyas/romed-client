@@ -99,7 +99,7 @@ interface KostenstellenMappingItem {
             </mat-form-field>
           </div>
         </div>
-        <p>Soll/Ist-Vergleich nach Kostenstellen mit Lohnartendaten (Krankenstand, Urlaub, Freizeitausgleich)</p>
+        <p>Soll/Ist-Vergleich nach Kostenstellen mit Lohnartendaten (Krankenstand, Urlaub, Sonstige Ausfälle)</p>
       </div>
 
       <!-- Data Info Panel -->
@@ -174,8 +174,8 @@ interface KostenstellenMappingItem {
               </mat-card-title>
               <mat-card-subtitle>
                 {{ selectedKostenstelleLabel() }} - 
-                KR (Krankenstand), FT (Urlaub/Feiertage), FB (Freizeitausgleich)
-                <span *ngIf="!showLohnartenPercentage()">(in Einheiten)</span>
+                K (Krankenstand), U. (Urlaub/Feiertage), Sonstige Ausfälle
+                <span *ngIf="!showLohnartenPercentage()">(in Stunden)</span>
                 <span *ngIf="showLohnartenPercentage()">(in Prozent)</span>
               </mat-card-subtitle>
             </mat-card-header>
@@ -186,8 +186,8 @@ interface KostenstellenMappingItem {
                   (change)="onLohnartenToggleChange($event.value === 'percent')"
                   appearance="legacy">
                   <mat-button-toggle value="units">
-                    <mat-icon>numbers</mat-icon>
-                    Einheiten
+                    <mat-icon>schedule</mat-icon>
+                    Stunden
                   </mat-button-toggle>
                   <mat-button-toggle value="percent">
                     <mat-icon>percent</mat-icon>
@@ -206,15 +206,15 @@ interface KostenstellenMappingItem {
                 <mat-chip-set>
                   <mat-chip class="la1-chip">
                     <mat-icon>sick</mat-icon>
-                    KR (Krankenstand): {{ totalLA1() }}
+                    K (Krankenstand): {{ totalLA1() }}
                   </mat-chip>
                   <mat-chip class="la2-chip">
                     <mat-icon>beach_access</mat-icon>
-                    FT (Urlaub/Feiertage): {{ totalLA2() }}
+                    U. (Urlaub/Feiertage): {{ totalLA2() }}
                   </mat-chip>
                   <mat-chip class="la3-chip">
                     <mat-icon>free_breakfast</mat-icon>
-                    FB (Freizeitausgleich): {{ totalLA3() }}
+                    Sonstige Ausfälle: {{ totalLA3() }}
                   </mat-chip>
                 </mat-chip-set>
               </div>
@@ -365,7 +365,7 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
           beginAtZero: true,
           title: {
             display: true,
-            text: isPercentage ? 'Prozent (%)' : 'Einheiten'
+            text: isPercentage ? 'Prozent (%)' : 'Stunden'
           }
         }
       }
@@ -391,7 +391,7 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
         beginAtZero: true,
         title: {
           display: true,
-          text: 'Ausfall (Einheiten)'
+          text: 'Ausfall (Stunden)'
         }
       }
     },
@@ -626,7 +626,7 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
       labels: months.map(m => monthNames[m]),
       datasets: [
         {
-          label: isPercentage ? 'KR (Krankenstand) (%)' : 'KR (Krankenstand)',
+          label: isPercentage ? 'K (Krankenstand) (%)' : 'K (Krankenstand)',
           data: months.map(m => {
             const monthData = monthlyData.get(m)!;
             return isPercentage ? monthData.la1Percent : monthData.la1;
@@ -634,7 +634,7 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
           backgroundColor: 'rgba(255, 99, 132, 0.6)'
         },
         {
-          label: isPercentage ? 'FT (Urlaub/Feiertage) (%)' : 'FT (Urlaub/Feiertage)',
+          label: isPercentage ? 'U. (Urlaub/Feiertage) (%)' : 'U. (Urlaub/Feiertage)',
           data: months.map(m => {
             const monthData = monthlyData.get(m)!;
             return isPercentage ? monthData.la2Percent : monthData.la2;
@@ -642,7 +642,7 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
           backgroundColor: 'rgba(54, 162, 235, 0.6)'
         },
         {
-          label: isPercentage ? 'FB (Freizeitausgleich) (%)' : 'FB (Freizeitausgleich)',
+          label: isPercentage ? 'Sonstige Ausfälle (%)' : 'Sonstige Ausfälle',
           data: months.map(m => {
             const monthData = monthlyData.get(m)!;
             return isPercentage ? monthData.la3Percent : monthData.la3;
