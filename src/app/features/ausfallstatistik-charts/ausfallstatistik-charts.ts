@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnChanges, signal, computed } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
@@ -9,7 +9,8 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType, registerables } from 'chart.js';
 import Chart from 'chart.js/auto';
-import { UploadRecord } from '../../core/api';
+import { firstValueFrom } from 'rxjs';
+import { Api, UploadRecord } from '../../core/api';
 import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel';
 
 interface AusfallstatistikData {
@@ -32,6 +33,15 @@ interface AusfallstatistikData {
   LA3_FB_Prozent: number | null;
   Monat: number | null;
   Jahr: number | null;
+}
+
+interface KostenstellenMappingItem {
+  kostenstelle: string;
+  stations?: string[];
+  standorte?: string[];
+  standortnummer?: number | string | null;
+  ik?: number | string | null;
+  paediatrie?: string | null;
 }
 
 @Component({
@@ -66,7 +76,7 @@ interface AusfallstatistikData {
                 (selectionChange)="onKostenstelleChange($event.value)">
                 <mat-option value="all">Alle Kostenstellen</mat-option>
                 <mat-option *ngFor="let kst of availableKostenstellen()" [value]="kst">
-                  {{ kst }}
+                  {{ formatKostenstelleLabel(kst) }}
                 </mat-option>
               </mat-select>
             </mat-form-field>
@@ -110,7 +120,7 @@ interface AusfallstatistikData {
                 Soll/Ist-Vergleich nach Monaten
               </mat-card-title>
               <mat-card-subtitle>
-                {{ selectedKostenstelle() === 'all' ? 'Alle Kostenstellen' : selectedKostenstelle() }} - 
+                {{ selectedKostenstelleLabel() }} - 
                 Arbeitszeit: Soll vs. Ist 
                 <span *ngIf="!showPercentage()">(in Stunden)</span>
                 <span *ngIf="showPercentage()">(in Prozent)</span>
@@ -163,9 +173,9 @@ interface AusfallstatistikData {
                 Lohnarten nach Monaten
               </mat-card-title>
               <mat-card-subtitle>
-                {{ selectedKostenstelle() === 'all' ? 'Alle Kostenstellen' : selectedKostenstelle() }} - 
-                K (Krankenstand), U (Urlaub/Feiertage), sonstige Ausfälle
-                <span *ngIf="!showLohnartenPercentage()">(in Stunden)</span>
+                {{ selectedKostenstelleLabel() }} - 
+                KR (Krankenstand), FT (Urlaub/Feiertage), FB (Freizeitausgleich)
+                <span *ngIf="!showLohnartenPercentage()">(in Einheiten)</span>
                 <span *ngIf="showLohnartenPercentage()">(in Prozent)</span>
               </mat-card-subtitle>
             </mat-card-header>
@@ -176,8 +186,8 @@ interface AusfallstatistikData {
                   (change)="onLohnartenToggleChange($event.value === 'percent')"
                   appearance="legacy">
                   <mat-button-toggle value="units">
-                    <mat-icon>schedule</mat-icon>
-                    Stunden
+                    <mat-icon>numbers</mat-icon>
+                    Einheiten
                   </mat-button-toggle>
                   <mat-button-toggle value="percent">
                     <mat-icon>percent</mat-icon>
@@ -196,15 +206,15 @@ interface AusfallstatistikData {
                 <mat-chip-set>
                   <mat-chip class="la1-chip">
                     <mat-icon>sick</mat-icon>
-                    K (Krankenstand): {{ totalLA1() }}
+                    KR (Krankenstand): {{ totalLA1() }}
                   </mat-chip>
                   <mat-chip class="la2-chip">
                     <mat-icon>beach_access</mat-icon>
-                    U (Urlaub/Feiertage): {{ totalLA2() }}
+                    FT (Urlaub/Feiertage): {{ totalLA2() }}
                   </mat-chip>
                   <mat-chip class="la3-chip">
                     <mat-icon>free_breakfast</mat-icon>
-                    sonstige Ausfälle: {{ totalLA3() }}
+                    FB (Freizeitausgleich): {{ totalLA3() }}
                   </mat-chip>
                 </mat-chip-set>
               </div>
@@ -239,6 +249,7 @@ interface AusfallstatistikData {
 export class AusfallstatistikCharts implements OnInit, OnChanges {
   @Input() uploads: UploadRecord[] = [];
   private _selectedYear = new Date().getFullYear();
+  private api = inject(Api);
   @Input() set selectedYear(value: number) {
     this._selectedYear = value;
     this.selectedYearSignal.set(value);
@@ -251,8 +262,16 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
   selectedKostenstelle = signal<string>('all');
   showPercentage = signal<boolean>(false);
   showLohnartenPercentage = signal<boolean>(false);
+  kostenstellenMapping = signal<Record<string, KostenstellenMappingItem>>({});
   
   allData = signal<AusfallstatistikData[]>([]);
+  selectedKostenstelleLabel = computed(() => {
+    const current = this.selectedKostenstelle();
+    if (current === 'all') {
+      return 'Alle Kostenstellen';
+    }
+    return this.formatKostenstelleLabel(current);
+  });
   
   availableYears = computed(() => {
     const years = new Set<number>();
@@ -381,6 +400,7 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
 
   ngOnInit() {
     Chart.register(...registerables);
+    void this.loadKostenstellenMapping();
     this.processData();
   }
 
@@ -429,6 +449,31 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
     const years = this.availableYears();
     if (years.length > 0 && !years.includes(this.selectedYearSignal())) {
       this.selectedYearSignal.set(years[0]); // Set to newest year
+    }
+  }
+
+  private async loadKostenstellenMapping() {
+    try {
+      const response = await firstValueFrom(this.api.getKostenstellenMapping());
+      const map: Record<string, KostenstellenMappingItem> = {};
+      const data = Array.isArray(response?.data) ? response.data : [];
+      data.forEach((item: any) => {
+        if (!item || !item.kostenstelle) {
+          return;
+        }
+        map[item.kostenstelle] = {
+          kostenstelle: item.kostenstelle,
+          stations: Array.isArray(item.stations) ? item.stations : [],
+          standorte: Array.isArray(item.standorte) ? item.standorte : [],
+          standortnummer: item.standortnummer ?? null,
+          ik: item.ik ?? null,
+          paediatrie: item.paediatrie ?? null
+        };
+      });
+      this.kostenstellenMapping.set(map);
+    } catch (error) {
+      console.error('Fehler beim Laden des Kostenstellen-Mappings', error);
+      this.kostenstellenMapping.set({});
     }
   }
   
@@ -581,7 +626,7 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
       labels: months.map(m => monthNames[m]),
       datasets: [
         {
-          label: isPercentage ? 'K (Krankenstand) (%)' : 'K (Krankenstand)',
+          label: isPercentage ? 'KR (Krankenstand) (%)' : 'KR (Krankenstand)',
           data: months.map(m => {
             const monthData = monthlyData.get(m)!;
             return isPercentage ? monthData.la1Percent : monthData.la1;
@@ -589,18 +634,18 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
           backgroundColor: 'rgba(255, 99, 132, 0.6)'
         },
         {
-          label: isPercentage ? 'U (Urlaub/Feiertage) (%)' : 'U (Urlaub/Feiertage)',
+          label: isPercentage ? 'FT (Urlaub/Feiertage) (%)' : 'FT (Urlaub/Feiertage)',
           data: months.map(m => {
-          const monthData = monthlyData.get(m)!;
-          return isPercentage ? monthData.la2Percent : monthData.la2;
+            const monthData = monthlyData.get(m)!;
+            return isPercentage ? monthData.la2Percent : monthData.la2;
           }),
           backgroundColor: 'rgba(54, 162, 235, 0.6)'
         },
         {
-          label: isPercentage ? 'Sonstige Ausfälle (%)' : 'Sonstige Ausfälle',
+          label: isPercentage ? 'FB (Freizeitausgleich) (%)' : 'FB (Freizeitausgleich)',
           data: months.map(m => {
-          const monthData = monthlyData.get(m)!;
-          return isPercentage ? monthData.la3Percent : monthData.la3;
+            const monthData = monthlyData.get(m)!;
+            return isPercentage ? monthData.la3Percent : monthData.la3;
           }),
           backgroundColor: 'rgba(255, 206, 86, 0.6)'
         }
@@ -626,7 +671,7 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
       .slice(0, 10);
 
     return {
-      labels: sorted.map(([kst]) => kst),
+      labels: sorted.map(([kst]) => this.formatKostenstelleLabel(kst)),
       datasets: [
         {
           label: 'Gesamtausfall',
@@ -702,4 +747,31 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
 
     return items;
   });
+
+  formatKostenstelleLabel(kst: string): string {
+    if (!kst || kst === 'all') {
+      return 'Alle Kostenstellen';
+    }
+
+    const mapping = this.kostenstellenMapping();
+    const entry = mapping[kst];
+    if (!entry) {
+      return kst;
+    }
+
+    const code = entry.kostenstelle ?? kst;
+    const stations = Array.isArray(entry.stations) ? entry.stations.filter(Boolean) : [];
+    const stationWithCode = stations.find(station => station.includes(code));
+    const primaryStation = stationWithCode ?? stations[0] ?? code;
+    const stationLabel = primaryStation.includes(code) ? primaryStation : `${code} - ${primaryStation}`;
+
+    const standorte = Array.isArray(entry.standorte) ? entry.standorte.filter(Boolean) : [];
+    const uniqueStandorte = Array.from(new Set(standorte));
+
+    if (uniqueStandorte.length > 0) {
+      return `${stationLabel} · ${uniqueStandorte.join(' / ')}`;
+    }
+
+    return stationLabel || code;
+  }
 }
