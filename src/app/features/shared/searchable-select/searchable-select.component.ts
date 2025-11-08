@@ -110,26 +110,48 @@ import { MatButtonModule } from '@angular/material/button';
       height: 18px;
     }
 
-    :host ::ng-deep .searchable-select-panel {
-      background: #ffffff;
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.18);
+    :host ::ng-deep .searchable-select-panel,
+    :host ::ng-deep .mat-mdc-autocomplete-panel {
+      background: #ffffff !important;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.18) !important;
       border-radius: 8px;
       z-index: 1300;
+      --mat-option-selected-state-layer-color: transparent;
+      --mat-option-hover-state-layer-color: transparent;
+      --mat-option-focus-state-layer-color: transparent;
     }
 
     :host ::ng-deep .searchable-select-panel .mat-mdc-option {
-      background: #ffffff;
+      background: #ffffff !important;
       color: rgba(0, 0, 0, 0.87);
     }
 
     :host ::ng-deep .searchable-select-panel .mat-mdc-option.mdc-list-item--selected,
     :host ::ng-deep .searchable-select-panel .mat-mdc-option:hover {
-      background: #e8f2ff;
+      background: #e0f2ff !important;
+      color: #0b5394 !important;
     }
 
     :host ::ng-deep .searchable-select-panel .mat-mdc-option.mdc-list-item--disabled {
       color: rgba(0, 0, 0, 0.38);
       background: #ffffff;
+    }
+
+    :host ::ng-deep .searchable-select-panel .mdc-list-item__background {
+      background-color: #ffffff !important;
+      opacity: 1 !important;
+    }
+
+    :host ::ng-deep .searchable-select-panel .mat-mdc-option.mdc-list-item--selected .mdc-list-item__background,
+    :host ::ng-deep .searchable-select-panel .mat-mdc-option:hover .mdc-list-item__background {
+      background-color: #e0f2ff !important;
+      opacity: 1 !important;
+    }
+
+    :host ::ng-deep .searchable-select-panel .mat-mdc-option.mdc-list-item--selected .mdc-list-item__primary-text,
+    :host ::ng-deep .searchable-select-panel .mat-mdc-option:hover .mdc-list-item__primary-text {
+      color: #0b5394 !important;
+      font-weight: 600;
     }
   `]
 })
