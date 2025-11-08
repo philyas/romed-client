@@ -1,15 +1,19 @@
-import { Component, Input, computed, effect, signal } from '@angular/core';
+import { Component, Input, computed, effect, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTableModule } from '@angular/material/table';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartOptions, ChartType } from 'chart.js';
 import { ResultsResponse } from '../../core/api';
 import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel';
+import { ComparisonDialogComponent, ComparisonMetricConfig, ComparisonSeries } from '../shared/comparison-dialog/comparison-dialog.component';
 
 interface BettenData {
   IK: string;
@@ -25,11 +29,13 @@ interface BettenData {
   imports: [
     CommonModule, 
     MatCardModule, 
+    MatButtonModule,
     MatChipsModule, 
     MatIconModule, 
     BaseChartDirective, 
     MatSelectModule, 
     MatFormFieldModule,
+    MatTooltipModule,
     MatTableModule,
     DataInfoPanel
   ],
@@ -45,6 +51,17 @@ export class MitteilungenBettenCharts {
   selectedStation = signal<string>('all');
   
   flippedCards: { [key: string]: boolean } = {};
+  private dialog = inject(MatDialog);
+
+  private readonly comparisonMetrics: ComparisonMetricConfig[] = [
+    {
+      key: 'betten',
+      label: 'Bettenanzahl',
+      chartTitle: 'Bettenanzahl',
+      decimals: 0,
+      valueFormatter: value => value === null ? '–' : value.toLocaleString('de-DE')
+    }
+  ];
   
   constructor() {
     // Update selected year when input changes
@@ -65,6 +82,32 @@ export class MitteilungenBettenCharts {
 
   toggleFlip(cardName: string) {
     this.flippedCards[cardName] = !this.flippedCards[cardName];
+  }
+
+  openComparisonDialog(event?: MouseEvent) {
+    event?.stopPropagation();
+    const series = this.comparisonSeries();
+    if (series.length <= 1) {
+      return;
+    }
+
+    this.dialog.open(ComparisonDialogComponent, {
+      width: '960px',
+      maxWidth: '95vw',
+      data: {
+        title: 'Aufgestellte Betten – Vergleich',
+        subtitle: this.selectedStandort() === 'all'
+          ? `Jahr ${this.selectedYear()} – Standorte`
+          : this.selectedStation() === 'all'
+            ? `Jahr ${this.selectedYear()} – Stationen in ${this.selectedStandort()}`
+            : `Jahr ${this.selectedYear()} – Station ${this.selectedStation()}`,
+        selectionLabel: this.selectedStandort() === 'all' ? 'Standorte' : 'Stationen',
+        selectionLimit: 4,
+        metrics: this.comparisonMetrics,
+        series,
+        monthLabels: ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez']
+      }
+    });
   }
 
   // Extract all Betten data from locationsData (similar to mitternachtsstatistik)
@@ -140,6 +183,56 @@ export class MitteilungenBettenCharts {
       .filter(d => d.Jahr === this.selectedYear() && d.Standort === standort);
     const stations = new Set(data.map(d => d.Station));
     return Array.from(stations).sort();
+  });
+
+  comparisonSeries = computed<ComparisonSeries[]>(() => {
+    const months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+
+    if (this.selectedStandort() === 'all') {
+      return this.standortSummaries().map(summary => ({
+        id: summary.standort,
+        label: summary.standort,
+        monthlyData: months.map(month => ({
+          month,
+          metrics: {
+            betten: summary.totalBetten
+          }
+        }))
+      }));
+    }
+
+    if (this.selectedStation() !== 'all') {
+      const stationData = this.filteredData().filter(row => row.Station === this.selectedStation());
+      const total = stationData.reduce((sum, row) => sum + row.Bettenanzahl, 0);
+      return stationData.length === 0 ? [] : [{
+        id: this.selectedStation(),
+        label: this.selectedStation(),
+        monthlyData: months.map(month => ({
+          month,
+          metrics: {
+            betten: total
+          }
+        }))
+      }];
+    }
+
+    const totalsByStation = new Map<string, number>();
+    this.filteredData().forEach(row => {
+      totalsByStation.set(row.Station, (totalsByStation.get(row.Station) ?? 0) + row.Bettenanzahl);
+    });
+
+    return Array.from(totalsByStation.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([station, total]) => ({
+        id: station,
+        label: station,
+        monthlyData: months.map(month => ({
+          month,
+          metrics: {
+            betten: total
+          }
+        }))
+      }));
   });
 
   // Calculate summaries per Standort

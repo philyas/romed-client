@@ -1,15 +1,19 @@
 import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType, registerables } from 'chart.js';
 import Chart from 'chart.js/auto';
 import { Api, ManualEntryDataResponse } from '../../core/api';
+import { ComparisonDialogComponent, ComparisonMetricConfig, ComparisonSeries } from '../shared/comparison-dialog/comparison-dialog.component';
 
 @Component({
   selector: 'app-patienten-pflegekraft-charts',
@@ -17,11 +21,13 @@ import { Api, ManualEntryDataResponse } from '../../core/api';
   imports: [
     CommonModule,
     MatCardModule,
+    MatButtonModule,
     MatChipsModule,
     MatIconModule,
     MatTabsModule,
     MatSelectModule,
     MatFormFieldModule,
+    MatTooltipModule,
     BaseChartDirective
   ],
   template: `
@@ -53,6 +59,17 @@ import { Api, ManualEntryDataResponse } from '../../core/api';
                 <mat-option *ngFor="let year of availableYears" [value]="year">{{ year }}</mat-option>
               </mat-select>
             </mat-form-field>
+
+            <button
+              mat-stroked-button
+              color="primary"
+              class="comparison-button"
+              (click)="openComparisonDialog($event)"
+              [disabled]="comparisonLoading() || comparisonSeries().length <= 1"
+              matTooltip="Vergleichen Sie bis zu vier Stationen (Tag/Nacht)">
+              <mat-icon>compare</mat-icon>
+              Vergleich
+            </button>
           </div>
         </div>
         <p>Monatliche Entwicklung der Kennzahl Patienten/Pflegekraft (PFK) für Tag und Nacht</p>
@@ -82,9 +99,11 @@ import { Api, ManualEntryDataResponse } from '../../core/api';
   `,
   styles: [`
     .pp-chart { padding: 8px; }
-    .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-    .selectors-container { display: flex; gap: 12px; align-items: center; }
+    .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 12px; flex-wrap: wrap; }
+    .selectors-container { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
     .station-selector, .year-selector { width: 220px; }
+    .comparison-button { display: flex; align-items: center; gap: 8px; }
+    .comparison-button mat-icon { margin: 0; }
     .metric-card { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     .metric-header { background: linear-gradient(135deg, #0097a7 0%, #007c91 100%); color: white; padding: 12px 16px; }
     .chart-content { padding: 0; }
@@ -95,6 +114,7 @@ import { Api, ManualEntryDataResponse } from '../../core/api';
 })
 export class PatientenPflegekraftCharts implements OnInit {
   private api = inject(Api);
+  private dialog = inject(MatDialog);
 
   stations = signal<string[]>([]);
   selectedStation = signal<string>(''); // will default to BABBELEG if vorhanden
@@ -107,6 +127,26 @@ export class PatientenPflegekraftCharts implements OnInit {
 
   private dayValues = signal<number[]>(Array(12).fill(0));
   private nightValues = signal<number[]>(Array(12).fill(0));
+  private comparisonCache = new Map<string, { day: number[]; night: number[] }>();
+  comparisonSeries = signal<ComparisonSeries[]>([]);
+  comparisonLoading = signal<boolean>(false);
+
+  private readonly comparisonMetrics: ComparisonMetricConfig[] = [
+    {
+      key: 'pfkTag',
+      label: 'PFK Tag',
+      chartTitle: 'Patient/Pflegekraft – Tag',
+      decimals: 3,
+      valueFormatter: value => value === null ? '–' : value.toLocaleString('de-DE', { minimumFractionDigits: 3, maximumFractionDigits: 3 })
+    },
+    {
+      key: 'pfkNacht',
+      label: 'PFK Nacht',
+      chartTitle: 'Patient/Pflegekraft – Nacht',
+      decimals: 3,
+      valueFormatter: value => value === null ? '–' : value.toLocaleString('de-DE', { minimumFractionDigits: 3, maximumFractionDigits: 3 })
+    }
+  ];
 
   chartType: ChartType = 'line';
   chartData: ChartData<'line'> = {
@@ -136,6 +176,8 @@ export class PatientenPflegekraftCharts implements OnInit {
 
   onYearChange(year: number) {
     this.selectedYear.set(year);
+    this.comparisonCache.clear();
+    this.comparisonSeries.set([]);
     this.loadAveragesAndData();
   }
 
@@ -172,44 +214,120 @@ export class PatientenPflegekraftCharts implements OnInit {
     if (!station) return;
 
     try {
-      // Konstanten laden
       const [mita, mina] = await Promise.all([
         this.api.getStationMitaAverage(station).toPromise(),
         this.api.getStationMinaAverage(station).toPromise()
       ]);
-      this.mitaAverage.set(mita?.mitaDurchschnitt ?? null);
-      this.minaAverage.set(mina?.minaDurchschnitt ?? null);
+      const mitaAvg = mita?.mitaDurchschnitt ?? null;
+      const minaAvg = mina?.minaDurchschnitt ?? null;
+      this.mitaAverage.set(mitaAvg);
+      this.minaAverage.set(minaAvg);
 
-      // Monatswerte laden (PFK) für Tag und Nacht
-      const year = this.selectedYear();
-      const monthPromises: Promise<void>[] = [];
-      const dayVals: number[] = Array(12).fill(0);
-      const nightVals: number[] = Array(12).fill(0);
-
-      for (let month = 1; month <= 12; month++) {
-        // Tag
-        monthPromises.push(this.api.getManualEntryData(station, year, month, 'PFK').toPromise().then(res => {
-          dayVals[month - 1] = this.computePatientenProPflegekraftTag(res);
-        }).catch(() => { dayVals[month - 1] = 0; }));
-        // Nacht
-        monthPromises.push(this.api.getManualEntryNachtData(station, year, month, 'PFK').toPromise().then(res => {
-          nightVals[month - 1] = this.computePatientenProPflegekraftNacht(res);
-        }).catch(() => { nightVals[month - 1] = 0; }));
-      }
-
-      await Promise.all(monthPromises);
-
-      this.dayValues.set(dayVals);
-      this.nightValues.set(nightVals);
+      const { dayValues, nightValues } = await this.fetchMonthlyValues(station, this.selectedYear(), mitaAvg, minaAvg);
+      this.dayValues.set(dayValues);
+      this.nightValues.set(nightValues);
       this.refreshChart();
     } catch (e) {
       // ignore
     }
   }
 
-  private computePatientenProPflegekraftTag(res: ManualEntryDataResponse | undefined): number {
-    if (!res || !res.data) return 0;
-    // Durchschnittliche PFK-Stunden pro Tag aus Tageswerten
+  private async fetchMonthlyValues(station: string, year: number, mitaAverage: number | null, minaAverage: number | null): Promise<{ dayValues: number[]; nightValues: number[] }> {
+    const cacheKey = `${station}::${year}`;
+    const cached = this.comparisonCache.get(cacheKey);
+    if (cached) {
+      return { dayValues: [...cached.day], nightValues: [...cached.night] };
+    }
+
+    const dayVals: number[] = Array(12).fill(0);
+    const nightVals: number[] = Array(12).fill(0);
+    const requests: Promise<void>[] = [];
+
+    for (let month = 1; month <= 12; month++) {
+      requests.push(
+        this.api.getManualEntryData(station, year, month, 'PFK').toPromise()
+          .then(res => { dayVals[month - 1] = this.computePatientenProPflegekraftTag(res, mitaAverage); })
+          .catch(() => { dayVals[month - 1] = 0; })
+      );
+      requests.push(
+        this.api.getManualEntryNachtData(station, year, month, 'PFK').toPromise()
+          .then(res => { nightVals[month - 1] = this.computePatientenProPflegekraftNacht(res, minaAverage); })
+          .catch(() => { nightVals[month - 1] = 0; })
+      );
+    }
+
+    await Promise.all(requests);
+    this.comparisonCache.set(cacheKey, { day: [...dayVals], night: [...nightVals] });
+    return { dayValues: dayVals, nightValues: nightVals };
+  }
+
+  async openComparisonDialog(event?: MouseEvent) {
+    event?.stopPropagation();
+
+    if (this.comparisonSeries().length <= 1 && !this.comparisonLoading()) {
+      await this.prepareComparisonSeries();
+    }
+
+    if (this.comparisonSeries().length <= 1) {
+      return;
+    }
+
+    this.dialog.open(ComparisonDialogComponent, {
+      width: '1100px',
+      maxWidth: '95vw',
+      data: {
+        title: `Patient/Pflegekraft – Vergleich (${this.selectedYear()})`,
+        subtitle: 'Tag- und Nachtwerte pro Station',
+        selectionLabel: 'Stationen',
+        selectionLimit: 4,
+        metrics: this.comparisonMetrics,
+        series: this.comparisonSeries(),
+        monthLabels: ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez']
+      }
+    });
+  }
+
+  private async prepareComparisonSeries() {
+    const stations = this.stations().filter(station => station && station.trim().length > 0);
+    if (stations.length <= 1) {
+      return;
+    }
+
+    this.comparisonLoading.set(true);
+    try {
+      const year = this.selectedYear();
+      const series: ComparisonSeries[] = [];
+
+      for (const station of stations) {
+        const [mita, mina] = await Promise.all([
+          this.api.getStationMitaAverage(station).toPromise(),
+          this.api.getStationMinaAverage(station).toPromise()
+        ]);
+        const mitaAvg = mita?.mitaDurchschnitt ?? null;
+        const minaAvg = mina?.minaDurchschnitt ?? null;
+        const { dayValues, nightValues } = await this.fetchMonthlyValues(station, year, mitaAvg, minaAvg);
+
+        series.push({
+          id: station,
+          label: station,
+          monthlyData: dayValues.map((day, index) => ({
+            month: index + 1,
+            metrics: {
+              pfkTag: day,
+              pfkNacht: nightValues[index] ?? null
+            }
+          }))
+        });
+      }
+
+      this.comparisonSeries.set(series);
+    } finally {
+      this.comparisonLoading.set(false);
+    }
+  }
+
+  private computePatientenProPflegekraftTag(res: ManualEntryDataResponse | undefined, mitaAverage: number | null): number {
+    if (!res || !res.data || !mitaAverage || mitaAverage === 0) return 0;
     const dayEntries = res.data.filter(d => d.Tag > 0);
     if (dayEntries.length === 0) return 0;
 
@@ -222,7 +340,6 @@ export class PatientenPflegekraftCharts implements OnInit {
     if (daysWithData === 0) return 0;
     const avgPfkHours = (totalMinutes / daysWithData) / 60;
 
-    // Tatsächlich anrechenbar aus phkTageswerte wenn vorhanden, sonst PHK_Anrechenbar_Stunden Durchschnitt (Tag=0)
     let tatsaechlichAnrechenbar = 0;
     if (res.phkTageswerte && Array.isArray(res.phkTageswerte) && res.phkTageswerte.length > 0) {
       const values: number[] = [];
@@ -239,16 +356,13 @@ export class PatientenPflegekraftCharts implements OnInit {
       tatsaechlichAnrechenbar = Number(avgRow?.PHK_Anrechenbar_Stunden) || 0;
     }
 
-    // Gesamt Anrechenbar = avgPfkHours + tatsaechlichAnrechenbar; Exam. Pflege = /16
     const gesamt = avgPfkHours + tatsaechlichAnrechenbar;
     const examPflege = gesamt / 16;
-    const konstante = this.mitaAverage();
-    if (!konstante || konstante === 0) return 0;
-    return examPflege / konstante;
+    return examPflege / mitaAverage;
   }
 
-  private computePatientenProPflegekraftNacht(res: ManualEntryDataResponse | undefined): number {
-    if (!res || !res.data) return 0;
+  private computePatientenProPflegekraftNacht(res: ManualEntryDataResponse | undefined, minaAverage: number | null): number {
+    if (!res || !res.data || !minaAverage || minaAverage === 0) return 0;
     const dayEntries = res.data.filter(d => d.Tag > 0);
     if (dayEntries.length === 0) return 0;
     let totalMinutes = 0; let daysWithData = 0;
@@ -261,10 +375,8 @@ export class PatientenPflegekraftCharts implements OnInit {
     const avgRow = res.data.find(d => d.Tag === 0);
     const phkAnr = Number(avgRow?.PHK_Anrechenbar_Stunden) || 0;
     const gesamt = avgPfkHours + phkAnr;
-    const examPflege = gesamt / 8; // Nacht 8h
-    const konstante = this.minaAverage();
-    if (!konstante || konstante === 0) return 0;
-    return examPflege / konstante;
+    const examPflege = gesamt / 8;
+    return examPflege / minaAverage;
   }
 
   private refreshChart() {
@@ -280,5 +392,4 @@ export class PatientenPflegekraftCharts implements OnInit {
   dayAverage() { const v = this.dayValues().filter(n=>n>0); return v.length? v.reduce((a,b)=>a+b,0)/v.length : 0; }
   nightAverage() { const v = this.nightValues().filter(n=>n>0); return v.length? v.reduce((a,b)=>a+b,0)/v.length : 0; }
 }
-
 

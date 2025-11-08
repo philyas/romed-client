@@ -33,6 +33,7 @@
         display: flex;
         gap: 16px;
         align-items: center;
+        flex-wrap: wrap;
 
         .selector {
           min-width: 180px;
@@ -47,6 +48,16 @@
               width: 18px;
               height: 18px;
             }
+          }
+        }
+
+        .comparison-button {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+
+          mat-icon {
+            margin: 0;
           }
         }
       }

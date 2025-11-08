@@ -1,14 +1,18 @@
-import { Component, Input, OnInit, OnChanges, signal, computed } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData } from 'chart.js';
 import { UploadRecord } from '../../core/api';
 import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel';
+import { ComparisonDialogComponent, ComparisonMetricConfig, ComparisonSeries } from '../shared/comparison-dialog/comparison-dialog.component';
 
 interface SaldenZeitkontenData {
   Berufsgruppe: string;
@@ -25,10 +29,12 @@ interface SaldenZeitkontenData {
   imports: [
     CommonModule,
     MatCardModule,
+    MatButtonModule,
     MatChipsModule,
     MatIconModule,
     MatSelectModule,
     MatFormFieldModule,
+    MatTooltipModule,
     BaseChartDirective,
     DataInfoPanel
   ],
@@ -69,6 +75,16 @@ interface SaldenZeitkontenData {
                 </mat-option>
               </mat-select>
             </mat-form-field>
+            <button
+              mat-stroked-button
+              color="primary"
+              class="comparison-button"
+              (click)="openComparisonDialog($event)"
+              [disabled]="comparisonSeries().length <= 1"
+              matTooltip="Vergleichen Sie bis zu vier Kostenstellen über das Jahr">
+              <mat-icon>compare</mat-icon>
+              Vergleich
+            </button>
           </div>
         </div>
         <p>Mehrarbeitszeit (Überstunden + Arbeitszeitkonto) in Stunden - {{ selectedBereich() }}</p>
@@ -261,6 +277,19 @@ interface SaldenZeitkontenData {
       display: flex;
       gap: 16px;
       flex-wrap: wrap;
+
+      .comparison-button {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+
+        mat-icon {
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+        }
+      }
     }
 
     .selector {
@@ -286,6 +315,22 @@ interface SaldenZeitkontenData {
     @media (max-width: 1400px) {
       .charts-grid {
         grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .selectors {
+        flex-direction: column;
+        align-items: stretch;
+
+        .selector {
+          width: 100%;
+        }
+
+        .comparison-button {
+          width: 100%;
+          justify-content: center;
+        }
       }
     }
 
@@ -455,6 +500,7 @@ interface SaldenZeitkontenData {
 })
 export class SaldenZeitkontenCharts implements OnInit, OnChanges {
   @Input() uploads: UploadRecord[] = [];
+  private dialog = inject(MatDialog);
 
   // Signals
   selectedKST = signal<string>('all');
@@ -535,6 +581,117 @@ export class SaldenZeitkontenCharts implements OnInit, OnChanges {
   });
 
   hasData = computed(() => this.filteredData().length > 0);
+
+  comparisonSeries = computed<ComparisonSeries[]>(() => this.buildComparisonSeries());
+
+  openComparisonDialog(event?: MouseEvent) {
+    event?.stopPropagation();
+
+    const series = this.comparisonSeries();
+    if (series.length <= 1) {
+      return;
+    }
+
+    const metrics: ComparisonMetricConfig[] = [
+      {
+        key: 'mehrarbeitszeit',
+        label: 'Mehrarbeitszeit',
+        unit: 'h',
+        chartTitle: 'Mehrarbeitszeit (Stunden)',
+        decimals: 2
+      }
+    ];
+
+    this.dialog.open(ComparisonDialogComponent, {
+      width: '1100px',
+      maxWidth: '95vw',
+      data: {
+        title: `Salden Zeitkonten – Vergleich (${this.selectedYear()})`,
+        subtitle: 'Mehrarbeitszeit je Kostenstelle',
+        selectionLabel: 'Kostenstellen',
+        metrics,
+        series
+      }
+    });
+  }
+
+  private buildComparisonSeries(): ComparisonSeries[] {
+    const data = this.saldenData();
+    if (data.length === 0) {
+      return [];
+    }
+
+    const targetYear = this.selectedYear();
+    const months = Array.from({ length: 12 }, (_, index) => index + 1);
+
+    const kostentragerMap = new Map<string, Map<number, number>>();
+    const aggregatedMap = new Map<number, number>();
+
+    data.forEach(row => {
+      if (!row || row.Jahr !== targetYear || !row.Monat) {
+        return;
+      }
+
+      const month = Number(row.Monat);
+      if (!month || month < 1 || month > 12) {
+        return;
+      }
+
+      const key = row.KST;
+      if (!key) {
+        return;
+      }
+
+      if (!kostentragerMap.has(key)) {
+        kostentragerMap.set(key, new Map());
+      }
+      const monthMap = kostentragerMap.get(key)!;
+      monthMap.set(month, (monthMap.get(month) || 0) + (row.Summe || 0));
+
+      aggregatedMap.set(month, (aggregatedMap.get(month) || 0) + (row.Summe || 0));
+    });
+
+    if (kostentragerMap.size === 0) {
+      return [];
+    }
+
+    const metadata = new Map<string, string>();
+    this.availableKST().forEach(item => metadata.set(item.KST, item.Beschreibung));
+
+    const buildSeries = (id: string, label: string, monthMap: Map<number, number>): ComparisonSeries => ({
+      id,
+      label,
+      monthlyData: months.map(month => ({
+        month,
+        metrics: {
+          mehrarbeitszeit: monthMap.get(month) ?? 0
+        }
+      }))
+    });
+
+    const series: ComparisonSeries[] = [];
+
+    if (aggregatedMap.size > 0) {
+      series.push(buildSeries('all', 'Alle Kostenstellen', aggregatedMap));
+    }
+
+    const sortedKeys = Array.from(kostentragerMap.keys()).sort((a, b) => {
+      const labelA = metadata.get(a) ?? a;
+      const labelB = metadata.get(b) ?? b;
+      return labelA.localeCompare(labelB, 'de-DE');
+    });
+
+    sortedKeys.forEach(key => {
+      const monthMap = kostentragerMap.get(key);
+      if (!monthMap) {
+        return;
+      }
+      const label = metadata.has(key) ? `${metadata.get(key)} (${key})` : key;
+      series.push(buildSeries(key, label ?? key, monthMap));
+    });
+
+    return series;
+  }
 
   // Data Info Items
   dataInfoItems = computed(() => {

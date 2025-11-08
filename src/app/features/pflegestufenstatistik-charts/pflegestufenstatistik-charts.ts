@@ -1,14 +1,18 @@
-import { Component, Input, OnInit, OnChanges, signal, computed } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData } from 'chart.js';
 import { UploadRecord } from '../../core/api';
 import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel';
+import { ComparisonDialogComponent, ComparisonMetricConfig, ComparisonSeries } from '../shared/comparison-dialog/comparison-dialog.component';
 
 interface PflegestufenData {
   Station: string;
@@ -26,10 +30,12 @@ interface PflegestufenData {
   imports: [
     CommonModule,
     MatCardModule,
+    MatButtonModule,
     MatChipsModule,
     MatIconModule,
     MatSelectModule,
     MatFormFieldModule,
+    MatTooltipModule,
     BaseChartDirective,
     DataInfoPanel
   ],
@@ -69,6 +75,16 @@ interface PflegestufenData {
                 </mat-option>
               </mat-select>
             </mat-form-field>
+            <button
+              mat-stroked-button
+              color="primary"
+              class="comparison-button"
+              (click)="openComparisonDialog($event)"
+              [disabled]="comparisonSeries().length <= 1"
+              matTooltip="Vergleichen Sie bis zu vier Stationen für diesen Standort">
+              <mat-icon>compare</mat-icon>
+              Vergleich
+            </button>
           </div>
         </div>
         <p>PPR-Pflegestufen: Pflegebedarf und Altersgruppen im Jahresverlauf</p>
@@ -192,6 +208,7 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
   pflegestufenData = signal<PflegestufenData[]>([]);
   flippedCards = signal<{ [key: string]: boolean }>({});
   dataInfoItems = signal<DataInfoItem[]>([]);
+  private dialog = inject(MatDialog);
   
   availableStandorte = computed(() => {
     const standorte = new Set<string>();
@@ -207,6 +224,82 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
       .forEach(d => stations.add(d.Station));
     return Array.from(stations).sort();
   });
+
+  comparisonSeries = computed<ComparisonSeries[]>(() => {
+    const standort = this.selectedStandort();
+    if (!standort) {
+      return [];
+    }
+
+    const data = this.pflegestufenData().filter(d => 
+      d.Standort === standort &&
+      d.Kategorie === 'Gesamt'
+    );
+
+    const stationSet = new Set<string>();
+    data.forEach(row => {
+      if (row.Station && row.Station.trim().length > 0) {
+        stationSet.add(row.Station.trim());
+      }
+    });
+
+    return Array.from(stationSet).sort().map(station => ({
+      id: station,
+      label: station,
+      monthlyData: Array.from({ length: 12 }, (_, index) => {
+        const month = index + 1;
+        const monthlyRows = data.filter(row => row.Station === station && row.Monat === month);
+
+        if (monthlyRows.length === 0) {
+          return {
+            month,
+            metrics: {
+              patienten: null,
+              einstufungen: null,
+              pflegebedarf: null
+            }
+          };
+        }
+
+        const patientenSum = monthlyRows.reduce((sum, row) => sum + this.toNumber(row['T.-Patienten']), 0);
+        const einstufungenSum = monthlyRows.reduce((sum, row) => sum + this.toNumber(row['Einstufungen absolut']), 0);
+        const pflegebedarfSum = monthlyRows.reduce((sum, row) => sum + this.toNumber(row['Pfl.bedarf Minuten']), 0);
+
+        return {
+          month,
+          metrics: {
+            patienten: patientenSum,
+            einstufungen: einstufungenSum,
+            pflegebedarf: pflegebedarfSum
+          }
+        };
+      })
+    }));
+  });
+
+  private readonly comparisonMetrics: ComparisonMetricConfig[] = [
+    {
+      key: 'patienten',
+      label: 'Tagespatienten',
+      chartTitle: 'Tagespatienten',
+      decimals: 0,
+      valueFormatter: value => value === null ? '–' : value.toLocaleString('de-DE')
+    },
+    {
+      key: 'einstufungen',
+      label: 'Einstufungen absolut',
+      chartTitle: 'Einstufungen absolut',
+      decimals: 0,
+      valueFormatter: value => value === null ? '–' : value.toLocaleString('de-DE')
+    },
+    {
+      key: 'pflegebedarf',
+      label: 'Pflegebedarf (Minuten)',
+      chartTitle: 'Pflegebedarf (Minuten)',
+      decimals: 0,
+      valueFormatter: value => value === null ? '–' : value.toLocaleString('de-DE')
+    }
+  ];
 
   ngOnInit() {
     this.loadData();
@@ -278,6 +371,33 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
 
   onStationChange(station: string) {
     this.selectedStation.set(station);
+  }
+
+  openComparisonDialog(event?: MouseEvent) {
+    event?.stopPropagation();
+    const series = this.comparisonSeries();
+    if (series.length <= 1) {
+      return;
+    }
+
+    this.dialog.open(ComparisonDialogComponent, {
+      width: '1100px',
+      maxWidth: '95vw',
+      data: {
+        title: `Pflegestufen – Vergleich (${this.selectedStandort()})`,
+        subtitle: `Jahr ${this.selectedYear()}`,
+        selectionLabel: 'Stationen',
+        selectionLimit: 4,
+        metrics: this.comparisonMetrics,
+        series,
+        monthLabels: ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez']
+      }
+    });
+  }
+
+  private toNumber(value: unknown): number {
+    const num = Number(value);
+    return isNaN(num) ? 0 : num;
   }
 
   toggleFlip(cardType: string) {

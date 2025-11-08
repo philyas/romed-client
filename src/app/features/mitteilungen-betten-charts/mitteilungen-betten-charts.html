@@ -36,6 +36,16 @@
             </mat-option>
           </mat-select>
         </mat-form-field>
+        <button
+          mat-stroked-button
+          color="primary"
+          class="comparison-button"
+          (click)="openComparisonDialog($event)"
+          [disabled]="comparisonSeries().length <= 1"
+          matTooltip="Vergleichen Sie bis zu vier Einheiten">
+          <mat-icon>compare</mat-icon>
+          Vergleich
+        </button>
       </div>
     </div>
     <p>

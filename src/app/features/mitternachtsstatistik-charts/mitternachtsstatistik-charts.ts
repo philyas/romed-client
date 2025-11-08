@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnChanges, signal, inject } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, signal, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -14,7 +14,7 @@ import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType, registerables } from 'chart.js';
 import { MitternachtsstatistikResponse, Api, ResultsResponse } from '../../core/api';
 import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel';
-import { MitternachtsstatistikComparisonDialogComponent } from './mitternachtsstatistik-comparison-dialog.component';
+import { ComparisonDialogComponent, ComparisonMetricConfig, ComparisonSeries } from '../shared/comparison-dialog/comparison-dialog.component';
 
 // Register Chart.js components
 import Chart from 'chart.js/auto';
@@ -109,7 +109,7 @@ interface StationChartData {
               color="primary"
               class="comparison-button"
               (click)="openComparisonDialog($event)"
-              [disabled]="availableStations().length === 0"
+              [disabled]="comparisonSeries().length === 0"
               matTooltip="Vergleichen Sie bis zu vier Stationen für diesen Standort">
               <mat-icon>compare</mat-icon>
               Vergleich
@@ -618,6 +618,50 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
   currentYear = signal<number>(new Date().getFullYear());
   dataInfoItems = signal<DataInfoItem[]>([]);
   aufgestellteBettenData = signal<AufgestellteBettenData[]>([]);
+  comparisonSeries = computed<ComparisonSeries[]>(() => {
+    const location = this.chartDataByLocation().find(loc => loc.location === this.selectedLocation());
+    if (!location || !location.stations || location.stations.length === 0) {
+      return [];
+    }
+
+    return location.stations.map(station => ({
+      id: station.stationName,
+      label: station.stationName,
+      monthlyData: station.monthlyData.map(month => ({
+        month: month.month,
+        metrics: {
+          pflegetage: month.pflegetage ?? null,
+          stationsauslastung: month.stationsauslastung ?? null,
+          verweildauer: month.verweildauer ?? null
+        }
+      }))
+    }));
+  });
+  private readonly comparisonMetrics: ComparisonMetricConfig[] = [
+    {
+      key: 'pflegetage',
+      label: 'Pflegetage',
+      chartTitle: 'Pflegetage',
+      decimals: 0,
+      valueFormatter: (value) => value === null ? '–' : `${value.toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+    },
+    {
+      key: 'stationsauslastung',
+      label: 'Stationsauslastung (%)',
+      chartTitle: 'Stationsauslastung',
+      unit: '%',
+      decimals: 1,
+      valueFormatter: (value) => value === null ? '–' : `${value.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`
+    },
+    {
+      key: 'verweildauer',
+      label: 'Verweildauer (Tage)',
+      chartTitle: 'Verweildauer (VD.inkl.)',
+      unit: 'Tage',
+      decimals: 2,
+      valueFormatter: (value) => value === null ? '–' : `${value.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Tage`
+    }
+  ];
   
   // Track flipped state for each card
   flippedCards: { [key: string]: boolean } = {
@@ -934,18 +978,25 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
     event?.stopPropagation();
 
     const locationData = this.chartDataByLocation().find(loc => loc.location === this.selectedLocation());
-    if (!locationData || !locationData.stations || locationData.stations.length === 0) {
+    const series = this.comparisonSeries();
+
+    if (!locationData || series.length === 0) {
       return;
     }
 
-    this.dialog.open(MitternachtsstatistikComparisonDialogComponent, {
+    const dialogData = {
+      title: `Mitternachtsstatistik – Vergleich (${locationData.locationName})`,
+      subtitle: `Jahr ${this.currentYear()}`,
+      selectionLabel: 'Stationen',
+      metrics: this.comparisonMetrics,
+      series,
+      monthLabels: this.monthLabels
+    };
+
+    this.dialog.open(ComparisonDialogComponent, {
       width: '1100px',
       maxWidth: '95vw',
-      data: {
-        location: locationData.location,
-        locationName: locationData.locationName,
-        stations: locationData.stations
-      }
+      data: dialogData
     });
   }
 

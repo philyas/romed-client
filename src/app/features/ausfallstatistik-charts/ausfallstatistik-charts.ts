@@ -1,17 +1,21 @@
 import { Component, Input, OnInit, OnChanges, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType, registerables } from 'chart.js';
 import Chart from 'chart.js/auto';
 import { firstValueFrom } from 'rxjs';
 import { Api, UploadRecord } from '../../core/api';
 import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel';
+import { ComparisonDialogComponent, ComparisonMetricConfig, ComparisonSeries } from '../shared/comparison-dialog/comparison-dialog.component';
 
 interface AusfallstatistikData {
   Kostenstelle: string;
@@ -49,11 +53,13 @@ interface KostenstellenMappingItem {
   imports: [
     CommonModule,
     MatCardModule,
+    MatButtonModule,
     MatChipsModule,
     MatIconModule,
     MatSelectModule,
     MatFormFieldModule,
     MatButtonToggleModule,
+    MatTooltipModule,
     BaseChartDirective,
     DataInfoPanel
   ],
@@ -97,6 +103,16 @@ interface KostenstellenMappingItem {
                 </mat-option>
               </mat-select>
             </mat-form-field>
+            <button
+              mat-stroked-button
+              color="primary"
+              class="comparison-button"
+              (click)="openComparisonDialog($event)"
+              [disabled]="comparisonSeries().length === 0"
+              matTooltip="Vergleichen Sie bis zu vier Kostenstellen über die Monate">
+              <mat-icon>compare</mat-icon>
+              Vergleich
+            </button>
           </div>
         </div>
         <p>Soll/Ist-Vergleich nach Kostenstellen mit Lohnartendaten (Krankenstand, Urlaub, Sonstige Ausfälle)</p>
@@ -250,6 +266,7 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
   @Input() uploads: UploadRecord[] = [];
   private _selectedYear = new Date().getFullYear();
   private api = inject(Api);
+  private dialog = inject(MatDialog);
   @Input() set selectedYear(value: number) {
     this._selectedYear = value;
     this.selectedYearSignal.set(value);
@@ -302,6 +319,8 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
       return a.localeCompare(b);
     });
   });
+
+  comparisonSeries = computed<ComparisonSeries[]>(() => this.buildComparisonSeries());
 
   // Chart options (computed to react to showPercentage)
   sollIstChartOptions = computed<ChartConfiguration['options']>(() => {
@@ -426,6 +445,195 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
     this.showLohnartenPercentage.set(showPercentage);
   }
 
+  openComparisonDialog(event?: MouseEvent) {
+    event?.stopPropagation();
+
+    const series = this.comparisonSeries();
+    if (!series.length) {
+      return;
+    }
+
+    const metrics: ComparisonMetricConfig[] = [
+      {
+        key: 'soll',
+        label: 'Soll-Stunden',
+        unit: 'h',
+        chartTitle: 'Soll-Stunden',
+        decimals: 1
+      },
+      {
+        key: 'ist',
+        label: 'Ist-Stunden',
+        unit: 'h',
+        chartTitle: 'Ist-Stunden',
+        decimals: 1
+      },
+      {
+        key: 'abdeckungsgrad',
+        label: 'Abdeckungsgrad',
+        unit: '%',
+        chartTitle: 'Abdeckungsgrad',
+        decimals: 1
+      },
+      {
+        key: 'la1',
+        label: 'K (Krankenstand)',
+        unit: 'h',
+        chartTitle: 'Krankenstand (LA1)',
+        decimals: 1
+      },
+      {
+        key: 'la2',
+        label: 'U. (Urlaub/Feiertage)',
+        unit: 'h',
+        chartTitle: 'Urlaub/Feiertage (LA2)',
+        decimals: 1
+      },
+      {
+        key: 'la3',
+        label: 'Sonstige Ausfälle',
+        unit: 'h',
+        chartTitle: 'Sonstige Ausfälle (LA3)',
+        decimals: 1
+      }
+    ];
+
+    this.dialog.open(ComparisonDialogComponent, {
+      width: '1100px',
+      maxWidth: '95vw',
+      data: {
+        title: `Ausfallstatistik – Vergleich (${this.selectedYearSignal()})`,
+        subtitle: 'Soll/Ist sowie Lohnartenkennzahlen im Kostenstellenvergleich',
+        selectionLabel: 'Kostenstellen',
+        metrics,
+        series
+      }
+    });
+  }
+
+  private buildComparisonSeries(): ComparisonSeries[] {
+    const data = this.allData();
+    if (data.length === 0) {
+      return [];
+    }
+
+    const targetYear = this.selectedYearSignal();
+
+    type MonthAggregate = {
+      soll: number;
+      ist: number;
+      la1: number;
+      la2: number;
+      la3: number;
+    };
+
+    const createAggregate = (): MonthAggregate => ({
+      soll: 0,
+      ist: 0,
+      la1: 0,
+      la2: 0,
+      la3: 0
+    });
+
+    const costCenterMap = new Map<string, Map<number, MonthAggregate>>();
+    const aggregatedMap = new Map<number, MonthAggregate>();
+
+    data.forEach(row => {
+      if (!row || row.Jahr !== targetYear || !row.Monat) {
+        return;
+      }
+
+      const month = Number(row.Monat);
+      if (!month || month < 1 || month > 12) {
+        return;
+      }
+
+      const rawKey = String(row.Kostenstelle || row.KSt || '').trim();
+      if (!rawKey) {
+        return;
+      }
+
+      if (!costCenterMap.has(rawKey)) {
+        costCenterMap.set(rawKey, new Map());
+      }
+      const monthMap = costCenterMap.get(rawKey)!;
+      if (!monthMap.has(month)) {
+        monthMap.set(month, createAggregate());
+      }
+      if (!aggregatedMap.has(month)) {
+        aggregatedMap.set(month, createAggregate());
+      }
+
+      const monthAggregate = monthMap.get(month)!;
+      const aggregatedAggregate = aggregatedMap.get(month)!;
+      const soll = (row.Soll_Stunden || 0) + ((row.Soll_Minuten || 0) / 60);
+      const ist = (row.Ist_Stunden || 0) + ((row.Ist_Minuten || 0) / 60);
+      const la1 = row.LA1_KR_Wert || 0;
+      const la2 = row.LA2_FT_Wert || 0;
+      const la3 = row.LA3_FB_Wert || 0;
+
+      monthAggregate.soll += soll;
+      monthAggregate.ist += ist;
+      monthAggregate.la1 += la1;
+      monthAggregate.la2 += la2;
+      monthAggregate.la3 += la3;
+
+      aggregatedAggregate.soll += soll;
+      aggregatedAggregate.ist += ist;
+      aggregatedAggregate.la1 += la1;
+      aggregatedAggregate.la2 += la2;
+      aggregatedAggregate.la3 += la3;
+    });
+
+    const months = Array.from({ length: 12 }, (_, index) => index + 1);
+    const series: ComparisonSeries[] = [];
+
+    const buildSeries = (id: string, label: string, monthMap: Map<number, MonthAggregate>) => {
+      const monthlyData = months.map(month => {
+        const values = monthMap.get(month) ?? createAggregate();
+        return {
+          month,
+          metrics: {
+            soll: values.soll,
+            ist: values.ist,
+            abdeckungsgrad: values.soll > 0 ? (values.ist / values.soll) * 100 : null,
+            la1: values.la1,
+            la2: values.la2,
+            la3: values.la3
+          }
+        };
+      });
+
+      series.push({
+        id,
+        label,
+        monthlyData
+      });
+    };
+
+    if (aggregatedMap.size > 0) {
+      buildSeries('all', 'Alle Kostenstellen', aggregatedMap);
+    }
+
+    const sortedKeys = Array.from(costCenterMap.keys()).sort((a, b) => {
+      const numA = parseInt(a, 10);
+      const numB = parseInt(b, 10);
+      if (!isNaN(numA) && !isNaN(numB)) {
+        return numA - numB;
+      }
+      return a.localeCompare(b);
+    });
+
+    sortedKeys.forEach(key => {
+      const monthMap = costCenterMap.get(key);
+      if (!monthMap) {
+        return;
+      }
+      buildSeries(key, this.formatKostenstelleLabel(key), monthMap);
+    });
+
+    return series;
+  }
   private processData() {
     const data: AusfallstatistikData[] = [];
 

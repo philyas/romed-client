@@ -31,11 +31,28 @@
         }
       }
 
-      .location-selector {
-        min-width: 200px;
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
 
-        mat-icon {
-          margin-right: 8px;
+        .location-selector {
+          min-width: 200px;
+
+          mat-icon {
+            margin-right: 8px;
+          }
+        }
+
+        .comparison-button {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+
+          mat-icon {
+            margin: 0;
+          }
         }
       }
     }

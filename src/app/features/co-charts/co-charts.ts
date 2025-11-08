@@ -1,14 +1,18 @@
-import { Component, Input, OnInit, OnChanges, signal } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType, registerables } from 'chart.js';
 import { UploadRecord, SchemaStatistics } from '../../core/api';
 import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel';
+import { ComparisonDialogComponent, ComparisonMetricConfig, ComparisonSeries } from '../shared/comparison-dialog/comparison-dialog.component';
 
 // Register Chart.js components
 import Chart from 'chart.js/auto';
@@ -38,10 +42,12 @@ interface COChartData {
   imports: [
     CommonModule,
     MatCardModule,
+    MatButtonModule,
     MatChipsModule,
     MatIconModule,
     MatSelectModule,
     MatFormFieldModule,
+    MatTooltipModule,
     BaseChartDirective,
     DataInfoPanel
   ],
@@ -53,20 +59,33 @@ interface COChartData {
             <mat-icon>timeline</mat-icon>
             Aufnahmen und Entlassungen - {{ selectedYear }}
           </h3>
-          <mat-form-field appearance="outline" class="location-selector">
-            <mat-label>
-              <mat-icon>location_on</mat-icon>
-              Standort
-            </mat-label>
-            <mat-select 
-              [value]="selectedStandort()" 
-              (selectionChange)="onStandortChange($event.value)">
-              <mat-option value="AIB">BAB</mat-option>
-              <mat-option value="PRI">PRI</mat-option>
-              <mat-option value="ROS">ROS</mat-option>
-              <mat-option value="WAS">WAS</mat-option>
-            </mat-select>
-          </mat-form-field>
+          <div class="header-actions">
+            <mat-form-field appearance="outline" class="location-selector">
+              <mat-label>
+                <mat-icon>location_on</mat-icon>
+                Standort
+              </mat-label>
+              <mat-select 
+                [value]="selectedStandort()" 
+                (selectionChange)="onStandortChange($event.value)">
+                <mat-option value="AIB">BAB</mat-option>
+                <mat-option value="PRI">PRI</mat-option>
+                <mat-option value="ROS">ROS</mat-option>
+                <mat-option value="WAS">WAS</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <button
+              mat-stroked-button
+              color="primary"
+              class="comparison-button"
+              (click)="openComparisonDialog($event)"
+              [disabled]="comparisonSeries().length <= 1"
+              matTooltip="Vergleichen Sie bis zu vier Standorte über alle Monate">
+              <mat-icon>compare</mat-icon>
+              Vergleich
+            </button>
+          </div>
         </div>
         <p>Zwei separate Charts: Entlassungen und Aufnahmen nach Zeitfenstern (vor/nach 11 Uhr)</p>
       </div>
@@ -240,6 +259,7 @@ export class COCharts implements OnInit, OnChanges {
   selectedStandort = signal<string>('AIB');
   flippedCards = signal<{ [key: string]: boolean }>({});
   dataInfoItems = signal<DataInfoItem[]>([]);
+  private dialog = inject(MatDialog);
 
   // Standort-Mapping: AIB = BAB
   standortNames: { [key: string]: string } = {
@@ -448,6 +468,97 @@ export class COCharts implements OnInit, OnChanges {
     });
 
     return { labels: months, datasets };
+  }
+
+  comparisonSeries = computed<ComparisonSeries[]>(() => {
+    const data = this.chartData();
+    if (!data || !data.monthlyData) {
+      return [];
+    }
+
+    const standorteSet = new Set<string>();
+    for (let month = 1; month <= 12; month++) {
+      const monthData = data.monthlyData[month];
+      if (!monthData) continue;
+      Object.keys(monthData).forEach(standort => standorteSet.add(standort));
+    }
+
+    return Array.from(standorteSet).sort().map(standort => ({
+      id: standort,
+      label: this.standortNames[standort] || standort,
+      monthlyData: Array.from({ length: 12 }, (_, index) => {
+        const month = index + 1;
+        const entlassungen = data.monthlyData[month]?.[standort]?.['Entlassungen'] || {};
+        const aufnahmen = data.monthlyData[month]?.[standort]?.['Aufnahmen'] || {};
+        return {
+          month,
+          metrics: {
+            entlassungenVor11: this.toNumberOrNull(entlassungen['vor 11 Uhr']),
+            entlassungenNach11: this.toNumberOrNull(entlassungen['nach 11 Uhr']),
+            aufnahmenVor11: this.toNumberOrNull(aufnahmen['vor 11 Uhr']),
+            aufnahmenNach11: this.toNumberOrNull(aufnahmen['nach 11 Uhr'])
+          }
+        };
+      })
+    }));
+  });
+
+  private readonly comparisonMetrics: ComparisonMetricConfig[] = [
+    {
+      key: 'entlassungenVor11',
+      label: 'Entlassungen vor 11 Uhr',
+      chartTitle: 'Entlassungen vor 11 Uhr',
+      decimals: 0,
+      valueFormatter: value => value === null ? '–' : value.toLocaleString('de-DE')
+    },
+    {
+      key: 'entlassungenNach11',
+      label: 'Entlassungen nach 11 Uhr',
+      chartTitle: 'Entlassungen nach 11 Uhr',
+      decimals: 0,
+      valueFormatter: value => value === null ? '–' : value.toLocaleString('de-DE')
+    },
+    {
+      key: 'aufnahmenVor11',
+      label: 'Aufnahmen vor 11 Uhr',
+      chartTitle: 'Aufnahmen vor 11 Uhr',
+      decimals: 0,
+      valueFormatter: value => value === null ? '–' : value.toLocaleString('de-DE')
+    },
+    {
+      key: 'aufnahmenNach11',
+      label: 'Aufnahmen nach 11 Uhr',
+      chartTitle: 'Aufnahmen nach 11 Uhr',
+      decimals: 0,
+      valueFormatter: value => value === null ? '–' : value.toLocaleString('de-DE')
+    }
+  ];
+
+  openComparisonDialog(event?: MouseEvent) {
+    event?.stopPropagation();
+    const series = this.comparisonSeries();
+    if (series.length <= 1) {
+      return;
+    }
+
+    this.dialog.open(ComparisonDialogComponent, {
+      width: '1100px',
+      maxWidth: '95vw',
+      data: {
+        title: 'CO-Aufnahmen & Entlassungen – Vergleich',
+        subtitle: `Jahr ${this.selectedYear}`,
+        selectionLabel: 'Standorte',
+        selectionLimit: 4,
+        metrics: this.comparisonMetrics,
+        series,
+        monthLabels: ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez']
+      }
+    });
+  }
+
+  private toNumberOrNull(value: unknown): number | null {
+    const num = Number(value);
+    return isNaN(num) ? null : num;
   }
 
   getChartOptions(title: string, yLabel: string, type: string): ChartConfiguration['options'] {
