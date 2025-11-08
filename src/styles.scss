@@ -46,6 +46,18 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+// Global override for Angular Material autocomplete panels
+.mat-mdc-autocomplete-panel,
+.mat-mdc-autocomplete-panel.mdc-menu-surface,
+.mat-mdc-autocomplete-panel.mdc-menu-surface--open,
+.mat-mdc-autocomplete-panel.mat-mdc-autocomplete-visible,
+.mat-mdc-autocomplete-panel.mat-autocomplete-panel-animations-enabled,
+.mat-mdc-autocomplete-panel.mat-primary {
+  background-color: #ffffff !important;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.18) !important;
+  border-radius: 8px !important;
+}
+
 // Professional Medical Navigation
 nav {
   background: $pure-white;
