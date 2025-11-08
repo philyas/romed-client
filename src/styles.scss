@@ -58,6 +58,39 @@ body {
   border-radius: 8px !important;
 }
 
+.mat-mdc-autocomplete-panel [role='listbox'],
+.mat-mdc-autocomplete-panel .mdc-list,
+.mat-mdc-autocomplete-panel .mat-mdc-option .mdc-list-item__background,
+.mat-mdc-autocomplete-panel .mat-mdc-option .mat-ripple-element {
+  background-color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+.mat-mdc-autocomplete-panel .mat-mdc-option,
+.mat-mdc-autocomplete-panel .mat-mdc-option .mdc-list-item__primary-text {
+  color: rgba(0, 0, 0, 0.87) !important;
+}
+
+.mat-mdc-autocomplete-panel .mat-mdc-option:not(.mdc-list-item--disabled):hover,
+.mat-mdc-autocomplete-panel .mat-mdc-option.mdc-list-item--activated,
+.mat-mdc-autocomplete-panel .mat-mdc-option.mdc-list-item--selected {
+  background-color: #b2ebf2 !important;
+  color: #006c7f !important;
+}
+
+.mat-mdc-autocomplete-panel .mat-mdc-option:not(.mdc-list-item--disabled):hover .mdc-list-item__background,
+.mat-mdc-autocomplete-panel .mat-mdc-option.mdc-list-item--activated .mdc-list-item__background,
+.mat-mdc-autocomplete-panel .mat-mdc-option.mdc-list-item--selected .mdc-list-item__background {
+  background-color: #b2ebf2 !important;
+}
+
+.mat-mdc-autocomplete-panel .mat-mdc-option:not(.mdc-list-item--disabled):hover .mdc-list-item__primary-text,
+.mat-mdc-autocomplete-panel .mat-mdc-option.mdc-list-item--activated .mdc-list-item__primary-text,
+.mat-mdc-autocomplete-panel .mat-mdc-option.mdc-list-item--selected .mdc-list-item__primary-text {
+  color: #006c7f !important;
+  font-weight: 600 !important;
+}
+
 // Professional Medical Navigation
 nav {
   background: $pure-white;
