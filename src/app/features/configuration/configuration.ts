@@ -15,13 +15,14 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormsModule } from '@angular/forms';
 import { Api } from '../../core/api';
+import { KostenstelleDialogComponent, KostenstelleDialogResult } from './kostenstelle-dialog.component';
 
 interface Kostenstelle {
   kostenstelle: string;
   stations: string[];
   standorte: string[];
-  standortnummer?: number | null;
-  ik?: number | null;
+  standortnummer?: string | number | null;
+  ik?: string | number | null;
   paediatrie?: string | null;
 }
 
@@ -55,6 +56,7 @@ export class Configuration implements OnInit {
   kostenstellen = signal<Kostenstelle[]>([]);
   dataSource = new MatTableDataSource<Kostenstelle>([]);
   loading = signal(false);
+  saving = signal(false);
   selectedFile = signal<File | null>(null);
   
   displayedColumns: string[] = ['kostenstelle', 'stations', 'standorte', 'standortnummer', 'ik', 'paediatrie', 'actions'];
@@ -75,6 +77,55 @@ export class Configuration implements OnInit {
         console.error('Error loading kostenstellen:', err);
         this.snackBar.open('Fehler beim Laden der Kostenstellen', 'Schließen', { duration: 3000 });
         this.loading.set(false);
+      }
+    });
+  }
+
+  openCreateDialog() {
+    this.openDialog();
+  }
+
+  openEditDialog(kostenstelle: Kostenstelle) {
+    this.openDialog(kostenstelle);
+  }
+
+  private openDialog(existing?: Kostenstelle) {
+    const dialogRef = this.dialog.open(KostenstelleDialogComponent, {
+      width: '520px',
+      data: existing ? { ...existing } : null
+    });
+
+    dialogRef.afterClosed().subscribe((result: KostenstelleDialogResult | null) => {
+      if (!result) {
+        return;
+      }
+      this.saveKostenstelle(result);
+    });
+  }
+
+  private saveKostenstelle(result: KostenstelleDialogResult) {
+    this.saving.set(true);
+
+    const payload = {
+      kostenstelle: result.kostenstelle,
+      stations: result.stations,
+      standorte: result.standorte,
+      standortnummer: result.standortnummer,
+      ik: result.ik,
+      paediatrie: result.paediatrie
+    };
+
+    this.api.saveKostenstelle(payload).subscribe({
+      next: (response) => {
+        this.snackBar.open(response.message, 'Schließen', { duration: 3000 });
+        this.saving.set(false);
+        this.loadKostenstellen();
+      },
+      error: (err) => {
+        console.error('Error saving kostenstelle:', err);
+        const errorMessage = err.error?.error || err.message || 'Fehler beim Speichern';
+        this.snackBar.open(errorMessage, 'Schließen', { duration: 5000 });
+        this.saving.set(false);
       }
     });
   }
@@ -141,15 +192,19 @@ export class Configuration implements OnInit {
       return;
     }
 
+    this.saving.set(true);
+
     this.api.deleteKostenstelle(kostenstelle).subscribe({
       next: (response) => {
         this.snackBar.open(response.message, 'Schließen', { duration: 3000 });
+        this.saving.set(false);
         this.loadKostenstellen();
       },
       error: (err) => {
         console.error('Error deleting kostenstelle:', err);
         const errorMessage = err.error?.error || err.message || 'Fehler beim Löschen';
         this.snackBar.open(errorMessage, 'Schließen', { duration: 3000 });
+        this.saving.set(false);
       }
     });
   }

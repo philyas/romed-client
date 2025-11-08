@@ -1,0 +1,90 @@
+<h2 mat-dialog-title>
+  <mat-icon>{{ isEditMode() ? 'edit' : 'add' }}</mat-icon>
+  {{ isEditMode() ? 'Kostenstelle bearbeiten' : 'Neue Kostenstelle' }}
+</h2>
+
+<mat-dialog-content class="dialog-content">
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Kostenstelle *</mat-label>
+    <input
+      matInput
+      [ngModel]="kostenstelle()"
+      (ngModelChange)="kostenstelle.set($event)"
+      required>
+  </mat-form-field>
+
+  <div class="chip-field">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Stationen</mat-label>
+      <mat-chip-grid #stationChipList>
+        <mat-chip-row *ngFor="let station of stations(); trackBy: trackByValue" (removed)="removeStation(station)">
+          {{ station }}
+          <button matChipRemove mat-icon-button>
+            <mat-icon>cancel</mat-icon>
+          </button>
+        </mat-chip-row>
+      </mat-chip-grid>
+      <input
+        placeholder="Station hinzufügen"
+        [matChipInputFor]="stationChipList"
+        [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+        (matChipInputTokenEnd)="addStation($event)">
+      <mat-hint>Mit Enter oder Komma bestätigen</mat-hint>
+    </mat-form-field>
+  </div>
+
+  <div class="chip-field">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Standorte</mat-label>
+      <mat-chip-grid #standortChipList>
+        <mat-chip-row *ngFor="let standort of standorte(); trackBy: trackByValue" (removed)="removeStandort(standort)">
+          {{ standort }}
+          <button matChipRemove mat-icon-button>
+            <mat-icon>cancel</mat-icon>
+          </button>
+        </mat-chip-row>
+      </mat-chip-grid>
+      <input
+        placeholder="Standort hinzufügen"
+        [matChipInputFor]="standortChipList"
+        [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+        (matChipInputTokenEnd)="addStandort($event)">
+      <mat-hint>Mit Enter oder Komma bestätigen</mat-hint>
+    </mat-form-field>
+  </div>
+
+  <div class="form-row">
+    <mat-form-field appearance="outline">
+      <mat-label>Standortnummer</mat-label>
+      <input
+        matInput
+        [ngModel]="standortnummer()"
+        (ngModelChange)="standortnummer.set($event)"
+        placeholder="z.B. 772847000">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>IK</mat-label>
+      <input
+        matInput
+        [ngModel]="ik()"
+        (ngModelChange)="ik.set($event)"
+        placeholder="z.B. 260911945">
+    </mat-form-field>
+  </div>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Pädiatrie</mat-label>
+    <input
+      matInput
+      [ngModel]="paediatrie()"
+      (ngModelChange)="paediatrie.set($event)"
+      placeholder="z.B. ja/nein">
+  </mat-form-field>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">Abbrechen</button>
+  <button mat-raised-button color="primary" (click)="save()" [disabled]="!canSave()">Speichern</button>
+</mat-dialog-actions>
+

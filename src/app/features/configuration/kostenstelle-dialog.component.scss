@@ -1,0 +1,32 @@
+.dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 320px;
+  max-width: 540px;
+
+  .full-width {
+    width: 100%;
+  }
+
+  .chip-field {
+    width: 100%;
+  }
+
+  .form-row {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+
+    mat-form-field {
+      flex: 1;
+      min-width: 140px;
+    }
+  }
+}
+
+mat-dialog-actions {
+  padding: 1rem 1.5rem;
+}
+
+
