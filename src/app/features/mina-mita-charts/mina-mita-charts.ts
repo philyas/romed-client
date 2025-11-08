@@ -5,9 +5,12 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { UploadRecord } from '../../core/api';
 import { MinaMitaChart } from './mina-mita-chart.component';
 import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel';
+import { MinaMitaComparisonDialogComponent } from './mina-mita-comparison-dialog.component';
 
 @Component({
   selector: 'app-mina-mita-charts',
@@ -19,6 +22,8 @@ import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel'
     MatIconModule,
     MatSelectModule,
     MatFormFieldModule,
+    MatDialogModule,
+    MatTooltipModule,
     MinaMitaChart,
     DataInfoPanel
   ],
@@ -31,20 +36,32 @@ import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel'
               <mat-icon>nights_stay</mat-icon>
               MiNa/MiTa-Bestände (PPUGV)
             </mat-card-title>
-            <mat-form-field appearance="outline" class="station-selector" *ngIf="availableStations().length > 0">
-              <mat-label>
-                <mat-icon>meeting_room</mat-icon>
-                Station
-              </mat-label>
-              <mat-select 
-                [value]="selectedStation()" 
-                (selectionChange)="onStationChange($event.value)">
-                <mat-option value="all">Alle Stationen</mat-option>
-                <mat-option *ngFor="let station of availableStations()" [value]="station">
-                  {{ station }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
+            <div class="actions" *ngIf="availableStations().length > 0">
+              <mat-form-field appearance="outline" class="station-selector">
+                <mat-label>
+                  <mat-icon>meeting_room</mat-icon>
+                  Station
+                </mat-label>
+                <mat-select 
+                  [value]="selectedStation()" 
+                  (selectionChange)="onStationChange($event.value)">
+                  <mat-option value="all">Alle Stationen</mat-option>
+                  <mat-option *ngFor="let station of availableStations()" [value]="station">
+                    {{ station }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <button
+                mat-stroked-button
+                color="primary"
+                class="comparison-button"
+                (click)="openComparisonDialog()"
+                matTooltip="Vergleichen Sie bis zu vier Stationen (MiNa)">
+                <mat-icon>compare</mat-icon>
+                Vergleich (MiNa)
+              </button>
+            </div>
           </div>
         </mat-card-header>
         
@@ -89,6 +106,17 @@ import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel'
       gap: 20px;
     }
 
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .comparison-button mat-icon {
+      margin-right: 8px;
+    }
+
     mat-card-title {
       display: flex;
       align-items: center;
@@ -123,6 +151,28 @@ import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel'
       height: 48px;
       color: #ccc;
     }
+
+    @media (max-width: 768px) {
+      .header-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+      }
+
+      .actions {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .station-selector {
+        width: 100%;
+      }
+
+      .comparison-button {
+        width: 100%;
+      }
+    }
   `]
 })
 export class MinaMitaCharts {
@@ -133,7 +183,7 @@ export class MinaMitaCharts {
   availableStations = signal<string[]>([]);
   dataInfoItems = signal<DataInfoItem[]>([]);
 
-  constructor() {
+  constructor(private dialog: MatDialog) {
     effect(() => {
       const minaMinaUploads = this.uploads.filter(u => u.schemaId === 'ppugv_bestaende');
       if (minaMinaUploads.length > 0) {
@@ -184,6 +234,27 @@ export class MinaMitaCharts {
 
   onStationChange(station: string) {
     this.selectedStation.set(station);
+  }
+
+  openComparisonDialog() {
+    const available = this.availableStations();
+    if (available.length === 0) {
+      return;
+    }
+
+    const minaUploads = this.uploads.filter(u => u.schemaId === 'ppugv_bestaende');
+    if (minaUploads.length === 0) {
+      return;
+    }
+
+    this.dialog.open(MinaMitaComparisonDialogComponent, {
+      width: '960px',
+      maxWidth: '95vw',
+      data: {
+        stations: available,
+        uploads: minaUploads
+      }
+    });
   }
 
   private prepareDataInfoItems(upload: UploadRecord) {

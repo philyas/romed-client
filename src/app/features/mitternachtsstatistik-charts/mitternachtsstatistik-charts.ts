@@ -1,16 +1,20 @@
 import { Component, Input, OnInit, OnChanges, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTableModule } from '@angular/material/table';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType, registerables } from 'chart.js';
 import { MitternachtsstatistikResponse, Api, ResultsResponse } from '../../core/api';
 import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel';
+import { MitternachtsstatistikComparisonDialogComponent } from './mitternachtsstatistik-comparison-dialog.component';
 
 // Register Chart.js components
 import Chart from 'chart.js/auto';
@@ -52,12 +56,14 @@ interface StationChartData {
   imports: [
     CommonModule,
     MatCardModule,
+    MatButtonModule,
     MatChipsModule,
     MatIconModule,
     MatTabsModule,
     MatSelectModule,
     MatFormFieldModule,
     MatTableModule,
+    MatTooltipModule,
     BaseChartDirective,
     DataInfoPanel
   ],
@@ -98,6 +104,16 @@ interface StationChartData {
                 </mat-option>
               </mat-select>
             </mat-form-field>
+            <button
+              mat-stroked-button
+              color="primary"
+              class="comparison-button"
+              (click)="openComparisonDialog($event)"
+              [disabled]="availableStations().length === 0"
+              matTooltip="Vergleichen Sie bis zu vier Stationen für diesen Standort">
+              <mat-icon>compare</mat-icon>
+              Vergleich
+            </button>
           </div>
         </div>
         <p>Monatliche Entwicklung der wichtigsten Kennzahlen {{ selectedStation() === 'all' ? '(Standort gesamt)' : '(Station: ' + selectedStation() + ')' }}</p>
@@ -346,6 +362,11 @@ interface StationChartData {
       display: flex;
       gap: 12px;
       align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .comparison-button mat-icon {
+      margin-right: 6px;
     }
 
     .location-selector,
@@ -587,6 +608,7 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
   @Input() mitternachtsstatistikData: MitternachtsstatistikResponse | null = null;
 
   private api = inject(Api);
+  private dialog = inject(MatDialog);
 
   chartDataByLocation = signal<LocationChartData[]>([]);
   selectedLocation = signal<string>('BAB');
@@ -906,6 +928,25 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
 
   onStationChange(station: string) {
     this.selectedStation.set(station);
+  }
+
+  openComparisonDialog(event?: MouseEvent) {
+    event?.stopPropagation();
+
+    const locationData = this.chartDataByLocation().find(loc => loc.location === this.selectedLocation());
+    if (!locationData || !locationData.stations || locationData.stations.length === 0) {
+      return;
+    }
+
+    this.dialog.open(MitternachtsstatistikComparisonDialogComponent, {
+      width: '1100px',
+      maxWidth: '95vw',
+      data: {
+        location: locationData.location,
+        locationName: locationData.locationName,
+        stations: locationData.stations
+      }
+    });
   }
 
   private updateAvailableStations() {
