@@ -4,8 +4,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSelectModule } from '@angular/material/select';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
@@ -14,6 +12,7 @@ import { ChartConfiguration, ChartData, ChartOptions, ChartType } from 'chart.js
 import { ResultsResponse } from '../../core/api';
 import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel';
 import { ComparisonDialogComponent, ComparisonMetricConfig, ComparisonSeries } from '../shared/comparison-dialog/comparison-dialog.component';
+import { SearchableSelectComponent } from '../shared/searchable-select/searchable-select.component';
 
 interface BettenData {
   IK: string;
@@ -31,13 +30,12 @@ interface BettenData {
     MatCardModule, 
     MatButtonModule,
     MatChipsModule, 
-    MatIconModule, 
-    BaseChartDirective, 
-    MatSelectModule, 
-    MatFormFieldModule,
+    MatIconModule,
+    BaseChartDirective,
     MatTooltipModule,
     MatTableModule,
-    DataInfoPanel
+    DataInfoPanel,
+    SearchableSelectComponent
   ],
   templateUrl: './mitteilungen-betten-charts.html',
   styleUrl: './mitteilungen-betten-charts.scss'
@@ -49,6 +47,8 @@ export class MitteilungenBettenCharts {
   selectedYear = signal<number>(new Date().getFullYear());
   selectedStandort = signal<string>('all');
   selectedStation = signal<string>('all');
+  readonly allStandorteLabel = 'Alle Standorte';
+  readonly allStationenLabel = 'Alle Stationen';
   
   flippedCards: { [key: string]: boolean } = {};
   private dialog = inject(MatDialog);

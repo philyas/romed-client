@@ -4,8 +4,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSelectModule } from '@angular/material/select';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
 import { BaseChartDirective } from 'ng2-charts';
@@ -13,6 +11,7 @@ import { ChartConfiguration, ChartData, ChartType, registerables } from 'chart.j
 import { UploadRecord, SchemaStatistics } from '../../core/api';
 import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel';
 import { ComparisonDialogComponent, ComparisonMetricConfig, ComparisonSeries } from '../shared/comparison-dialog/comparison-dialog.component';
+import { SearchableSelectComponent } from '../shared/searchable-select/searchable-select.component';
 
 // Register Chart.js components
 import Chart from 'chart.js/auto';
@@ -45,11 +44,10 @@ interface COChartData {
     MatButtonModule,
     MatChipsModule,
     MatIconModule,
-    MatSelectModule,
-    MatFormFieldModule,
     MatTooltipModule,
     BaseChartDirective,
-    DataInfoPanel
+    DataInfoPanel,
+    SearchableSelectComponent
   ],
   template: `
     <div class="co-charts">
@@ -60,20 +58,15 @@ interface COChartData {
             Aufnahmen und Entlassungen - {{ selectedYear }}
           </h3>
           <div class="header-actions">
-            <mat-form-field appearance="outline" class="location-selector">
-              <mat-label>
-                <mat-icon>location_on</mat-icon>
-                Standort
-              </mat-label>
-              <mat-select 
-                [value]="selectedStandort()" 
-                (selectionChange)="onStandortChange($event.value)">
-                <mat-option value="AIB">BAB</mat-option>
-                <mat-option value="PRI">PRI</mat-option>
-                <mat-option value="ROS">ROS</mat-option>
-                <mat-option value="WAS">WAS</mat-option>
-              </mat-select>
-            </mat-form-field>
+            <app-searchable-select
+              class="location-selector"
+              label="Standort"
+              icon="location_on"
+              [options]="standortOptions"
+              [value]="selectedStandort()"
+              [displayWith]="standortDisplayName"
+              (valueChange)="onStandortChange($event)"
+            ></app-searchable-select>
 
             <button
               mat-stroked-button
@@ -268,6 +261,8 @@ export class COCharts implements OnInit, OnChanges {
     'ROS': 'ROS',
     'WAS': 'WAS'
   };
+  readonly standortOptions = ['AIB', 'PRI', 'ROS', 'WAS'] as const;
+  readonly standortDisplayName = (value: string) => this.standortNames[value] || value;
 
   ngOnInit() {
     Chart.register(...registerables);

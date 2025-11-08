@@ -5,8 +5,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
-import { MatSelectModule } from '@angular/material/select';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
@@ -15,6 +13,7 @@ import { ChartConfiguration, ChartData, ChartType, registerables } from 'chart.j
 import { MitternachtsstatistikResponse, Api, ResultsResponse } from '../../core/api';
 import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel';
 import { ComparisonDialogComponent, ComparisonMetricConfig, ComparisonSeries } from '../shared/comparison-dialog/comparison-dialog.component';
+import { SearchableSelectComponent } from '../shared/searchable-select/searchable-select.component';
 
 // Register Chart.js components
 import Chart from 'chart.js/auto';
@@ -60,12 +59,11 @@ interface StationChartData {
     MatChipsModule,
     MatIconModule,
     MatTabsModule,
-    MatSelectModule,
-    MatFormFieldModule,
     MatTableModule,
     MatTooltipModule,
     BaseChartDirective,
-    DataInfoPanel
+    DataInfoPanel,
+    SearchableSelectComponent
   ],
   template: `
     <div class="mitternachtsstatistik-charts">
@@ -76,34 +74,27 @@ interface StationChartData {
             Mitternachtsstatistik - Jahresübersicht {{ currentYear() }}
           </h3>
           <div class="selectors-container">
-            <mat-form-field appearance="outline" class="location-selector">
-              <mat-label>
-                <mat-icon>location_on</mat-icon>
-                Standort
-              </mat-label>
-              <mat-select 
-                [value]="selectedLocation()" 
-                (selectionChange)="onLocationChange($event.value)">
-                <mat-option *ngFor="let location of availableLocations()" [value]="location">
-                  {{ locationNames[location] || location }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
-            
-            <mat-form-field appearance="outline" class="station-selector">
-              <mat-label>
-                <mat-icon>business</mat-icon>
-                Station
-              </mat-label>
-              <mat-select 
-                [value]="selectedStation()" 
-                (selectionChange)="onStationChange($event.value)">
-                <mat-option value="all">Alle Stationen (Aggregiert)</mat-option>
-                <mat-option *ngFor="let station of availableStations()" [value]="station">
-                  {{ station }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
+            <app-searchable-select
+              class="location-selector"
+              label="Standort"
+              icon="location_on"
+              [options]="availableLocations()"
+              [value]="selectedLocation()"
+              [displayWith]="locationDisplayName"
+              (valueChange)="onLocationChange($event)"
+            ></app-searchable-select>
+
+            <app-searchable-select
+              class="station-selector"
+              label="Station"
+              icon="business"
+              [options]="availableStations()"
+              [value]="selectedStation()"
+              [includeAllOption]="true"
+              [allValue]="'all'"
+              [allLabel]="aggregatedStationLabel"
+              (valueChange)="onStationChange($event)"
+            ></app-searchable-select>
             <button
               mat-stroked-button
               color="primary"
@@ -362,7 +353,13 @@ interface StationChartData {
       display: flex;
       gap: 12px;
       align-items: center;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
+    }
+
+    .comparison-button {
+      position: relative;
+      z-index: 0;
+      flex: 0 0 auto;
     }
 
     .comparison-button mat-icon {
@@ -372,6 +369,7 @@ interface StationChartData {
     .location-selector,
     .station-selector {
       width: 220px;
+      flex: 0 0 220px;
     }
 
     .location-selector mat-label,
@@ -576,10 +574,16 @@ interface StationChartData {
         flex-direction: column;
         gap: 8px;
         align-items: stretch;
+        flex-wrap: wrap;
       }
       
       .location-selector,
       .station-selector {
+        width: 100%;
+        flex: 1 1 auto;
+      }
+
+      .comparison-button {
         width: 100%;
       }
     }
@@ -615,6 +619,8 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
   availableLocations = signal<string[]>([]);
   selectedStation = signal<string>('all'); // 'all' = alle Stationen (aggregiert)
   availableStations = signal<string[]>([]);
+  readonly aggregatedStationLabel = 'Alle Stationen (Aggregiert)';
+  readonly locationDisplayName = (value: string) => this.locationNames[value] || value;
   currentYear = signal<number>(new Date().getFullYear());
   dataInfoItems = signal<DataInfoItem[]>([]);
   aufgestellteBettenData = signal<AufgestellteBettenData[]>([]);

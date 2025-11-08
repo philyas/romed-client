@@ -3,14 +3,13 @@ import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSelectModule } from '@angular/material/select';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { UploadRecord } from '../../core/api';
 import { MinaMitaChart } from './mina-mita-chart.component';
 import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel';
 import { MinaMitaComparisonDialogComponent } from './mina-mita-comparison-dialog.component';
+import { SearchableSelectComponent } from '../shared/searchable-select/searchable-select.component';
 
 @Component({
   selector: 'app-mina-mita-charts',
@@ -20,12 +19,11 @@ import { MinaMitaComparisonDialogComponent } from './mina-mita-comparison-dialog
     MatCardModule,
     MatButtonModule,
     MatIconModule,
-    MatSelectModule,
-    MatFormFieldModule,
     MatDialogModule,
     MatTooltipModule,
     MinaMitaChart,
-    DataInfoPanel
+    DataInfoPanel,
+    SearchableSelectComponent
   ],
   template: `
     <div class="mina-mita-charts">
@@ -37,20 +35,17 @@ import { MinaMitaComparisonDialogComponent } from './mina-mita-comparison-dialog
               MiNa/MiTa-Bestände (PPUGV)
             </mat-card-title>
             <div class="actions" *ngIf="availableStations().length > 0">
-              <mat-form-field appearance="outline" class="station-selector">
-                <mat-label>
-                  <mat-icon>meeting_room</mat-icon>
-                  Station
-                </mat-label>
-                <mat-select 
-                  [value]="selectedStation()" 
-                  (selectionChange)="onStationChange($event.value)">
-                  <mat-option value="all">Alle Stationen</mat-option>
-                  <mat-option *ngFor="let station of availableStations()" [value]="station">
-                    {{ station }}
-                  </mat-option>
-                </mat-select>
-              </mat-form-field>
+              <app-searchable-select
+                class="station-selector"
+                label="Station"
+                icon="meeting_room"
+                [options]="availableStations()"
+                [value]="selectedStation()"
+                [includeAllOption]="true"
+                [allValue]="'all'"
+                [allLabel]="'Alle Stationen'"
+                (valueChange)="onStationChange($event)"
+              ></app-searchable-select>
 
               <button
                 mat-stroked-button
@@ -110,7 +105,13 @@ import { MinaMitaComparisonDialogComponent } from './mina-mita-comparison-dialog
       display: flex;
       align-items: center;
       gap: 12px;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
+    }
+
+    .comparison-button {
+      position: relative;
+      z-index: 0;
+      flex: 0 0 auto;
     }
 
     .comparison-button mat-icon {
@@ -127,6 +128,7 @@ import { MinaMitaComparisonDialogComponent } from './mina-mita-comparison-dialog
 
     .station-selector {
       min-width: 250px;
+      flex: 0 0 250px;
     }
 
     .station-selector mat-label {
@@ -152,6 +154,21 @@ import { MinaMitaComparisonDialogComponent } from './mina-mita-comparison-dialog
       color: #ccc;
     }
 
+    @media (max-width: 1100px) {
+      .actions {
+        flex-wrap: wrap;
+      }
+
+      .station-selector {
+        flex: 1 1 240px;
+        min-width: 200px;
+      }
+
+      .comparison-button {
+        flex: 1 1 auto;
+      }
+    }
+
     @media (max-width: 768px) {
       .header-container {
         flex-direction: column;
@@ -163,14 +180,17 @@ import { MinaMitaComparisonDialogComponent } from './mina-mita-comparison-dialog
         width: 100%;
         flex-direction: column;
         align-items: stretch;
+        flex-wrap: wrap;
       }
 
       .station-selector {
         width: 100%;
+        flex: 1 1 auto;
       }
 
       .comparison-button {
         width: 100%;
+        justify-content: center;
       }
     }
   `]

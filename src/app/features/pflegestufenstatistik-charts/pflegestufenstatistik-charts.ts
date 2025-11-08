@@ -4,8 +4,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSelectModule } from '@angular/material/select';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
 import { BaseChartDirective } from 'ng2-charts';
@@ -13,6 +11,7 @@ import { ChartConfiguration, ChartData } from 'chart.js';
 import { UploadRecord } from '../../core/api';
 import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel';
 import { ComparisonDialogComponent, ComparisonMetricConfig, ComparisonSeries } from '../shared/comparison-dialog/comparison-dialog.component';
+import { SearchableSelectComponent } from '../shared/searchable-select/searchable-select.component';
 
 interface PflegestufenData {
   Station: string;
@@ -33,11 +32,10 @@ interface PflegestufenData {
     MatButtonModule,
     MatChipsModule,
     MatIconModule,
-    MatSelectModule,
-    MatFormFieldModule,
     MatTooltipModule,
     BaseChartDirective,
-    DataInfoPanel
+    DataInfoPanel,
+    SearchableSelectComponent
   ],
   template: `
     <div class="pflegestufenstatistik-charts">
@@ -48,33 +46,23 @@ interface PflegestufenData {
             Pflegestufen PPR - {{ selectedStandort() }} ({{ selectedYear() }})
           </h3>
           <div class="selectors">
-            <mat-form-field appearance="outline" class="selector">
-              <mat-label>
-                <mat-icon>location_on</mat-icon>
-                Standort
-              </mat-label>
-              <mat-select 
-                [value]="selectedStandort()" 
-                (selectionChange)="onStandortChange($event.value)">
-                <mat-option *ngFor="let standort of availableStandorte()" [value]="standort">
-                  {{ standort }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
+            <app-searchable-select
+              class="selector"
+              label="Standort"
+              icon="location_on"
+              [options]="availableStandorte()"
+              [value]="selectedStandort()"
+              (valueChange)="onStandortChange($event)"
+            ></app-searchable-select>
             
-            <mat-form-field appearance="outline" class="selector">
-              <mat-label>
-                <mat-icon>business</mat-icon>
-                Station
-              </mat-label>
-              <mat-select 
-                [value]="selectedStation()" 
-                (selectionChange)="onStationChange($event.value)">
-                <mat-option *ngFor="let station of availableStations()" [value]="station">
-                  {{ station }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
+            <app-searchable-select
+              class="selector"
+              label="Station"
+              icon="business"
+              [options]="availableStations()"
+              [value]="selectedStation()"
+              (valueChange)="onStationChange($event)"
+            ></app-searchable-select>
             <button
               mat-stroked-button
               color="primary"

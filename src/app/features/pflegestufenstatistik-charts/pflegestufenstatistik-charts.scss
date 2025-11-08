@@ -33,10 +33,11 @@
         display: flex;
         gap: 16px;
         align-items: center;
-        flex-wrap: wrap;
+      flex-wrap: nowrap;
 
         .selector {
-          min-width: 180px;
+        min-width: 180px;
+        flex: 0 0 220px;
 
           mat-label {
             display: flex;
@@ -55,6 +56,7 @@
           display: flex;
           align-items: center;
           gap: 8px;
+        flex: 0 0 auto;
 
           mat-icon {
             margin: 0;
@@ -67,6 +69,42 @@
       margin: 0;
       color: #666;
       font-size: 14px;
+    }
+  }
+
+  @media (max-width: 1200px) {
+    .charts-header {
+      .selectors {
+        flex-wrap: wrap;
+
+        .selector {
+          flex: 1 1 240px;
+          min-width: 200px;
+        }
+
+        .comparison-button {
+          flex: 1 1 auto;
+        }
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    .charts-header {
+      .selectors {
+        flex-direction: column;
+        align-items: stretch;
+
+        .selector {
+          width: 100%;
+          flex: 1 1 auto;
+        }
+
+        .comparison-button {
+          width: 100%;
+          justify-content: center;
+        }
+      }
     }
   }
 

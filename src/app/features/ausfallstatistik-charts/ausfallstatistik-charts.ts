@@ -4,8 +4,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSelectModule } from '@angular/material/select';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
@@ -16,6 +14,7 @@ import { firstValueFrom } from 'rxjs';
 import { Api, UploadRecord } from '../../core/api';
 import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel';
 import { ComparisonDialogComponent, ComparisonMetricConfig, ComparisonSeries } from '../shared/comparison-dialog/comparison-dialog.component';
+import { SearchableSelectComponent } from '../shared/searchable-select/searchable-select.component';
 
 interface AusfallstatistikData {
   Kostenstelle: string;
@@ -56,12 +55,11 @@ interface KostenstellenMappingItem {
     MatButtonModule,
     MatChipsModule,
     MatIconModule,
-    MatSelectModule,
-    MatFormFieldModule,
     MatButtonToggleModule,
     MatTooltipModule,
     BaseChartDirective,
-    DataInfoPanel
+    DataInfoPanel,
+    SearchableSelectComponent
   ],
   template: `
     <div class="ausfallstatistik-charts">
@@ -72,37 +70,29 @@ interface KostenstellenMappingItem {
             Ausfallstatistik - {{ selectedYearSignal() }}
           </h3>
           <div class="selectors">
-            <mat-form-field appearance="outline" class="selector">
-              <mat-label>
-                <mat-icon>domain</mat-icon>
-                Kostenstelle
-              </mat-label>
-              <mat-select 
-                [value]="selectedKostenstelle()" 
-                (selectionChange)="onKostenstelleChange($event.value)">
-                <mat-option value="all">Alle Kostenstellen</mat-option>
-                <mat-option *ngFor="let kst of availableKostenstellen()" [value]="kst">
-                  {{ formatKostenstelleLabel(kst) }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
+            <app-searchable-select
+              class="selector"
+              label="Kostenstelle"
+              icon="domain"
+              [options]="availableKostenstellen()"
+              [value]="selectedKostenstelle()"
+              [includeAllOption]="true"
+              [allValue]="'all'"
+              [allLabel]="allKostenstellenLabel"
+              [displayWith]="kostenstelleDisplayName"
+              (valueChange)="onKostenstelleChange($event)"
+            ></app-searchable-select>
             
-            <mat-form-field appearance="outline" class="selector">
-              <mat-label>
-                <mat-icon>calendar_today</mat-icon>
-                Jahr
-              </mat-label>
-              <mat-select 
-                [value]="selectedYearSignal()" 
-                (selectionChange)="onYearChange($event.value)"
-                [disabled]="availableYears().length === 0">
-                <mat-option 
-                  *ngFor="let year of availableYears()" 
-                  [value]="year">
-                  {{ year }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
+            <app-searchable-select
+              class="selector"
+              label="Jahr"
+              icon="calendar_today"
+              [options]="availableYearOptions()"
+              [value]="selectedYearSignal().toString()"
+              [clearable]="false"
+              [disabled]="availableYearOptions().length === 0"
+              (valueChange)="onYearSelect($event)"
+            ></app-searchable-select>
             <button
               mat-stroked-button
               color="primary"
@@ -277,6 +267,9 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
 
   selectedYearSignal = signal(this.selectedYear);
   selectedKostenstelle = signal<string>('all');
+  readonly allKostenstellenLabel = 'Alle Kostenstellen';
+  readonly kostenstelleDisplayName = (value: string) => this.formatKostenstelleLabel(value);
+  availableYearOptions = computed(() => this.availableYears().map(year => year.toString()));
   showPercentage = signal<boolean>(false);
   showLohnartenPercentage = signal<boolean>(false);
   kostenstellenMapping = signal<Record<string, KostenstellenMappingItem>>({});
@@ -431,6 +424,13 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
   onYearChange(year: number) {
     this.selectedYearSignal.set(year);
     this.processData();
+  }
+
+  onYearSelect(year: string) {
+    const parsed = Number.parseInt(year, 10);
+    if (!Number.isNaN(parsed)) {
+      this.onYearChange(parsed);
+    }
   }
 
   onKostenstelleChange(kostenstelle: string) {

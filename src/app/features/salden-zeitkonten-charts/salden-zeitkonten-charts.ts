@@ -1,18 +1,18 @@
-import { Component, Input, OnInit, OnChanges, signal, computed, inject } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSelectModule } from '@angular/material/select';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData } from 'chart.js';
-import { UploadRecord } from '../../core/api';
+import { UploadRecord, Api } from '../../core/api';
 import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel';
 import { ComparisonDialogComponent, ComparisonMetricConfig, ComparisonSeries } from '../shared/comparison-dialog/comparison-dialog.component';
+import { SearchableSelectComponent } from '../shared/searchable-select/searchable-select.component';
+import { firstValueFrom } from 'rxjs';
 
 interface SaldenZeitkontenData {
   Berufsgruppe: string;
@@ -24,6 +24,15 @@ interface SaldenZeitkontenData {
   Summe: number;
 }
 
+interface KostenstellenMappingItem {
+  kostenstelle: string;
+  stations?: string[];
+  standorte?: string[];
+  standortnummer?: number | string | null;
+  ik?: number | string | null;
+  paediatrie?: string | null;
+}
+
 @Component({
   selector: 'app-salden-zeitkonten-charts',
   imports: [
@@ -32,11 +41,10 @@ interface SaldenZeitkontenData {
     MatButtonModule,
     MatChipsModule,
     MatIconModule,
-    MatSelectModule,
-    MatFormFieldModule,
     MatTooltipModule,
     BaseChartDirective,
-    DataInfoPanel
+    DataInfoPanel,
+    SearchableSelectComponent
   ],
   template: `
     <div class="salden-zeitkonten-charts">
@@ -47,34 +55,29 @@ interface SaldenZeitkontenData {
             Salden Zeitkonten - Mehrarbeitszeit Pflegedienst
           </h3>
           <div class="selectors">
-            <mat-form-field appearance="outline" class="selector">
-              <mat-label>
-                <mat-icon>domain</mat-icon>
-                Kostenstelle
-              </mat-label>
-              <mat-select 
-                [value]="selectedKST()" 
-                (selectionChange)="onKSTChange($event.value)">
-                <mat-option value="all">Alle Kostenstellen</mat-option>
-                <mat-option *ngFor="let kst of availableKST()" [value]="kst.KST">
-                  {{ kst.Beschreibung }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
+            <app-searchable-select
+              class="selector"
+              label="Kostenstelle"
+              icon="domain"
+              [options]="availableKSTCodes()"
+              [value]="selectedKST()"
+              [includeAllOption]="true"
+              [allValue]="'all'"
+              [allLabel]="allKSTLabel"
+              [displayWith]="kstDisplayName"
+              (valueChange)="onKSTChange($event)"
+            ></app-searchable-select>
             
-            <mat-form-field appearance="outline" class="selector" *ngIf="availableYears().length > 1">
-              <mat-label>
-                <mat-icon>calendar_today</mat-icon>
-                Jahr
-              </mat-label>
-              <mat-select 
-                [value]="selectedYear()" 
-                (selectionChange)="onYearChange($event.value)">
-                <mat-option *ngFor="let year of availableYears()" [value]="year">
-                  {{ year }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
+            <app-searchable-select
+              *ngIf="availableYearOptions().length > 1"
+              class="selector"
+              label="Jahr"
+              icon="calendar_today"
+              [options]="availableYearOptions()"
+              [value]="selectedYear().toString()"
+              [clearable]="false"
+              (valueChange)="onYearSelect($event)"
+            ></app-searchable-select>
             <button
               mat-stroked-button
               color="primary"
@@ -275,14 +278,17 @@ interface SaldenZeitkontenData {
 
     .selectors {
       display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
+    gap: 16px;
+    flex-wrap: nowrap;
 
       .comparison-button {
         display: flex;
         align-items: center;
         gap: 8px;
         white-space: nowrap;
+        position: relative;
+        z-index: 0;
+      flex: 0 0 auto;
 
         mat-icon {
           font-size: 18px;
@@ -293,7 +299,8 @@ interface SaldenZeitkontenData {
     }
 
     .selector {
-      min-width: 250px;
+    min-width: 250px;
+    flex: 0 0 250px;
     }
 
     .selector mat-label {
@@ -325,11 +332,13 @@ interface SaldenZeitkontenData {
 
         .selector {
           width: 100%;
+          flex: 1 1 auto;
         }
 
         .comparison-button {
           width: 100%;
           justify-content: center;
+          flex: 0 0 auto;
         }
       }
     }
@@ -501,11 +510,13 @@ interface SaldenZeitkontenData {
 export class SaldenZeitkontenCharts implements OnInit, OnChanges {
   @Input() uploads: UploadRecord[] = [];
   private dialog = inject(MatDialog);
+  private api = inject(Api);
 
   // Signals
   selectedKST = signal<string>('all');
   selectedYear = signal<number>(new Date().getFullYear());
   flippedCards = signal<Record<string, boolean>>({});
+  kostenstellenMapping = signal<Record<string, KostenstellenMappingItem>>({});
 
   // Computed data
   saldenData = computed(() => {
@@ -555,11 +566,38 @@ export class SaldenZeitkontenCharts implements OnInit, OnChanges {
     return Array.from(kstMap.values()).sort((a, b) => a.KST.localeCompare(b.KST));
   });
 
+  availableKSTCodes = computed(() => this.availableKST().map(k => k.KST));
+  readonly allKSTLabel = 'Alle Kostenstellen';
+  readonly kstDisplayName = (value: string): string => {
+    if (value === 'all') {
+      return this.allKSTLabel;
+    }
+    const match = this.availableKST().find(k => k.KST === value);
+    if (match) {
+      return match.Beschreibung;
+    }
+    const mapping = this.kostenstellenMapping()[value];
+    if (mapping) {
+      const code = mapping.kostenstelle ?? value;
+      const stations = Array.isArray(mapping.stations) ? (mapping.stations.filter(Boolean) as string[]) : [];
+      const stationWithCode = stations.find((station: string) => station.includes(`${code}`));
+      const primaryStation = stationWithCode ?? stations[0] ?? code;
+      const standorte = Array.isArray(mapping.standorte) ? mapping.standorte.filter(Boolean) : [];
+      const uniqueStandorte = Array.from(new Set(standorte));
+      if (uniqueStandorte.length > 0) {
+        return `${primaryStation} · ${uniqueStandorte.join(' / ')}`;
+      }
+      return `${primaryStation}`;
+    }
+    return value;
+  };
+
   availableYears = computed(() => {
     const data = this.saldenData();
     const years = new Set(data.map(row => row.Jahr));
     return Array.from(years).sort((a, b) => b - a);
   });
+  availableYearOptions = computed(() => this.availableYears().map(year => year.toString()));
 
   selectedKSTName = computed(() => {
     const kst = this.availableKST().find(k => k.KST === this.selectedKST());
@@ -887,9 +925,10 @@ export class SaldenZeitkontenCharts implements OnInit, OnChanges {
     if (years.length > 0) {
       this.selectedYear.set(years[0]);
     }
+    void this.loadKostenstellenMapping();
   }
 
-  ngOnChanges() {
+  ngOnChanges(changes: SimpleChanges) {
     // Reset selection if not available
     const years = this.availableYears();
     if (years.length > 0 && !years.includes(this.selectedYear())) {
@@ -905,12 +944,44 @@ export class SaldenZeitkontenCharts implements OnInit, OnChanges {
     this.selectedYear.set(year);
   }
 
+  onYearSelect(year: string) {
+    const parsed = Number.parseInt(year, 10);
+    if (!Number.isNaN(parsed)) {
+      this.onYearChange(parsed);
+    }
+  }
+
   toggleFlip(cardName: string) {
     const current = this.flippedCards();
     this.flippedCards.set({
       ...current,
       [cardName]: !current[cardName]
     });
+  }
+
+  private async loadKostenstellenMapping() {
+    try {
+      const response = await firstValueFrom(this.api.getKostenstellenMapping());
+      const map: Record<string, KostenstellenMappingItem> = {};
+      const data = Array.isArray(response?.data) ? response.data : [];
+      data.forEach((item: any) => {
+        if (!item || !item.kostenstelle) {
+          return;
+        }
+        map[item.kostenstelle] = {
+          kostenstelle: item.kostenstelle,
+          stations: Array.isArray(item.stations) ? item.stations : [],
+          standorte: Array.isArray(item.standorte) ? item.standorte : [],
+          standortnummer: item.standortnummer ?? null,
+          ik: item.ik ?? null,
+          paediatrie: item.paediatrie ?? null
+        };
+      });
+      this.kostenstellenMapping.set(map);
+    } catch (error) {
+      console.error('Fehler beim Laden des Kostenstellen-Mappings', error);
+      this.kostenstellenMapping.set({});
+    }
   }
 }
 

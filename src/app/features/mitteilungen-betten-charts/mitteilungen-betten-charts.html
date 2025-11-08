@@ -6,36 +6,30 @@
         Aufgestellte Betten - Jahresübersicht {{ selectedYear() }}
       </h3>
       <div class="selectors-container">
-        <mat-form-field appearance="outline" class="standort-selector">
-          <mat-label>
-            <mat-icon>location_on</mat-icon>
-            Standort
-          </mat-label>
-          <mat-select 
-            [value]="selectedStandort()" 
-            (selectionChange)="onStandortChange($event.value)">
-            <mat-option value="all">Alle Standorte</mat-option>
-            <mat-option *ngFor="let standort of standorte()" [value]="standort">
-              {{ standort }}
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
+        <app-searchable-select
+          class="standort-selector"
+          label="Standort"
+          icon="location_on"
+          [options]="standorte()"
+          [value]="selectedStandort()"
+          [includeAllOption]="true"
+          [allValue]="'all'"
+          [allLabel]="allStandorteLabel"
+          (valueChange)="onStandortChange($event)"
+        ></app-searchable-select>
         
-        <mat-form-field appearance="outline" class="station-selector">
-          <mat-label>
-            <mat-icon>business</mat-icon>
-            Station
-          </mat-label>
-          <mat-select 
-            [value]="selectedStation()" 
-            (selectionChange)="onStationChange($event.value)"
-            [disabled]="selectedStandort() === 'all'">
-            <mat-option value="all">Alle Stationen</mat-option>
-            <mat-option *ngFor="let station of availableStations()" [value]="station">
-              {{ station }}
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
+        <app-searchable-select
+          class="station-selector"
+          label="Station"
+          icon="business"
+          [options]="availableStations()"
+          [value]="selectedStation()"
+          [includeAllOption]="true"
+          [allValue]="'all'"
+          [allLabel]="allStationenLabel"
+          [disabled]="selectedStandort() === 'all'"
+          (valueChange)="onStationChange($event)"
+        ></app-searchable-select>
         <button
           mat-stroked-button
           color="primary"

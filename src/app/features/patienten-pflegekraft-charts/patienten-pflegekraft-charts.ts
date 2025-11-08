@@ -5,8 +5,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
-import { MatSelectModule } from '@angular/material/select';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
 import { BaseChartDirective } from 'ng2-charts';
@@ -14,6 +12,7 @@ import { ChartConfiguration, ChartData, ChartType, registerables } from 'chart.j
 import Chart from 'chart.js/auto';
 import { Api, ManualEntryDataResponse } from '../../core/api';
 import { ComparisonDialogComponent, ComparisonMetricConfig, ComparisonSeries } from '../shared/comparison-dialog/comparison-dialog.component';
+import { SearchableSelectComponent } from '../shared/searchable-select/searchable-select.component';
 
 @Component({
   selector: 'app-patienten-pflegekraft-charts',
@@ -25,10 +24,9 @@ import { ComparisonDialogComponent, ComparisonMetricConfig, ComparisonSeries } f
     MatChipsModule,
     MatIconModule,
     MatTabsModule,
-    MatSelectModule,
-    MatFormFieldModule,
     MatTooltipModule,
-    BaseChartDirective
+    BaseChartDirective,
+    SearchableSelectComponent
   ],
   template: `
     <div class="pp-chart">
@@ -39,26 +37,27 @@ import { ComparisonDialogComponent, ComparisonMetricConfig, ComparisonSeries } f
             Patienten/Pflegekraft gem. PpUGV – Jahresübersicht {{ selectedYear() }}
           </h3>
           <div class="selectors-container">
-            <mat-form-field appearance="outline" class="station-selector">
-              <mat-label>
-                <mat-icon>business</mat-icon>
-                Station
-              </mat-label>
-              <mat-select [value]="selectedStation()" (selectionChange)="onStationChange($event.value)">
-                <mat-option value="">-- Bitte wählen --</mat-option>
-                <mat-option *ngFor="let station of stations()" [value]="station">{{ station }}</mat-option>
-              </mat-select>
-            </mat-form-field>
+            <app-searchable-select
+              class="station-selector"
+              label="Station"
+              icon="business"
+              [options]="stations()"
+              [value]="selectedStation()"
+              [includeAllOption]="true"
+              [allValue]="''"
+              [allLabel]="'-- Bitte wählen --'"
+              (valueChange)="onStationChange($event)"
+            ></app-searchable-select>
 
-            <mat-form-field appearance="outline" class="year-selector">
-              <mat-label>
-                <mat-icon>event</mat-icon>
-                Jahr
-              </mat-label>
-              <mat-select [value]="selectedYear()" (selectionChange)="onYearChange($event.value)">
-                <mat-option *ngFor="let year of availableYears" [value]="year">{{ year }}</mat-option>
-              </mat-select>
-            </mat-form-field>
+            <app-searchable-select
+              class="year-selector"
+              label="Jahr"
+              icon="event"
+              [options]="availableYearOptions"
+              [value]="selectedYear().toString()"
+              [clearable]="false"
+              (valueChange)="onYearSelect($event)"
+            ></app-searchable-select>
 
             <button
               mat-stroked-button
@@ -100,9 +99,9 @@ import { ComparisonDialogComponent, ComparisonMetricConfig, ComparisonSeries } f
   styles: [`
     .pp-chart { padding: 8px; }
     .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 12px; flex-wrap: wrap; }
-    .selectors-container { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-    .station-selector, .year-selector { width: 220px; }
-    .comparison-button { display: flex; align-items: center; gap: 8px; }
+    .selectors-container { display: flex; gap: 12px; align-items: center; flex-wrap: nowrap; }
+    .station-selector, .year-selector { width: 220px; flex: 0 0 220px; }
+    .comparison-button { display: flex; align-items: center; gap: 8px; position: relative; z-index: 0; flex: 0 0 auto; }
     .comparison-button mat-icon { margin: 0; }
     .metric-card { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     .metric-header { background: linear-gradient(135deg, #0097a7 0%, #007c91 100%); color: white; padding: 12px 16px; }
@@ -110,6 +109,32 @@ import { ComparisonDialogComponent, ComparisonMetricConfig, ComparisonSeries } f
     .chart-container { height: 320px; position: relative; margin-bottom: 12px; }
     .chart-info { padding: 8px 12px; background: #f5f5f5; border-radius: 4px; margin-top: 8px; }
     .chart-info mat-chip-set { display: flex; gap: 8px; justify-content: center; }
+    @media (max-width: 1024px) {
+      .selectors-container {
+        flex-wrap: wrap;
+      }
+      .station-selector, .year-selector {
+        flex: 1 1 240px;
+        min-width: 200px;
+      }
+      .comparison-button {
+        flex: 1 1 auto;
+      }
+    }
+    @media (max-width: 768px) {
+      .selectors-container {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .station-selector, .year-selector {
+        width: 100%;
+        flex: 1 1 auto;
+      }
+      .comparison-button {
+        width: 100%;
+        justify-content: center;
+      }
+    }
   `]
 })
 export class PatientenPflegekraftCharts implements OnInit {
@@ -121,6 +146,7 @@ export class PatientenPflegekraftCharts implements OnInit {
   selectedYear = signal<number>(new Date().getFullYear());
 
   availableYears = [2023, 2024, 2025, 2026, 2027];
+  readonly availableYearOptions = this.availableYears.map(year => year.toString());
 
   private mitaAverage = signal<number | null>(null);
   private minaAverage = signal<number | null>(null);
@@ -179,6 +205,13 @@ export class PatientenPflegekraftCharts implements OnInit {
     this.comparisonCache.clear();
     this.comparisonSeries.set([]);
     this.loadAveragesAndData();
+  }
+
+  onYearSelect(year: string) {
+    const parsed = Number.parseInt(year, 10);
+    if (!Number.isNaN(parsed)) {
+      this.onYearChange(parsed);
+    }
   }
 
   private loadStations() {
