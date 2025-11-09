@@ -52,6 +52,7 @@ export class MitteilungenBettenCharts {
   
   flippedCards: { [key: string]: boolean } = {};
   private dialog = inject(MatDialog);
+  chartLoading = signal<boolean>(true);
 
   private readonly comparisonMetrics: ComparisonMetricConfig[] = [
     {
@@ -418,6 +419,12 @@ export class MitteilungenBettenCharts {
     }
   };
 
+  private readonly chartReadyEffect = effect(() => {
+    this.barChartData();
+    this.pieChartData();
+    queueMicrotask(() => this.chartLoading.set(false));
+  }, { allowSignalWrites: true });
+
   // Table data for flip cards
   getStandortTableData() {
     return this.standortSummaries().map(s => ({
@@ -439,15 +446,18 @@ export class MitteilungenBettenCharts {
   }
 
   onYearChange(year: number) {
+    this.chartLoading.set(true);
     this.selectedYear.set(year);
   }
 
   onStandortChange(standort: string) {
+    this.chartLoading.set(true);
     this.selectedStandort.set(standort);
     this.selectedStation.set('all');
   }
 
   onStationChange(station: string) {
+    this.chartLoading.set(true);
     this.selectedStation.set(station);
   }
 }

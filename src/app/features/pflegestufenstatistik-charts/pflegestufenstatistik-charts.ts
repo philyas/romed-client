@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnChanges, signal, computed, inject } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, signal, computed, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -104,6 +104,10 @@ interface PflegestufenData {
                   </mat-card-header>
                   <mat-card-content class="chart-content">
                     <div class="chart-container">
+                      <div class="chart-loading-overlay" *ngIf="chartLoading()">
+                        <div class="loading-bar"></div>
+                        <p>Daten werden geladen…</p>
+                      </div>
                       <canvas baseChart
                         [data]="altersgruppenChartData()"
                         [options]="altersgruppenChartOptions"
@@ -196,6 +200,7 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
   pflegestufenData = signal<PflegestufenData[]>([]);
   flippedCards = signal<{ [key: string]: boolean }>({});
   dataInfoItems = signal<DataInfoItem[]>([]);
+  chartLoading = signal<boolean>(true);
   private dialog = inject(MatDialog);
   
   availableStandorte = computed(() => {
@@ -320,6 +325,10 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
       }
     }
   };
+  private readonly chartReadyEffect = effect(() => {
+    this.altersgruppenChartData();
+    queueMicrotask(() => this.chartLoading.set(false));
+  }, { allowSignalWrites: true });
   comparisonSeries = computed<ComparisonSeries[]>(() => {
     const standort = this.selectedStandort();
     if (!standort) {
@@ -405,10 +414,12 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
   }
 
   private loadData() {
+    this.chartLoading.set(true);
     const pflegeUploads = this.uploads.filter(u => u.schemaId === 'pflegestufenstatistik');
     if (pflegeUploads.length === 0) {
       this.pflegestufenData.set([]);
       this.dataInfoItems.set([]);
+      this.chartLoading.set(false);
       return;
     }
 
@@ -430,6 +441,7 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
     if (this.availableStandorte().length > 0 && !this.availableStandorte().includes(this.selectedStandort())) {
       this.selectedStandort.set(this.availableStandorte()[0]);
     }
+    this.chartLoading.set(false);
   }
 
   getFilteredData(): PflegestufenData[] {
@@ -459,12 +471,14 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
   }
 
   onStandortChange(standort: string) {
+    this.chartLoading.set(true);
     this.selectedStandort.set(standort);
     // Reset station to "Alle"
     this.selectedStation.set('Alle');
   }
 
   onStationChange(station: string) {
+    this.chartLoading.set(true);
     this.selectedStation.set(station);
   }
 

@@ -52,6 +52,10 @@ interface ChartDataPoint {
             
             <mat-card-content>
               <div class="chart-container" *ngIf="hasData()">
+                <div class="chart-loading-overlay" *ngIf="chartLoading()">
+                  <div class="loading-bar"></div>
+                  <p>Daten werden geladen…</p>
+                </div>
                 <canvas baseChart
                   [data]="chartDataset()"
                   [options]="chartOptions"
@@ -247,6 +251,34 @@ interface ChartDataPoint {
       width: 100%;
       height: 400px;
       position: relative;
+
+      .chart-loading-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        background: rgba(255, 255, 255, 0.92);
+        border-radius: 6px;
+        z-index: 2;
+        pointer-events: none;
+
+        .loading-bar {
+          width: min(240px, 70%);
+          height: 5px;
+          border-radius: 999px;
+          background: linear-gradient(90deg, rgba(0,151,167,0.2) 0%, rgba(0,124,145,0.9) 50%, rgba(0,151,167,0.2) 100%);
+          animation: mina-chart-loading 1.2s ease-in-out infinite;
+        }
+
+        p {
+          margin: 0;
+          color: #007c91;
+          font-weight: 600;
+        }
+      }
     }
 
     .no-data {
@@ -325,6 +357,12 @@ interface ChartDataPoint {
       background: #555;
     }
 
+    @keyframes mina-chart-loading {
+      0% { transform: translateX(-15%); opacity: 0.4; }
+      50% { transform: translateX(0%); opacity: 1; }
+      100% { transform: translateX(15%); opacity: 0.4; }
+    }
+
     .table-container table {
       width: 100%;
       border-collapse: collapse;
@@ -379,6 +417,7 @@ export class MinaMitaChart implements OnInit, OnChanges {
   chartDataset = signal<ChartData<'line'>>(this.createEmptyChartData());
   chartOptions: ChartConfiguration['options'] = {};
   isFlipped = signal<boolean>(false);
+  chartLoading = signal<boolean>(false);
 
   constructor(private dialog: MatDialog) {
     effect(() => {
@@ -504,11 +543,13 @@ export class MinaMitaChart implements OnInit, OnChanges {
   }
 
   private processChartData() {
+    this.chartLoading.set(true);
     const minaMinaUploads = this.uploads.filter(u => u.schemaId === 'ppugv_bestaende');
     
     if (minaMinaUploads.length === 0) {
       this.chartData.set([]);
       this.chartDataset.set(this.createEmptyChartData());
+      this.chartLoading.set(false);
       return;
     }
 
@@ -716,6 +757,7 @@ export class MinaMitaChart implements OnInit, OnChanges {
         ? 'MiNa vs MiTa Durchschnitte (Alle Stationen)' 
         : `MiNa vs MiTa Durchschnitte - ${this.selectedStation}`;
     }
+    this.chartLoading.set(false);
   }
 
   private buildChartDataset(dataPoints: ChartDataPoint[]): ChartData<'line'> {

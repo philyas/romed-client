@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnChanges, SimpleChanges, signal, computed, inject } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges, signal, computed, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -127,6 +127,10 @@ interface KostenstellenMappingItem {
                       [options]="lineChartOptions"
                       [type]="'line'">
                     </canvas>
+                    <div class="chart-loading-overlay" *ngIf="chartLoading()">
+                      <div class="loading-bar"></div>
+                      <p>Daten werden geladen…</p>
+                    </div>
                   </mat-card-content>
                 </mat-card>
               </div>
@@ -192,6 +196,10 @@ interface KostenstellenMappingItem {
                       [options]="barChartOptions"
                       [type]="'bar'">
                     </canvas>
+                    <div class="chart-loading-overlay" *ngIf="chartLoading()">
+                      <div class="loading-bar"></div>
+                      <p>Daten werden geladen…</p>
+                    </div>
                   </mat-card-content>
                 </mat-card>
               </div>
@@ -433,10 +441,45 @@ interface KostenstellenMappingItem {
       display: flex;
       align-items: center;
       justify-content: center;
+      position: relative;
+
+      canvas {
+        max-height: 350px;
+      }
+
+      .chart-loading-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        background: rgba(255, 255, 255, 0.92);
+        border-radius: 12px;
+        z-index: 2;
+        pointer-events: none;
+
+        .loading-bar {
+          width: min(260px, 70%);
+          height: 5px;
+          border-radius: 999px;
+          background: linear-gradient(90deg, rgba(102,126,234,0.2) 0%, rgba(102,126,234,0.85) 50%, rgba(102,126,234,0.2) 100%);
+          animation: salden-chart-loading 1.2s ease-in-out infinite;
+        }
+
+        p {
+          margin: 0;
+          color: #667eea;
+          font-weight: 600;
+        }
+      }
     }
 
-    .chart-content canvas {
-      max-height: 350px;
+    @keyframes salden-chart-loading {
+      0% { transform: translateX(-12%); opacity: 0.4; }
+      50% { transform: translateX(0%); opacity: 1; }
+      100% { transform: translateX(12%); opacity: 0.4; }
     }
 
     .info-content {
@@ -517,6 +560,7 @@ export class SaldenZeitkontenCharts implements OnInit, OnChanges {
   selectedYear = signal<number>(new Date().getFullYear());
   flippedCards = signal<Record<string, boolean>>({});
   kostenstellenMapping = signal<Record<string, KostenstellenMappingItem>>({});
+  chartLoading = signal<boolean>(true);
 
   // Computed data
   saldenData = computed(() => {
@@ -905,6 +949,12 @@ export class SaldenZeitkontenCharts implements OnInit, OnChanges {
     };
   });
 
+  private readonly chartReadyEffect = effect(() => {
+    this.monatsverlaufChartData();
+    this.vergleichChartData();
+    queueMicrotask(() => this.chartLoading.set(false));
+  }, { allowSignalWrites: true });
+
   vergleichStats = computed(() => {
     const data = this.vergleichChartData();
     const values = data.datasets[0].data as number[];
@@ -937,10 +987,12 @@ export class SaldenZeitkontenCharts implements OnInit, OnChanges {
   }
 
   onKSTChange(kst: string) {
+    this.chartLoading.set(true);
     this.selectedKST.set(kst);
   }
 
   onYearChange(year: number) {
+    this.chartLoading.set(true);
     this.selectedYear.set(year);
   }
 

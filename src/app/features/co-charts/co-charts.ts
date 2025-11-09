@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnChanges, signal, computed, inject, SimpleChanges } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, signal, computed, inject, SimpleChanges, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -109,6 +109,10 @@ interface COChartData {
                   </mat-card-header>
                   <mat-card-content class="chart-content">
                     <div class="chart-container">
+                      <div class="chart-loading-overlay" *ngIf="chartLoading()">
+                        <div class="loading-bar"></div>
+                        <p>Daten werden geladen…</p>
+                      </div>
                       <canvas baseChart
                         [data]="entlassungenChartData()"
                         [options]="entlassungenChartOptions()"
@@ -181,6 +185,10 @@ interface COChartData {
                   </mat-card-header>
                   <mat-card-content class="chart-content">
                     <div class="chart-container">
+                      <div class="chart-loading-overlay" *ngIf="chartLoading()">
+                        <div class="loading-bar"></div>
+                        <p>Daten werden geladen…</p>
+                      </div>
                       <canvas baseChart
                         [data]="aufnahmenChartData()"
                         [options]="aufnahmenChartOptions()"
@@ -252,6 +260,7 @@ export class COCharts implements OnInit, OnChanges {
   selectedStandort = signal<string>('AIB');
   flippedCards = signal<{ [key: string]: boolean }>({});
   dataInfoItems = signal<DataInfoItem[]>([]);
+  chartLoading = signal<boolean>(true);
   private selectedYearState = signal<number>(this.selectedYear);
   private readonly monthLabels = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'] as const;
   private dialog = inject(MatDialog);
@@ -282,15 +291,25 @@ export class COCharts implements OnInit, OnChanges {
   }
 
   private processChartData() {
-    if (!this.schemaId || this.uploads.length === 0) return;
+    this.chartLoading.set(true);
+    if (!this.schemaId || this.uploads.length === 0) {
+      this.chartLoading.set(false);
+      return;
+    }
 
     // Find schema statistics
     const schemaStat = this.statistics.find(s => s.schemaId === this.schemaId);
-    if (!schemaStat) return;
+    if (!schemaStat) {
+      this.chartLoading.set(false);
+      return;
+    }
 
     // Get uploads for this schema
     const schemaUploads = this.uploads.filter(upload => upload.schemaId === this.schemaId);
-    if (schemaUploads.length === 0) return;
+    if (schemaUploads.length === 0) {
+      this.chartLoading.set(false);
+      return;
+    }
 
     // Sort uploads by date
     schemaUploads.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
@@ -382,6 +401,7 @@ export class COCharts implements OnInit, OnChanges {
   }
 
   onStandortChange(standort: string) {
+    this.chartLoading.set(true);
     this.selectedStandort.set(standort);
   }
 
@@ -475,6 +495,11 @@ export class COCharts implements OnInit, OnChanges {
   aufnahmenChartOptions = computed<ChartConfiguration['options']>(() =>
     this.buildChartOptions('Aufnahmen', 'Anzahl Aufnahmen')
   );
+  private readonly chartReadyEffect = effect(() => {
+    this.entlassungenChartData();
+    this.aufnahmenChartData();
+    queueMicrotask(() => this.chartLoading.set(false));
+  }, { allowSignalWrites: true });
 
   comparisonSeries = computed<ComparisonSeries[]>(() => {
     const data = this.chartData();

@@ -134,6 +134,10 @@ interface StationChartData {
                   </mat-card-header>
                   <mat-card-content class="chart-content">
                     <div class="chart-container">
+                      <div class="chart-loading-overlay" *ngIf="chartLoading()">
+                        <div class="loading-bar"></div>
+                        <p>Daten werden geladen…</p>
+                      </div>
                       <canvas baseChart
                         [data]="pflegetageChartData()"
                         [options]="pflegetageChartOptions()"
@@ -193,6 +197,10 @@ interface StationChartData {
                   </mat-card-header>
                   <mat-card-content class="chart-content">
                     <div class="chart-container">
+                      <div class="chart-loading-overlay" *ngIf="chartLoading()">
+                        <div class="loading-bar"></div>
+                        <p>Daten werden geladen…</p>
+                      </div>
                       <canvas baseChart
                         [data]="stationsauslastungChartData()"
                         [options]="stationsauslastungChartOptions()"
@@ -256,6 +264,10 @@ interface StationChartData {
                   </mat-card-header>
                   <mat-card-content class="chart-content">
                     <div class="chart-container">
+                      <div class="chart-loading-overlay" *ngIf="chartLoading()">
+                        <div class="loading-bar"></div>
+                        <p>Daten werden geladen…</p>
+                      </div>
                       <canvas baseChart
                         [data]="verweildauerChartData()"
                         [options]="verweildauerChartOptions()"
@@ -493,6 +505,34 @@ interface StationChartData {
       height: 300px;
       position: relative;
       margin-bottom: 12px;
+
+      .chart-loading-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        background: rgba(255, 255, 255, 0.92);
+        border-radius: 8px;
+        z-index: 2;
+        pointer-events: none;
+
+        .loading-bar {
+          width: min(240px, 70%);
+          height: 5px;
+          border-radius: 999px;
+          background: linear-gradient(90deg, rgba(25,118,210,0.2) 0%, rgba(25,118,210,0.9) 50%, rgba(25,118,210,0.2) 100%);
+          animation: mitternachts-loading 1.2s ease-in-out infinite;
+        }
+
+        p {
+          margin: 0;
+          color: #1976d2;
+          font-weight: 600;
+        }
+      }
     }
 
     .chart-info {
@@ -514,6 +554,12 @@ interface StationChartData {
       font-weight: 500;
       height: 24px;
       padding: 0 10px;
+    }
+
+    @keyframes mitternachts-loading {
+      0% { transform: translateX(-12%); opacity: 0.4; }
+      50% { transform: translateX(0%); opacity: 1; }
+      100% { transform: translateX(12%); opacity: 0.4; }
     }
 
     .table-content {
@@ -624,6 +670,7 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
   currentYear = signal<number>(new Date().getFullYear());
   dataInfoItems = signal<DataInfoItem[]>([]);
   aufgestellteBettenData = signal<AufgestellteBettenData[]>([]);
+  chartLoading = signal<boolean>(true);
   private sharedScales: Record<'pflegetage' | 'stationsauslastung' | 'verweildauer', {
     aggregated: { min: number; max: number };
     station: { min: number; max: number };
@@ -695,6 +742,7 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
       this.pflegetageChartOptions.set(this.buildChartOptions('Pflegetage', 'Pflegetage', 'pflegetage'));
       this.stationsauslastungChartOptions.set(this.buildChartOptions('Stationsauslastung', 'Auslastung (%)', 'stationsauslastung'));
       this.verweildauerChartOptions.set(this.buildChartOptions('Verweildauer', 'Tage', 'verweildauer'));
+      this.chartLoading.set(false);
       return;
     }
 
@@ -705,6 +753,7 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
     this.pflegetageChartOptions.set(this.buildChartOptions('Pflegetage', 'Pflegetage', 'pflegetage'));
     this.stationsauslastungChartOptions.set(this.buildChartOptions('Stationsauslastung', 'Auslastung (%)', 'stationsauslastung'));
     this.verweildauerChartOptions.set(this.buildChartOptions('Verweildauer', 'Tage', 'verweildauer'));
+    this.chartLoading.set(false);
   });
   comparisonSeries = computed<ComparisonSeries[]>(() => {
     const location = this.chartDataByLocation().find(loc => loc.location === this.selectedLocation());
@@ -1026,12 +1075,14 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
   }
 
   onLocationChange(location: string) {
+    this.chartLoading.set(true);
     this.selectedLocation.set(location);
     this.selectedStation.set('all'); // Reset station to "all" when location changes
     this.updateAvailableStations();
   }
 
   onStationChange(station: string) {
+    this.chartLoading.set(true);
     this.selectedStation.set(station);
   }
 

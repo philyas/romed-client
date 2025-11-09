@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnChanges, signal, computed, inject } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, signal, computed, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -154,6 +154,10 @@ interface KostenstellenMappingItem {
                   [options]="sollIstChartOptions()"
                   [type]="'bar'">
                 </canvas>
+              <div class="chart-loading-overlay" *ngIf="chartLoading()">
+                <div class="loading-bar"></div>
+                <p>Daten werden geladen…</p>
+              </div>
               </div>
               <div class="chart-summary">
                 <mat-chip-set>
@@ -207,6 +211,10 @@ interface KostenstellenMappingItem {
                   [options]="lohnartenChartOptions()"
                   [type]="'bar'">
                 </canvas>
+              <div class="chart-loading-overlay" *ngIf="chartLoading()">
+                <div class="loading-bar"></div>
+                <p>Daten werden geladen…</p>
+              </div>
               </div>
               <div class="chart-legend">
                 <mat-chip-set>
@@ -243,6 +251,10 @@ interface KostenstellenMappingItem {
                   [options]="topKostenstellenChartOptions"
                   [type]="'bar'">
                 </canvas>
+                <div class="chart-loading-overlay" *ngIf="chartLoading()">
+                  <div class="loading-bar"></div>
+                  <p>Daten werden geladen…</p>
+                </div>
               </div>
             </mat-card-content>
           </mat-card>
@@ -314,6 +326,7 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
   });
 
   comparisonSeries = computed<ComparisonSeries[]>(() => this.buildComparisonSeries());
+  chartLoading = signal<boolean>(true);
 
   // Chart options (computed to react to showPercentage)
   sollIstChartOptions = computed<ChartConfiguration['options']>(() => {
@@ -413,15 +426,18 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
   ngOnInit() {
     Chart.register(...registerables);
     void this.loadKostenstellenMapping();
+    this.chartLoading.set(true);
     this.processData();
   }
 
   ngOnChanges() {
     this.selectedYearSignal.set(this.selectedYear);
+    this.chartLoading.set(true);
     this.processData();
   }
 
   onYearChange(year: number) {
+    this.chartLoading.set(true);
     this.selectedYearSignal.set(year);
     this.processData();
   }
@@ -434,6 +450,7 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
   }
 
   onKostenstelleChange(kostenstelle: string) {
+    this.chartLoading.set(true);
     this.selectedKostenstelle.set(kostenstelle);
   }
 
@@ -889,6 +906,13 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
       ]
     };
   });
+
+  private readonly chartReadyEffect = effect(() => {
+    this.sollIstChartData();
+    this.lohnartenChartData();
+    this.topKostenstellenChartData();
+    queueMicrotask(() => this.chartLoading.set(false));
+  }, { allowSignalWrites: true });
 
   totalSoll = computed(() => {
     return this.getFilteredData().reduce((sum, row) => 
