@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, effect, ViewChild, ElementRef } from '@angular/core';
+import { Component, inject, signal, computed, effect, ViewChild, ElementRef, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -10,7 +10,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatDialogModule, MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Api } from '../../core/api';
@@ -712,23 +712,31 @@ export class ManualEntry {
     this.api.uploadDienstplan(file).subscribe({
       next: (response) => {
         this.uploading.set(false);
-        this.snackBar.open(response.message || 'Dienstplan erfolgreich importiert', 'Schließen', { duration: 3000 });
-        
+        this.dialog.open(DienstplanUploadSuccessDialog, {
+          width: '450px',
+          disableClose: false,
+          data: {
+            message: response.message || 'Dienstplan erfolgreich importiert',
+            totalEntries: response.totalEntries,
+            uploads: response.uploaded
+          }
+        });
+
         // Clear selected file
         this.clearSelectedFile();
-        
+
         // Reload data if station, year, month match
         const station = this.selectedStation();
         const year = this.selectedYear();
         const month = this.selectedMonth();
         const kategorie = this.selectedKategorie();
-        
+
         if (station && year && month) {
           // Check if uploaded data matches current selection
-          const matchingUpload = response.uploaded.find(u => 
+          const matchingUpload = response.uploaded.find(u =>
             u.station === station && u.jahr === year && u.monat === month
           );
-          
+
           if (matchingUpload) {
             // Reload data for current selection
             this.loadDataForPeriod(station, year, month, kategorie);
@@ -742,6 +750,105 @@ export class ManualEntry {
         this.snackBar.open(errorMessage, 'Schließen', { duration: 5000 });
       }
     });
+  }
+}
+
+@Component({
+  selector: 'dienstplan-upload-success-dialog',
+  standalone: true,
+  imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule],
+  template: `
+    <div class="dialog-container">
+      <div class="dialog-header">
+        <mat-icon>check_circle</mat-icon>
+        <h2>Upload erfolgreich</h2>
+      </div>
+      <p class="dialog-message">{{ data.message }}</p>
+
+      <div class="dialog-summary" *ngIf="data.totalEntries !== undefined && data.totalEntries !== null">
+        <div class="summary-item">
+          <mat-icon>summarize</mat-icon>
+          <span>{{ data.totalEntries }} Einträge verarbeitet</span>
+        </div>
+      </div>
+    </div>
+
+    <div mat-dialog-actions align="end">
+      <button mat-raised-button color="primary" (click)="close()">Schließen</button>
+    </div>
+  `,
+  styles: [`
+    .dialog-container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 8px 4px;
+    }
+
+    .dialog-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .dialog-header mat-icon {
+      color: #4caf50;
+      font-size: 36px;
+      width: 36px;
+      height: 36px;
+    }
+
+    .dialog-header h2 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 600;
+    }
+
+    .dialog-message {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.5;
+      color: #333;
+    }
+
+    .dialog-summary {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 14px 12px;
+      background: #f3f9f4;
+      border-radius: 10px;
+      border: 1px solid rgba(76, 175, 80, 0.2);
+    }
+
+    .summary-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #2e7d32;
+      font-weight: 500;
+    }
+
+    .summary-item mat-icon {
+      font-size: 22px;
+      width: 22px;
+      height: 22px;
+    }
+
+  `]
+})
+export class DienstplanUploadSuccessDialog {
+  constructor(
+    private dialogRef: MatDialogRef<DienstplanUploadSuccessDialog>,
+    @Inject(MAT_DIALOG_DATA) public data: {
+      message: string;
+      totalEntries?: number;
+      uploads?: Array<{ station: string; jahr: number; monat: number }>;
+    }
+  ) {}
+
+  close(): void {
+    this.dialogRef.close();
   }
 }
 
