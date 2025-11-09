@@ -86,11 +86,7 @@ export interface ManualEntryDataResponse {
 })
 export class Api {
   private http = inject(HttpClient);
-  private readonly baseUrl = isDevMode() 
-    ? 'http://localhost:3000' 
-    : (typeof window !== 'undefined' && window.location.origin
-        ? window.location.origin.replace(':4200', ':3000')
-        : 'http://localhost:3000');
+  private readonly baseUrl = this.resolveBaseUrl();
 
   constructor() {
     const mode = isDevMode() ? 'DEVELOPMENT' : 'PRODUCTION';
@@ -270,5 +266,30 @@ export class Api {
 
   importKostenstellenFromSample(): Observable<{ success: boolean; message: string; imported: number }> {
     return this.http.post<{ success: boolean; message: string; imported: number }>(`${this.baseUrl}/kostenstellen/import-sample`, {});
+  }
+
+  private resolveBaseUrl(): string {
+    if (isDevMode()) {
+      return 'http://localhost:3000';
+    }
+
+    const globalOverride = (globalThis as Record<string, unknown>)?.['__ROMED_BACKEND_URL__'];
+    if (typeof globalOverride === 'string' && globalOverride.trim().length > 0) {
+      return globalOverride;
+    }
+
+    const importMetaEnv = (import.meta as unknown as { env?: { NG_APP_BACKEND_URL?: string } })?.env;
+    if (importMetaEnv?.NG_APP_BACKEND_URL) {
+      return importMetaEnv.NG_APP_BACKEND_URL;
+    }
+
+    const processEnvUrl = typeof (globalThis as any)?.process !== 'undefined'
+      ? (globalThis as any)?.process?.env?.NG_APP_BACKEND_URL
+      : undefined;
+    if (typeof processEnvUrl === 'string' && processEnvUrl.trim().length > 0) {
+      return processEnvUrl;
+    }
+
+    return 'https://romed-backend.onrender.com';
   }
 }
