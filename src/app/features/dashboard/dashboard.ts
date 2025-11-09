@@ -33,6 +33,7 @@ export class Dashboard implements AfterViewInit {
   private api = inject(Api);
   private dialog = inject(MatDialog);
   private route = inject(ActivatedRoute);
+  private pendingScrollSchemaId: string | null = null;
   data = signal<ResultsResponse | null>(null);
   statistics = signal<SchemaStatistics[]>([]);
   globalSelectedYear = signal<number>(new Date().getFullYear());
@@ -82,7 +83,8 @@ export class Dashboard implements AfterViewInit {
     // Listen to route changes and scroll to schema
     this.route.fragment.subscribe(fragment => {
       if (fragment) {
-        setTimeout(() => this.scrollToSchema(fragment), 500);
+        this.pendingScrollSchemaId = fragment;
+        this.tryScrollToSchema();
       }
     });
 
@@ -121,10 +123,12 @@ export class Dashboard implements AfterViewInit {
         this.hasPatientenPflegekraftData.set(hasAny);
 
         this.isLoading.set(false);
+        this.tryScrollToSchema();
       },
       error: (error) => {
         console.error('Fehler beim Laden der Dashboard-Daten:', error);
         this.isLoading.set(false);
+        this.tryScrollToSchema();
       }
     });
   }
@@ -137,10 +141,21 @@ export class Dashboard implements AfterViewInit {
     this.globalSelectedStation.set(station);
   }
 
-  private scrollToSchema(schemaId: string) {
-    const element = document.getElementById(schemaId);
+  private tryScrollToSchema(attempt = 0) {
+    if (!this.pendingScrollSchemaId) {
+      return;
+    }
+
+    if (this.isLoading()) {
+      return;
+    }
+
+    const element = document.getElementById(this.pendingScrollSchemaId);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      this.pendingScrollSchemaId = null;
+    } else if (attempt < 10) {
+      setTimeout(() => this.tryScrollToSchema(attempt + 1), 200);
     }
   }
 
