@@ -1,140 +1,119 @@
 <div class="main-content">
   <div class="dashboard">
-    
-    <!-- Empty State -->
-    <div class="no-data" *ngIf="(data()?.uploads?.length || 0) === 0 && (mitternachtsstatistikData()?.uploads?.length || 0) === 0">
-      <mat-icon class="no-data-icon">insert_chart_outlined</mat-icon>
-      <h3>Noch keine Daten vorhanden</h3>
-      <p>Laden Sie Excel-Dateien hoch, um Charts und Statistiken zu visualisieren.</p>
-      <a mat-raised-button color="primary" routerLink="/upload">
-        <mat-icon>upload_file</mat-icon>
-        Dateien hochladen
-      </a>
+    <div class="dashboard-loading-overlay" *ngIf="isLoading()">
+      <mat-progress-bar mode="indeterminate" color="accent" class="loading-bar"></mat-progress-bar>
+      <p>Daten werden geladen...</p>
+      <span class="loading-subtext">Bitte warten Sie einen Moment</span>
     </div>
 
-    <!-- Reset Button -->
-    <div class="reset-section" *ngIf="(data()?.uploads?.length || 0) > 0 || (mitternachtsstatistikData()?.uploads?.length || 0) > 0">
-      <button mat-raised-button color="warn" (click)="openResetDialog()" class="reset-button">
-        <mat-icon>delete_forever</mat-icon>
-        Alle Daten zurücksetzen
-      </button>
-    </div>
-
-    <!-- Schema Charts Section - Direct Display -->
-    <!-- Temporarily hidden
-    <section class="schema-charts-section" *ngIf="(data()?.uploads?.length || 0) > 0">
-      <div class="global-selectors">
-        <div class="global-year-selector">
-          <app-year-selector 
-            [uploads]="data()?.uploads || []"
-            (yearChanged)="onGlobalYearChange($event)">
-          </app-year-selector>
-        </div>
-        <div class="global-station-selector">
-          <app-station-selector 
-            [uploads]="data()?.uploads || []"
-            (stationChanged)="onGlobalStationChange($event)">
-          </app-station-selector>
-        </div>
+    <ng-container *ngIf="!isLoading()">
+      <!-- Empty State -->
+      <div class="no-data" *ngIf="(data()?.uploads?.length || 0) === 0 && (mitternachtsstatistikData()?.uploads?.length || 0) === 0">
+        <mat-icon class="no-data-icon">insert_chart_outlined</mat-icon>
+        <h3>Noch keine Daten vorhanden</h3>
+        <p>Laden Sie Excel-Dateien hoch, um Charts und Statistiken zu visualisieren.</p>
+        <a mat-raised-button color="primary" routerLink="/upload">
+          <mat-icon>upload_file</mat-icon>
+          Dateien hochladen
+        </a>
       </div>
-      
-      <app-chart-overview 
-        [uploads]="data()?.uploads || []"
-        [statistics]="statistics()"
-        [selectedYear]="globalSelectedYear()"
-        [selectedStation]="globalSelectedStation()">
-      </app-chart-overview>
-    </section>
-    -->
 
-    <!-- Mitternachtsstatistik Charts Section -->
-    <section 
-      id="mitternachtsstatistik"
-      class="mitternachtsstatistik-charts-section" 
-      [class.highlighted]="highlightedSchemaId() === 'mitternachtsstatistik'"
-      *ngIf="mitternachtsstatistikData() && mitternachtsstatistikData()!.uploads.length > 0">
-      <app-mitternachtsstatistik-charts 
-        [mitternachtsstatistikData]="mitternachtsstatistikData()">
-      </app-mitternachtsstatistik-charts>
-    </section>
+      <!-- Reset Button -->
+      <div class="reset-section" *ngIf="(data()?.uploads?.length || 0) > 0 || (mitternachtsstatistikData()?.uploads?.length || 0) > 0">
+        <button mat-raised-button color="warn" (click)="openResetDialog()" class="reset-button">
+          <mat-icon>delete_forever</mat-icon>
+          Alle Daten zurücksetzen
+        </button>
+      </div>
 
-    <!-- Patienten/Pflegekraft Charts Section -->
-    <section 
-      class="pp-charts-section"
-      *ngIf="hasPatientenPflegekraftData()">
-      <app-patienten-pflegekraft-charts></app-patienten-pflegekraft-charts>
-    </section>
+      <!-- Mitternachtsstatistik Charts Section -->
+      <section 
+        id="mitternachtsstatistik"
+        class="mitternachtsstatistik-charts-section" 
+        [class.highlighted]="highlightedSchemaId() === 'mitternachtsstatistik'"
+        *ngIf="mitternachtsstatistikData() && mitternachtsstatistikData()!.uploads.length > 0">
+        <app-mitternachtsstatistik-charts 
+          [mitternachtsstatistikData]="mitternachtsstatistikData()">
+        </app-mitternachtsstatistik-charts>
+      </section>
 
-    <!-- MiNa/MiTa Charts Section -->
-    <section 
-      id="ppugv_bestaende"
-      class="mina-mita-charts-section" 
-      [class.highlighted]="highlightedSchemaId() === 'ppugv_bestaende'"
-      *ngIf="hasMinaMitaData()">
-      <app-mina-mita-charts 
-        [uploads]="data()?.uploads || []">
-      </app-mina-mita-charts>
-    </section>
+      <!-- Patienten/Pflegekraft Charts Section -->
+      <section 
+        class="pp-charts-section"
+        *ngIf="hasPatientenPflegekraftData()">
+        <app-patienten-pflegekraft-charts></app-patienten-pflegekraft-charts>
+      </section>
 
-    <!-- CO Charts Section -->
-    <section 
-      id="co_entlass_aufnahmezeiten"
-      class="co-charts-section" 
-      [class.highlighted]="highlightedSchemaId() === 'co_entlass_aufnahmezeiten'"
-      *ngIf="hasCOData()">
-      <app-co-charts 
-        [uploads]="data()?.uploads || []"
-        [statistics]="statistics()"
-        [schemaId]="'co_entlass_aufnahmezeiten'"
-        [selectedYear]="globalSelectedYear()">
-      </app-co-charts>
-    </section>
+      <!-- MiNa/MiTa Charts Section -->
+      <section 
+        id="ppugv_bestaende"
+        class="mina-mita-charts-section" 
+        [class.highlighted]="highlightedSchemaId() === 'ppugv_bestaende'"
+        *ngIf="hasMinaMitaData()">
+        <app-mina-mita-charts 
+          [uploads]="data()?.uploads || []">
+        </app-mina-mita-charts>
+      </section>
 
-    <!-- Pflegestufenstatistik Charts Section -->
-    <section 
-      id="pflegestufenstatistik"
-      class="pflegestufenstatistik-charts-section" 
-      [class.highlighted]="highlightedSchemaId() === 'pflegestufenstatistik'"
-      *ngIf="hasPflegestufenData()">
-      <app-pflegestufenstatistik-charts 
-        [uploads]="data()?.uploads || []">
-      </app-pflegestufenstatistik-charts>
-    </section>
+      <!-- CO Charts Section -->
+      <section 
+        id="co_entlass_aufnahmezeiten"
+        class="co-charts-section" 
+        [class.highlighted]="highlightedSchemaId() === 'co_entlass_aufnahmezeiten'"
+        *ngIf="hasCOData()">
+        <app-co-charts 
+          [uploads]="data()?.uploads || []"
+          [statistics]="statistics()"
+          [schemaId]="'co_entlass_aufnahmezeiten'"
+          [selectedYear]="globalSelectedYear()">
+        </app-co-charts>
+      </section>
 
-    <!-- Salden Zeitkonten Charts Section -->
-    <section 
-      id="salden_zeitkonten"
-      class="salden-zeitkonten-charts-section" 
-      [class.highlighted]="highlightedSchemaId() === 'salden_zeitkonten'"
-      *ngIf="hasSaldenData()">
-      <app-salden-zeitkonten-charts 
-        [uploads]="data()?.uploads || []">
-      </app-salden-zeitkonten-charts>
-    </section>
+      <!-- Pflegestufenstatistik Charts Section -->
+      <section 
+        id="pflegestufenstatistik"
+        class="pflegestufenstatistik-charts-section" 
+        [class.highlighted]="highlightedSchemaId() === 'pflegestufenstatistik'"
+        *ngIf="hasPflegestufenData()">
+        <app-pflegestufenstatistik-charts 
+          [uploads]="data()?.uploads || []">
+        </app-pflegestufenstatistik-charts>
+      </section>
 
-    <!-- Mitteilungen Betten Charts Section -->
-    <section 
-      id="mitteilungen_betten"
-      class="mitteilungen-betten-charts-section" 
-      [class.highlighted]="highlightedSchemaId() === 'mitteilungen_betten'"
-      *ngIf="hasMitteilungenBettenData()">
-      <app-mitteilungen-betten-charts 
-        [data]="data()"
-        [selectedYearInput]="globalSelectedYear()">
-      </app-mitteilungen-betten-charts>
-    </section>
+      <!-- Salden Zeitkonten Charts Section -->
+      <section 
+        id="salden_zeitkonten"
+        class="salden-zeitkonten-charts-section" 
+        [class.highlighted]="highlightedSchemaId() === 'salden_zeitkonten'"
+        *ngIf="hasSaldenData()">
+        <app-salden-zeitkonten-charts 
+          [uploads]="data()?.uploads || []">
+        </app-salden-zeitkonten-charts>
+      </section>
 
-    <!-- Ausfallstatistik Charts Section -->
-    <section 
-      id="ausfallstatistik"
-      class="ausfallstatistik-charts-section" 
-      [class.highlighted]="highlightedSchemaId() === 'ausfallstatistik'"
-      *ngIf="hasAusfallstatistikData()">
-      <app-ausfallstatistik-charts 
-        [uploads]="data()?.uploads || []"
-        [selectedYear]="globalSelectedYear()">
-      </app-ausfallstatistik-charts>
-    </section>
+      <!-- Mitteilungen Betten Charts Section -->
+      <section 
+        id="mitteilungen_betten"
+        class="mitteilungen-betten-charts-section" 
+        [class.highlighted]="highlightedSchemaId() === 'mitteilungen_betten'"
+        *ngIf="hasMitteilungenBettenData()">
+        <app-mitteilungen-betten-charts 
+          [data]="data()"
+          [selectedYearInput]="globalSelectedYear()">
+        </app-mitteilungen-betten-charts>
+      </section>
 
+      <!-- Ausfallstatistik Charts Section -->
+      <section 
+        id="ausfallstatistik"
+        class="ausfallstatistik-charts-section" 
+        [class.highlighted]="highlightedSchemaId() === 'ausfallstatistik'"
+        *ngIf="hasAusfallstatistikData()">
+        <app-ausfallstatistik-charts 
+          [uploads]="data()?.uploads || []"
+          [selectedYear]="globalSelectedYear()">
+        </app-ausfallstatistik-charts>
+      </section>
+    </ng-container>
   </div>
 </div>

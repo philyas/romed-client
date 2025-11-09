@@ -7,6 +7,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatDialogModule, MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { Api, ResultsResponse, UploadRecord, MitternachtsstatistikResponse, SchemaStatistics } from '../../core/api';
 import { MitternachtsstatistikCharts } from '../mitternachtsstatistik-charts/mitternachtsstatistik-charts';
@@ -17,10 +19,12 @@ import { SaldenZeitkontenCharts } from '../salden-zeitkonten-charts/salden-zeitk
 import { MitteilungenBettenCharts } from '../mitteilungen-betten-charts/mitteilungen-betten-charts';
 import { PatientenPflegekraftCharts } from '../patienten-pflegekraft-charts/patienten-pflegekraft-charts';
 import { AusfallstatistikCharts } from '../ausfallstatistik-charts/ausfallstatistik-charts';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule, NgIf, MatCardModule, MatChipsModule, MatIconModule, MatButtonModule, MatExpansionModule, MatDialogModule, RouterModule, MitternachtsstatistikCharts, COCharts, MinaMitaCharts, PflegestufenstatistikCharts, SaldenZeitkontenCharts, MitteilungenBettenCharts, PatientenPflegekraftCharts, AusfallstatistikCharts],
+  imports: [CommonModule, NgIf, MatCardModule, MatChipsModule, MatIconModule, MatButtonModule, MatExpansionModule, MatDialogModule, MatProgressSpinnerModule, MatProgressBarModule, RouterModule, MitternachtsstatistikCharts, COCharts, MinaMitaCharts, PflegestufenstatistikCharts, SaldenZeitkontenCharts, MitteilungenBettenCharts, PatientenPflegekraftCharts, AusfallstatistikCharts],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss'
 })
@@ -35,6 +39,7 @@ export class Dashboard implements AfterViewInit {
   globalSelectedStation = signal<string>('all');
   mitternachtsstatistikData = signal<MitternachtsstatistikResponse | null>(null);
   highlightedSchemaId = signal<string | null>(null);
+  isLoading = signal<boolean>(true);
   // Show PPK charts only when manual-entry data exists (day or night)
   hasPatientenPflegekraftData = signal<boolean>(false);
 
@@ -92,24 +97,35 @@ export class Dashboard implements AfterViewInit {
   }
 
   refresh() {
-    this.api.getData().subscribe(res => this.data.set(res));
-    this.api.getStatistics().subscribe(stats => this.statistics.set(stats.statistics));
-    this.loadMitternachtsstatistik();
-    // Probe availability of manual-entry data (day or night)
-    Promise.all([
-      this.api.getManualEntryStations().toPromise().catch(() => ({ stations: [] })),
-      this.api.getManualEntryNachtStations().toPromise().catch(() => ({ stations: [] }))
-    ]).then(([day, night]) => {
-      const hasAny = (day?.stations?.length || 0) > 0 || (night?.stations?.length || 0) > 0;
-      this.hasPatientenPflegekraftData.set(hasAny);
-    }).catch(() => {
-      this.hasPatientenPflegekraftData.set(false);
-    });
-  }
+    this.isLoading.set(true);
 
-  loadMitternachtsstatistik() {
-    this.api.getMitternachtsstatistik().subscribe(data => {
-      this.mitternachtsstatistikData.set(data);
+    forkJoin({
+      data: this.api.getData(),
+      statistics: this.api.getStatistics(),
+      mitternachtsstatistik: this.api.getMitternachtsstatistik(),
+      manualEntryDay: this.api.getManualEntryStations().pipe(
+        catchError(() => of({ stations: [] }))
+      ),
+      manualEntryNight: this.api.getManualEntryNachtStations().pipe(
+        catchError(() => of({ stations: [] }))
+      )
+    }).subscribe({
+      next: ({ data, statistics, mitternachtsstatistik, manualEntryDay, manualEntryNight }) => {
+        this.data.set(data);
+        this.statistics.set(statistics.statistics);
+        this.mitternachtsstatistikData.set(mitternachtsstatistik);
+
+        const dayStations = manualEntryDay?.stations ?? [];
+        const nightStations = manualEntryNight?.stations ?? [];
+        const hasAny = (dayStations.length > 0) || (nightStations.length > 0);
+        this.hasPatientenPflegekraftData.set(hasAny);
+
+        this.isLoading.set(false);
+      },
+      error: (error) => {
+        console.error('Fehler beim Laden der Dashboard-Daten:', error);
+        this.isLoading.set(false);
+      }
     });
   }
 

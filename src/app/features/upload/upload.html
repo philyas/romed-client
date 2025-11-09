@@ -68,8 +68,9 @@
     </mat-list>
 
     <div class="upload-loading-overlay" *ngIf="uploading()">
-      <mat-progress-spinner mode="indeterminate" diameter="64"></mat-progress-spinner>
+      <mat-progress-bar mode="indeterminate" color="accent" class="loading-bar"></mat-progress-bar>
       <p>Upload läuft noch. Einen Moment bitte…</p>
+      <span class="loading-subtext">Dateien werden verarbeitet</span>
     </div>
   </div>
 </div>

@@ -1,6 +1,8 @@
 /* Dashboard component specific styles */
 .dashboard {
   padding: 24px;
+  position: relative;
+  min-height: 400px;
 }
 
 /* Reset Section */
@@ -40,6 +42,62 @@
       font-size: 16px !important;
       color: white !important;
     }
+  }
+}
+
+.dashboard-loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  background: rgba(255, 255, 255, 0.9);
+  z-index: 200;
+  border-radius: 16px;
+  backdrop-filter: blur(3px);
+  text-align: center;
+  pointer-events: all;
+  padding: 28px 20px;
+
+  .loading-bar {
+    width: min(420px, 90%);
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: none;
+    animation: fade-in 300ms ease-out;
+  }
+
+  p {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #0093b8;
+  }
+
+  .loading-subtext {
+    font-size: 14px;
+    color: #4a6370;
+    letter-spacing: 0.2px;
+  }
+}
+
+::ng-deep .dashboard-loading-overlay .mat-mdc-progress-bar .mdc-linear-progress__buffer-bar,
+::ng-deep .dashboard-loading-overlay .mat-mdc-progress-bar .mdc-linear-progress__buffer-dots {
+  background-color: rgba(0, 147, 184, 0.15);
+}
+
+::ng-deep .dashboard-loading-overlay .mat-mdc-progress-bar .mdc-linear-progress__bar-inner {
+  border-color: #0093b8;
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
   }
 }
 
