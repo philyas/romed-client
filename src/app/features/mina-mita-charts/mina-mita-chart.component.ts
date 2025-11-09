@@ -53,7 +53,7 @@ interface ChartDataPoint {
             <mat-card-content>
               <div class="chart-container" *ngIf="hasData()">
                 <canvas baseChart
-                  [data]="getChartData()"
+                  [data]="chartDataset()"
                   [options]="chartOptions"
                   [type]="'line'">
                 </canvas>
@@ -373,12 +373,12 @@ export class MinaMitaChart implements OnInit, OnChanges {
   @Input() uploads: any[] = [];
   @Input() selectedStation: string = 'all';
   
-  chartData = signal<ChartDataPoint[]>([]);
-  chartOptions: ChartConfiguration['options'] = {};
-  isFlipped = signal<boolean>(false);
-
   private readonly monthLabels = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
   private readonly monthLabelsFull = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+  chartData = signal<ChartDataPoint[]>([]);
+  chartDataset = signal<ChartData<'line'>>(this.createEmptyChartData());
+  chartOptions: ChartConfiguration['options'] = {};
+  isFlipped = signal<boolean>(false);
 
   constructor(private dialog: MatDialog) {
     effect(() => {
@@ -401,6 +401,13 @@ export class MinaMitaChart implements OnInit, OnChanges {
 
   ngOnChanges() {
     this.processChartData();
+  }
+
+  private createEmptyChartData(): ChartData<'line'> {
+    return {
+      labels: [...this.monthLabels],
+      datasets: []
+    };
   }
 
   private setupChartOptions() {
@@ -501,6 +508,7 @@ export class MinaMitaChart implements OnInit, OnChanges {
     
     if (minaMinaUploads.length === 0) {
       this.chartData.set([]);
+      this.chartDataset.set(this.createEmptyChartData());
       return;
     }
 
@@ -700,6 +708,7 @@ export class MinaMitaChart implements OnInit, OnChanges {
     });
 
     this.chartData.set(monthlyData);
+    this.chartDataset.set(this.buildChartDataset(monthlyData));
     
     // Update chart title dynamically
     if (this.chartOptions && this.chartOptions.plugins && this.chartOptions.plugins.title) {
@@ -709,14 +718,12 @@ export class MinaMitaChart implements OnInit, OnChanges {
     }
   }
 
-  getChartData(): ChartData<'line'> {
-    const data = this.chartData();
-    
+  private buildChartDataset(dataPoints: ChartDataPoint[]): ChartData<'line'> {
     return {
       labels: this.monthLabels,
       datasets: [
         {
-          data: data.map(point => point.minaAverage),
+          data: dataPoints.map(point => point.minaAverage),
           label: '🌙 MiNa (Mitternacht)',
           borderColor: '#1976d2',
           backgroundColor: 'rgba(25, 118, 210, 0.1)',
@@ -729,7 +736,7 @@ export class MinaMitaChart implements OnInit, OnChanges {
           pointBorderWidth: 2
         },
         {
-          data: data.map(point => point.mitaAverage),
+          data: dataPoints.map(point => point.mitaAverage),
           label: '☀️ MiTa (Mittag)',
           borderColor: '#ff9800',
           backgroundColor: 'rgba(255, 152, 0, 0.1)',

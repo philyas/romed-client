@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnChanges, signal, computed, inject } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, signal, computed, inject, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -110,8 +110,8 @@ interface COChartData {
                   <mat-card-content class="chart-content">
                     <div class="chart-container">
                       <canvas baseChart
-                        [data]="getEntlassungenChartData()"
-                        [options]="getChartOptions('Entlassungen', 'Anzahl Entlassungen', 'entlassungen')"
+                        [data]="entlassungenChartData()"
+                        [options]="entlassungenChartOptions()"
                         [type]="'bar'">
                       </canvas>
                     </div>
@@ -182,8 +182,8 @@ interface COChartData {
                   <mat-card-content class="chart-content">
                     <div class="chart-container">
                       <canvas baseChart
-                        [data]="getAufnahmenChartData()"
-                        [options]="getChartOptions('Aufnahmen', 'Anzahl Aufnahmen', 'aufnahmen')"
+                        [data]="aufnahmenChartData()"
+                        [options]="aufnahmenChartOptions()"
                         [type]="'bar'">
                       </canvas>
                     </div>
@@ -252,6 +252,8 @@ export class COCharts implements OnInit, OnChanges {
   selectedStandort = signal<string>('AIB');
   flippedCards = signal<{ [key: string]: boolean }>({});
   dataInfoItems = signal<DataInfoItem[]>([]);
+  private selectedYearState = signal<number>(this.selectedYear);
+  private readonly monthLabels = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'] as const;
   private dialog = inject(MatDialog);
 
   // Standort-Mapping: AIB = BAB
@@ -269,8 +271,14 @@ export class COCharts implements OnInit, OnChanges {
     this.processChartData();
   }
 
-  ngOnChanges() {
-    this.processChartData();
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['selectedYear'] && changes['selectedYear'].currentValue !== undefined) {
+      this.selectedYearState.set(this.selectedYear);
+    }
+
+    if (changes['uploads'] || changes['statistics'] || changes['schemaId']) {
+      this.processChartData();
+    }
   }
 
   private processChartData() {
@@ -385,85 +393,88 @@ export class COCharts implements OnInit, OnChanges {
     });
   }
 
-  getEntlassungenChartData(): ChartData<'bar'> {
+  entlassungenChartData = computed<ChartData<'bar'>>(() => {
     const data = this.chartData();
     if (!data || !data.monthlyData) {
       return { labels: [], datasets: [] };
     }
 
-    const months = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
-    const standorte = [this.selectedStandort()];
+    const months = [...this.monthLabels];
+    const selectedStandort = this.selectedStandort();
+    const datasets: ChartData<'bar'>['datasets'] = [];
     
-    const datasets: any[] = [];
-    standorte.forEach(standort => {
-      const vor11: number[] = [];
-      const nach11: number[] = [];
+    const vor11: number[] = [];
+    const nach11: number[] = [];
 
-      for (let month = 1; month <= 12; month++) {
-        const monthData = data.monthlyData[month]?.[standort]?.['Entlassungen'];
-        vor11.push(monthData?.['vor 11 Uhr'] || 0);
-        nach11.push(monthData?.['nach 11 Uhr'] || 0);
-      }
+    for (let month = 1; month <= 12; month++) {
+      const monthData = data.monthlyData[month]?.[selectedStandort]?.['Entlassungen'];
+      vor11.push(monthData?.['vor 11 Uhr'] || 0);
+      nach11.push(monthData?.['nach 11 Uhr'] || 0);
+    }
 
-      datasets.push({
-        label: `${this.standortNames[standort] || standort} - vor 11 Uhr`,
-        data: vor11,
-        backgroundColor: '#FF6B6B',
-        borderColor: '#FF6B6B',
-        borderWidth: 1
-      });
+    datasets.push({
+      label: `${this.standortNames[selectedStandort] || selectedStandort} - vor 11 Uhr`,
+      data: vor11,
+      backgroundColor: '#FF6B6B',
+      borderColor: '#FF6B6B',
+      borderWidth: 1
+    });
 
-      datasets.push({
-        label: `${this.standortNames[standort] || standort} - nach 11 Uhr`,
-        data: nach11,
-        backgroundColor: '#FF8E8E',
-        borderColor: '#FF8E8E',
-        borderWidth: 1
-      });
+    datasets.push({
+      label: `${this.standortNames[selectedStandort] || selectedStandort} - nach 11 Uhr`,
+      data: nach11,
+      backgroundColor: '#FF8E8E',
+      borderColor: '#FF8E8E',
+      borderWidth: 1
     });
 
     return { labels: months, datasets };
-  }
+  });
 
-  getAufnahmenChartData(): ChartData<'bar'> {
+  aufnahmenChartData = computed<ChartData<'bar'>>(() => {
     const data = this.chartData();
     if (!data || !data.monthlyData) {
       return { labels: [], datasets: [] };
     }
 
-    const months = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
-    const standorte = [this.selectedStandort()];
-    
-    const datasets: any[] = [];
-    standorte.forEach(standort => {
-      const vor11: number[] = [];
-      const nach11: number[] = [];
+    const months = [...this.monthLabels];
+    const selectedStandort = this.selectedStandort();
+    const datasets: ChartData<'bar'>['datasets'] = [];
+    const vor11: number[] = [];
+    const nach11: number[] = [];
 
-      for (let month = 1; month <= 12; month++) {
-        const monthData = data.monthlyData[month]?.[standort]?.['Aufnahmen'];
-        vor11.push(monthData?.['vor 11 Uhr'] || 0);
-        nach11.push(monthData?.['nach 11 Uhr'] || 0);
-      }
+    for (let month = 1; month <= 12; month++) {
+      const monthData = data.monthlyData[month]?.[selectedStandort]?.['Aufnahmen'];
+      vor11.push(monthData?.['vor 11 Uhr'] || 0);
+      nach11.push(monthData?.['nach 11 Uhr'] || 0);
+    }
 
-      datasets.push({
-        label: `${this.standortNames[standort] || standort} - vor 11 Uhr`,
-        data: vor11,
-        backgroundColor: '#4ECDC4',
-        borderColor: '#4ECDC4',
-        borderWidth: 1
-      });
+    datasets.push({
+      label: `${this.standortNames[selectedStandort] || selectedStandort} - vor 11 Uhr`,
+      data: vor11,
+      backgroundColor: '#4ECDC4',
+      borderColor: '#4ECDC4',
+      borderWidth: 1
+    });
 
-      datasets.push({
-        label: `${this.standortNames[standort] || standort} - nach 11 Uhr`,
-        data: nach11,
-        backgroundColor: '#7EDDD8',
-        borderColor: '#7EDDD8',
-        borderWidth: 1
-      });
+    datasets.push({
+      label: `${this.standortNames[selectedStandort] || selectedStandort} - nach 11 Uhr`,
+      data: nach11,
+      backgroundColor: '#7EDDD8',
+      borderColor: '#7EDDD8',
+      borderWidth: 1
     });
 
     return { labels: months, datasets };
-  }
+  });
+
+  entlassungenChartOptions = computed<ChartConfiguration['options']>(() =>
+    this.buildChartOptions('Entlassungen', 'Anzahl Entlassungen')
+  );
+
+  aufnahmenChartOptions = computed<ChartConfiguration['options']>(() =>
+    this.buildChartOptions('Aufnahmen', 'Anzahl Aufnahmen')
+  );
 
   comparisonSeries = computed<ComparisonSeries[]>(() => {
     const data = this.chartData();
@@ -556,17 +567,18 @@ export class COCharts implements OnInit, OnChanges {
     return isNaN(num) ? null : num;
   }
 
-  getChartOptions(title: string, yLabel: string, type: string): ChartConfiguration['options'] {
+  private buildChartOptions(title: string, yLabel: string): ChartConfiguration['options'] {
     const selectedStandort = this.selectedStandort();
     const standortText = ` - ${this.standortNames[selectedStandort] || selectedStandort}`;
-    
+    const year = this.selectedYearState();
+
     return {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
         title: {
           display: true,
-          text: `${title} ${this.selectedYear}${standortText}`
+          text: `${title} ${year}${standortText}`
         },
         legend: {
           display: true

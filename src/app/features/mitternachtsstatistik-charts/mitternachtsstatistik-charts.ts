@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnChanges, signal, inject, computed } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, signal, inject, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -118,7 +118,7 @@ interface StationChartData {
       </app-data-info-panel>
 
       <!-- Charts for selected location -->
-      <div *ngIf="getSelectedLocationData() as locationData" class="charts-container">
+      <div *ngIf="selectedLocationData() as locationData" class="charts-container">
         <div class="charts-grid">
           <!-- Pflegetage Chart -->
           <div class="flip-card" [class.flipped]="flippedCards['pflegetage']" (click)="toggleFlip('pflegetage')">
@@ -135,8 +135,8 @@ interface StationChartData {
                   <mat-card-content class="chart-content">
                     <div class="chart-container">
                       <canvas baseChart
-                        [data]="getPflegetageChartData(locationData)"
-                        [options]="getChartOptions('Pflegetage', 'Pflegetage', 'pflegetage')"
+                        [data]="pflegetageChartData()"
+                        [options]="pflegetageChartOptions()"
                         [type]="'line'">
                       </canvas>
                     </div>
@@ -194,8 +194,8 @@ interface StationChartData {
                   <mat-card-content class="chart-content">
                     <div class="chart-container">
                       <canvas baseChart
-                        [data]="getStationsauslastungChartData(locationData)"
-                        [options]="getChartOptions('Stationsauslastung', 'Auslastung (%)', 'stationsauslastung')"
+                        [data]="stationsauslastungChartData()"
+                        [options]="stationsauslastungChartOptions()"
                         [type]="'line'">
                       </canvas>
                     </div>
@@ -257,8 +257,8 @@ interface StationChartData {
                   <mat-card-content class="chart-content">
                     <div class="chart-container">
                       <canvas baseChart
-                        [data]="getVerweildauerChartData(locationData)"
-                        [options]="getChartOptions('Verweildauer', 'Tage', 'verweildauer')"
+                        [data]="verweildauerChartData()"
+                        [options]="verweildauerChartOptions()"
                         [type]="'line'">
                       </canvas>
                     </div>
@@ -624,6 +624,88 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
   currentYear = signal<number>(new Date().getFullYear());
   dataInfoItems = signal<DataInfoItem[]>([]);
   aufgestellteBettenData = signal<AufgestellteBettenData[]>([]);
+  private sharedScales: Record<'pflegetage' | 'stationsauslastung' | 'verweildauer', {
+    aggregated: { min: number; max: number };
+    station: { min: number; max: number };
+  }> = {
+    pflegetage: {
+      aggregated: { min: 0, max: 0 },
+      station: { min: 0, max: 0 }
+    },
+    stationsauslastung: {
+      aggregated: { min: 0, max: 100 },
+      station: { min: 0, max: 100 }
+    },
+    verweildauer: {
+      aggregated: { min: 0, max: 0 },
+      station: { min: 0, max: 0 }
+    }
+  };
+  readonly locationNames: Record<string, string> = {
+    'BAB': 'BAB',
+    'PRI': 'PRI',
+    'ROS': 'ROS',
+    'WAS': 'WAS'
+  };
+  private readonly monthLabels = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+  selectedLocationData = computed<LocationChartData | null>(() => {
+    const baseLocation = this.chartDataByLocation().find(loc => loc.location === this.selectedLocation());
+    if (!baseLocation) {
+      return null;
+    }
+
+    if (this.selectedStation() !== 'all') {
+      const stationData = baseLocation.stations?.find(s => s.stationName === this.selectedStation());
+      if (stationData) {
+        return {
+          ...baseLocation,
+          monthlyData: stationData.monthlyData.map(m => ({
+            month: m.month,
+            pflegetage: m.pflegetage,
+            stationsauslastung: m.stationsauslastung,
+            verweildauer: m.verweildauer,
+            stationCount: 1,
+            betten: m.betten
+          }))
+        };
+      }
+    }
+
+    return baseLocation;
+  });
+  pflegetageChartData = signal<ChartData<'line'>>(this.createEmptyLineChart());
+  stationsauslastungChartData = signal<ChartData<'line'>>(this.createEmptyLineChart());
+  verweildauerChartData = signal<ChartData<'line'>>(this.createEmptyLineChart());
+  pflegetageChartOptions = signal<ChartConfiguration['options']>(
+    this.buildChartOptions('Pflegetage', 'Pflegetage', 'pflegetage')
+  );
+  stationsauslastungChartOptions = signal<ChartConfiguration['options']>(
+    this.buildChartOptions('Stationsauslastung', 'Auslastung (%)', 'stationsauslastung')
+  );
+  verweildauerChartOptions = signal<ChartConfiguration['options']>(
+    this.buildChartOptions('Verweildauer', 'Tage', 'verweildauer')
+  );
+  private readonly chartStateEffect = effect(() => {
+    const locationData = this.selectedLocationData();
+    if (!locationData) {
+      this.pflegetageChartData.set(this.createEmptyLineChart());
+      this.stationsauslastungChartData.set(this.createEmptyLineChart());
+      this.verweildauerChartData.set(this.createEmptyLineChart());
+
+      this.pflegetageChartOptions.set(this.buildChartOptions('Pflegetage', 'Pflegetage', 'pflegetage'));
+      this.stationsauslastungChartOptions.set(this.buildChartOptions('Stationsauslastung', 'Auslastung (%)', 'stationsauslastung'));
+      this.verweildauerChartOptions.set(this.buildChartOptions('Verweildauer', 'Tage', 'verweildauer'));
+      return;
+    }
+
+    this.pflegetageChartData.set(this.buildPflegetageChartData(locationData));
+    this.stationsauslastungChartData.set(this.buildStationsauslastungChartData(locationData));
+    this.verweildauerChartData.set(this.buildVerweildauerChartData(locationData));
+
+    this.pflegetageChartOptions.set(this.buildChartOptions('Pflegetage', 'Pflegetage', 'pflegetage'));
+    this.stationsauslastungChartOptions.set(this.buildChartOptions('Stationsauslastung', 'Auslastung (%)', 'stationsauslastung'));
+    this.verweildauerChartOptions.set(this.buildChartOptions('Verweildauer', 'Tage', 'verweildauer'));
+  });
   comparisonSeries = computed<ComparisonSeries[]>(() => {
     const location = this.chartDataByLocation().find(loc => loc.location === this.selectedLocation());
     if (!location || !location.stations || location.stations.length === 0) {
@@ -677,33 +759,6 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
   };
 
   // Shared Y-axis scales for visual comparison (separate for aggregated vs. stations)
-  private sharedScales: Record<'pflegetage' | 'stationsauslastung' | 'verweildauer', {
-    aggregated: { min: number; max: number };
-    station: { min: number; max: number };
-  }> = {
-    pflegetage: {
-      aggregated: { min: 0, max: 0 },
-      station: { min: 0, max: 0 }
-    },
-    stationsauslastung: {
-      aggregated: { min: 0, max: 100 },
-      station: { min: 0, max: 100 }
-    },
-    verweildauer: {
-      aggregated: { min: 0, max: 0 },
-      station: { min: 0, max: 0 }
-    }
-  };
-
-  readonly locationNames: Record<string, string> = {
-    'BAB': 'BAB',
-    'PRI': 'PRI',
-    'ROS': 'ROS',
-    'WAS': 'WAS'
-  };
-
-  private readonly monthLabels = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
-
   ngOnInit() {
     Chart.register(...registerables);
     this.loadAufgestellteBetten();
@@ -1016,32 +1071,6 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
     }
   }
 
-  getSelectedLocationData(): LocationChartData | null {
-    const locationData = this.chartDataByLocation().find(loc => loc.location === this.selectedLocation());
-    if (!locationData) return null;
-
-    // If a specific station is selected, return modified data with station's values
-    if (this.selectedStation() !== 'all') {
-      const stationData = locationData.stations?.find(s => s.stationName === this.selectedStation());
-      if (stationData) {
-        // Map station data to location data format
-        return {
-          ...locationData,
-          monthlyData: stationData.monthlyData.map(m => ({
-            month: m.month,
-            pflegetage: m.pflegetage,
-            stationsauslastung: m.stationsauslastung,
-            verweildauer: m.verweildauer,
-            stationCount: 1, // Single station
-            betten: m.betten // Preserve betten info for debugging
-          }))
-        };
-      }
-    }
-
-    return locationData;
-  }
-
   private calculateSharedScales(locationData: LocationChartData[]) {
     // Calculate shared min/max for each metric across all locations
     let aggregatedMaxPflegetage = 0;
@@ -1079,7 +1108,14 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
     this.sharedScales.stationsauslastung.station.max = 100;
   }
 
-  getPflegetageChartData(locationData: LocationChartData): ChartData<'line'> {
+  private createEmptyLineChart(): ChartData<'line'> {
+    return {
+      labels: [...this.monthLabels],
+      datasets: []
+    };
+  }
+
+  private buildPflegetageChartData(locationData: LocationChartData): ChartData<'line'> {
     return {
       labels: this.monthLabels,
       datasets: [{
@@ -1095,7 +1131,7 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
     };
   }
 
-  getStationsauslastungChartData(locationData: LocationChartData): ChartData<'line'> {
+  private buildStationsauslastungChartData(locationData: LocationChartData): ChartData<'line'> {
     return {
       labels: this.monthLabels,
       datasets: [{
@@ -1111,7 +1147,7 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
     };
   }
 
-  getVerweildauerChartData(locationData: LocationChartData): ChartData<'line'> {
+  private buildVerweildauerChartData(locationData: LocationChartData): ChartData<'line'> {
     return {
       labels: this.monthLabels,
       datasets: [{
@@ -1127,7 +1163,7 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
     };
   }
 
-  getCombinedChartData(locationData: LocationChartData): ChartData<'line'> {
+  private buildCombinedChartData(locationData: LocationChartData): ChartData<'line'> {
     return {
       labels: this.monthLabels,
       datasets: [
@@ -1159,7 +1195,7 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
     };
   }
 
-  getChartOptions(title: string, yAxisLabel: string, metric?: 'pflegetage' | 'stationsauslastung' | 'verweildauer'): ChartConfiguration['options'] {
+  private buildChartOptions(title: string, yAxisLabel: string, metric?: 'pflegetage' | 'stationsauslastung' | 'verweildauer'): ChartConfiguration['options'] {
     const yAxisConfig: any = {
       display: true,
       title: {

@@ -105,8 +105,8 @@ interface PflegestufenData {
                   <mat-card-content class="chart-content">
                     <div class="chart-container">
                       <canvas baseChart
-                        [data]="getAltersgruppenChartData()"
-                        [options]="getAltersgruppenChartOptions()"
+                        [data]="altersgruppenChartData()"
+                        [options]="altersgruppenChartOptions"
                         [type]="'bar'">
                       </canvas>
                     </div>
@@ -213,6 +213,113 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
     return Array.from(stations).sort();
   });
 
+  altersgruppenChartData = computed<ChartData<'bar'>>(() => {
+    const allMonthsData = this.pflegestufenData().filter(d =>
+      d.Standort === this.selectedStandort() &&
+      d.Kategorie !== 'Gesamt' &&
+      (this.selectedStation() === 'Alle' || d.Station === this.selectedStation())
+    );
+
+    const monthData: Record<number, { A1: number; A2: number; A3: number; A4: number; ohne: number }> = {};
+    for (let i = 1; i <= 12; i++) {
+      monthData[i] = { A1: 0, A2: 0, A3: 0, A4: 0, ohne: 0 };
+    }
+
+    allMonthsData.forEach(row => {
+      const monat = row.Monat;
+      const kategorie = row.Kategorie;
+      if (!kategorie || !monat || monat < 1 || monat > 12) return;
+
+      if (kategorie.startsWith('A1')) monthData[monat].A1 += row['Einstufungen absolut'];
+      else if (kategorie.startsWith('A2')) monthData[monat].A2 += row['Einstufungen absolut'];
+      else if (kategorie.startsWith('A3')) monthData[monat].A3 += row['Einstufungen absolut'];
+      else if (kategorie.startsWith('A4')) monthData[monat].A4 += row['Einstufungen absolut'];
+      else if (kategorie.toLowerCase().includes('ohne einstufung')) monthData[monat].ohne += row['Einstufungen absolut'];
+    });
+
+    const months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+    const labels = months.map(m => this.getMonthName(m));
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'A1',
+          data: months.map(m => monthData[m].A1),
+          backgroundColor: 'rgba(33, 150, 243, 0.7)',
+          borderColor: 'rgba(33, 150, 243, 1)',
+          borderWidth: 2
+        },
+        {
+          label: 'A2',
+          data: months.map(m => monthData[m].A2),
+          backgroundColor: 'rgba(76, 175, 80, 0.7)',
+          borderColor: 'rgba(76, 175, 80, 1)',
+          borderWidth: 2
+        },
+        {
+          label: 'A3',
+          data: months.map(m => monthData[m].A3),
+          backgroundColor: 'rgba(255, 152, 0, 0.7)',
+          borderColor: 'rgba(255, 152, 0, 1)',
+          borderWidth: 2
+        },
+        {
+          label: 'A4',
+          data: months.map(m => monthData[m].A4),
+          backgroundColor: 'rgba(156, 39, 176, 0.7)',
+          borderColor: 'rgba(156, 39, 176, 1)',
+          borderWidth: 2
+        },
+        {
+          label: 'ohne Einstufung',
+          data: months.map(m => monthData[m].ohne),
+          backgroundColor: 'rgba(244, 67, 54, 0.7)',
+          borderColor: 'rgba(244, 67, 54, 1)',
+          borderWidth: 2
+        }
+      ]
+    };
+  });
+  readonly altersgruppenChartOptions: ChartConfiguration['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top',
+        labels: {
+          usePointStyle: true,
+          padding: 15
+        }
+      },
+      title: { display: false },
+      tooltip: {
+        mode: 'index',
+        intersect: false,
+        callbacks: {
+          label: (context) => {
+            return `${context.dataset.label}: ${context.parsed.y.toLocaleString('de-DE')}`;
+          }
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Einstufungen absolut'
+        }
+      },
+      x: {
+        title: {
+          display: true,
+          text: 'Monat'
+        }
+      }
+    }
+  };
   comparisonSeries = computed<ComparisonSeries[]>(() => {
     const standort = this.selectedStandort();
     if (!standort) {
@@ -400,123 +507,6 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
     const months = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 
                    'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
     return months[month - 1] || `Monat ${month}`;
-  }
-
-  // Altersgruppen Chart Methods
-  getAltersgruppenChartData(): ChartData<'bar'> {
-    // Get data for ALL months (not filtered by selectedMonth)
-    const allMonthsData = this.pflegestufenData().filter(d => 
-      d.Standort === this.selectedStandort() &&
-      d.Kategorie !== 'Gesamt' &&
-      (this.selectedStation() === 'Alle' || d.Station === this.selectedStation())
-    );
-    
-    // Initialize all 12 months with zero values
-    const monthData: { [month: number]: { A1: number, A2: number, A3: number, A4: number, ohne: number } } = {};
-    for (let i = 1; i <= 12; i++) {
-      monthData[i] = { A1: 0, A2: 0, A3: 0, A4: 0, ohne: 0 };
-    }
-    
-    // Fill in actual data
-    allMonthsData.forEach(row => {
-      const monat = row.Monat;
-      const kategorie = row.Kategorie;
-      if (!kategorie || !monat || monat < 1 || monat > 12) return;
-      
-      if (kategorie.startsWith('A1')) monthData[monat].A1 += row['Einstufungen absolut'];
-      else if (kategorie.startsWith('A2')) monthData[monat].A2 += row['Einstufungen absolut'];
-      else if (kategorie.startsWith('A3')) monthData[monat].A3 += row['Einstufungen absolut'];
-      else if (kategorie.startsWith('A4')) monthData[monat].A4 += row['Einstufungen absolut'];
-      else if (kategorie.toLowerCase().includes('ohne einstufung')) monthData[monat].ohne += row['Einstufungen absolut'];
-    });
-    
-    // All 12 months
-    const months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-    const labels = months.map(m => this.getMonthName(m));
-    
-    // Create datasets for each Altersgruppe (grouped bars)
-    return {
-      labels: labels,
-      datasets: [
-        {
-          label: 'A1',
-          data: months.map(m => monthData[m].A1),
-          backgroundColor: 'rgba(33, 150, 243, 0.7)',
-          borderColor: 'rgba(33, 150, 243, 1)',
-          borderWidth: 2
-        },
-        {
-          label: 'A2',
-          data: months.map(m => monthData[m].A2),
-          backgroundColor: 'rgba(76, 175, 80, 0.7)',
-          borderColor: 'rgba(76, 175, 80, 1)',
-          borderWidth: 2
-        },
-        {
-          label: 'A3',
-          data: months.map(m => monthData[m].A3),
-          backgroundColor: 'rgba(255, 152, 0, 0.7)',
-          borderColor: 'rgba(255, 152, 0, 1)',
-          borderWidth: 2
-        },
-        {
-          label: 'A4',
-          data: months.map(m => monthData[m].A4),
-          backgroundColor: 'rgba(156, 39, 176, 0.7)',
-          borderColor: 'rgba(156, 39, 176, 1)',
-          borderWidth: 2
-        },
-        {
-          label: 'ohne Einstufung',
-          data: months.map(m => monthData[m].ohne),
-          backgroundColor: 'rgba(244, 67, 54, 0.7)',
-          borderColor: 'rgba(244, 67, 54, 1)',
-          borderWidth: 2
-        }
-      ]
-    };
-  }
-
-  getAltersgruppenChartOptions(): ChartConfiguration['options'] {
-    return {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { 
-          display: true,
-          position: 'top',
-          labels: {
-            usePointStyle: true,
-            padding: 15
-          }
-        },
-        title: { display: false },
-        tooltip: {
-          mode: 'index',
-          intersect: false,
-          callbacks: {
-            label: (context) => {
-              return `${context.dataset.label}: ${context.parsed.y.toLocaleString('de-DE')}`;
-            }
-          }
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          title: {
-            display: true,
-            text: 'Einstufungen absolut'
-          }
-        },
-        x: {
-          title: {
-            display: true,
-            text: 'Monat'
-          }
-        }
-      }
-    };
   }
 
   getAltersgruppeTotal(gruppe: string): number {
