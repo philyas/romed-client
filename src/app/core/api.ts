@@ -290,6 +290,6 @@ export class Api {
       return processEnvUrl;
     }
 
-    return 'https://romed-backend.onrender.com';
+    return 'https://romed-server.onrender.com';
   }
 }
