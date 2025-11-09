@@ -86,24 +86,11 @@ export interface ManualEntryDataResponse {
 })
 export class Api {
   private http = inject(HttpClient);
-  private readonly baseUrl = (() => {
-    const localApi = 'http://localhost:3000';
-    const defaultProdApi = 'https://romed-server.onrender.com';
-
-    if (typeof window !== 'undefined') {
-      const runtimeUrl = (window as unknown as { __ROMED_API_URL__?: string }).__ROMED_API_URL__;
-      if (runtimeUrl) {
-        return runtimeUrl.replace(/\/+$/, '');
-      }
-
-      const host = window.location.hostname;
-      if (host === 'localhost' || host === '127.0.0.1') {
-        return localApi;
-      }
-    }
-
-    return isDevMode() ? localApi : defaultProdApi;
-  })();
+  private readonly baseUrl = isDevMode() 
+    ? 'http://localhost:3000' 
+    : (typeof window !== 'undefined' && window.location.origin
+        ? window.location.origin.replace(':4200', ':3000')
+        : 'http://localhost:3000');
 
   constructor() {
     const mode = isDevMode() ? 'DEVELOPMENT' : 'PRODUCTION';
