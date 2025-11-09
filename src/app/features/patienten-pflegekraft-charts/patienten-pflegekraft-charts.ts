@@ -79,6 +79,10 @@ import { SearchableSelectComponent } from '../shared/searchable-select/searchabl
           <mat-card-title>Patient/Pflegekraft gem. PpUGV ({{ selectedStation() }})</mat-card-title>
         </mat-card-header>
         <mat-card-content class="chart-content">
+          <div class="chart-loading-overlay" *ngIf="chartLoading()">
+            <div class="loading-bar"></div>
+            <p>Daten werden geladen…</p>
+          </div>
           <div class="chart-container">
             <canvas baseChart
               [data]="chartData"
@@ -109,6 +113,39 @@ import { SearchableSelectComponent } from '../shared/searchable-select/searchabl
     .chart-container { height: 320px; position: relative; margin-bottom: 12px; }
     .chart-info { padding: 8px 12px; background: #f5f5f5; border-radius: 4px; margin-top: 8px; }
     .chart-info mat-chip-set { display: flex; gap: 8px; justify-content: center; }
+    .chart-loading-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.92);
+      border-radius: 4px;
+      gap: 16px;
+      z-index: 2;
+      pointer-events: none;
+
+      .loading-bar {
+        width: 180px;
+        height: 4px;
+        background: linear-gradient(90deg, rgba(0,151,167,0.3) 0%, rgba(0,124,145,0.9) 50%, rgba(0,151,167,0.3) 100%);
+        animation: shimmer 1.4s infinite ease-in-out;
+        border-radius: 999px;
+      }
+
+      p {
+        margin: 0;
+        font-weight: 600;
+        color: #007c91;
+      }
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-50%); opacity: 0.4; }
+      50% { transform: translateX(0%); opacity: 1; }
+      100% { transform: translateX(50%); opacity: 0.4; }
+    }
     @media (max-width: 1024px) {
       .selectors-container {
         flex-wrap: wrap;
@@ -156,6 +193,7 @@ export class PatientenPflegekraftCharts implements OnInit {
   private comparisonCache = new Map<string, { day: number[]; night: number[] }>();
   comparisonSeries = signal<ComparisonSeries[]>([]);
   comparisonLoading = signal<boolean>(false);
+  chartLoading = signal<boolean>(false);
 
   private readonly comparisonMetrics: ComparisonMetricConfig[] = [
     {
@@ -202,7 +240,6 @@ export class PatientenPflegekraftCharts implements OnInit {
 
   onYearChange(year: number) {
     this.selectedYear.set(year);
-    this.comparisonCache.clear();
     this.comparisonSeries.set([]);
     this.loadAveragesAndData();
   }
@@ -245,6 +282,7 @@ export class PatientenPflegekraftCharts implements OnInit {
   private async loadAveragesAndData() {
     const station = this.selectedStation();
     if (!station) return;
+    this.chartLoading.set(true);
 
     try {
       const [mita, mina] = await Promise.all([
@@ -262,6 +300,8 @@ export class PatientenPflegekraftCharts implements OnInit {
       this.refreshChart();
     } catch (e) {
       // ignore
+    } finally {
+      this.chartLoading.set(false);
     }
   }
 
