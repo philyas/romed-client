@@ -35,6 +35,7 @@ import { MatButtonModule } from '@angular/material/button';
         [placeholder]="placeholder || ''"
         [disabled]="disabled"
         autocomplete="off"
+        (blur)="handleBlur()"
       />
       <button
         *ngIf="clearable && searchTerm()"
@@ -188,9 +189,11 @@ export class SearchableSelectComponent implements OnChanges {
     return options.filter(option => this.formatOption(option).toLowerCase().includes(term));
   });
 
+  private readonly isEditing = signal(false);
+
   readonly inputValue = computed(() => {
     const term = this.searchTerm();
-    if (term) {
+    if (term || this.isEditing()) {
       return term;
     }
     const display = this.selectedDisplay();
@@ -224,6 +227,7 @@ export class SearchableSelectComponent implements OnChanges {
     if (changes['value'] && !changes['value'].firstChange) {
       // Clear search term when value is updated externally to avoid stale filter
       this.searchTerm.set('');
+      this.isEditing.set(false);
       queueMicrotask(() => {
         this.autocompleteTrigger?.closePanel();
         this.inputElement?.nativeElement.blur();
@@ -232,6 +236,9 @@ export class SearchableSelectComponent implements OnChanges {
   }
 
   handleInput(value: string) {
+    if (!this.isEditing()) {
+      this.isEditing.set(true);
+    }
     this.searchTerm.set(value);
     this.selectedDisplay.set('');
     this.searchChange.emit(value);
@@ -257,6 +264,7 @@ export class SearchableSelectComponent implements OnChanges {
     }
     this.searchTerm.set('');
     this.selectedDisplay.set('');
+    this.isEditing.set(true);
     this.searchChange.emit('');
     this.autocompleteTrigger?.openPanel();
     queueMicrotask(() => this.inputElement?.nativeElement.focus());
@@ -286,9 +294,16 @@ export class SearchableSelectComponent implements OnChanges {
         : this.formatOption(selected);
     this.selectedDisplay.set(displayValue);
     this.searchTerm.set('');
+    this.isEditing.set(false);
     this.valueChange.emit(selected);
     this.autocompleteTrigger?.closePanel();
     queueMicrotask(() => this.inputElement?.nativeElement.blur());
+  }
+
+  handleBlur() {
+    if (this.isEditing()) {
+      this.isEditing.set(false);
+    }
   }
 
   shouldShowAllOption(): boolean {
