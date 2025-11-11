@@ -10,7 +10,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType, registerables } from 'chart.js';
 import Chart from 'chart.js/auto';
-import { Api, ManualEntryDataResponse } from '../../core/api';
+import { Api, PatientenPflegekraftOverviewResponse } from '../../core/api';
 import { ComparisonDialogComponent, ComparisonMetricConfig, ComparisonSeries } from '../shared/comparison-dialog/comparison-dialog.component';
 import { SearchableSelectComponent } from '../shared/searchable-select/searchable-select.component';
 
@@ -185,12 +185,9 @@ export class PatientenPflegekraftCharts implements OnInit {
   availableYears = [2023, 2024, 2025, 2026, 2027];
   readonly availableYearOptions = this.availableYears.map(year => year.toString());
 
-  private mitaAverage = signal<number | null>(null);
-  private minaAverage = signal<number | null>(null);
-
   private dayValues = signal<number[]>(Array(12).fill(0));
   private nightValues = signal<number[]>(Array(12).fill(0));
-  private comparisonCache = new Map<string, { day: number[]; night: number[] }>();
+  private comparisonCache = new Map<string, { day: number[]; night: number[]; metadata?: PatientenPflegekraftOverviewResponse['metadata'] }>();
   comparisonSeries = signal<ComparisonSeries[]>([]);
   comparisonLoading = signal<boolean>(false);
   chartLoading = signal<boolean>(false);
@@ -285,53 +282,35 @@ export class PatientenPflegekraftCharts implements OnInit {
     this.chartLoading.set(true);
 
     try {
-      const [mita, mina] = await Promise.all([
-        this.api.getStationMitaAverage(station).toPromise(),
-        this.api.getStationMinaAverage(station).toPromise()
-      ]);
-      const mitaAvg = mita?.mitaDurchschnitt ?? null;
-      const minaAvg = mina?.minaDurchschnitt ?? null;
-      this.mitaAverage.set(mitaAvg);
-      this.minaAverage.set(minaAvg);
-
-      const { dayValues, nightValues } = await this.fetchMonthlyValues(station, this.selectedYear(), mitaAvg, minaAvg);
+      const { dayValues, nightValues, metadata } = await this.fetchMonthlyValues(station, this.selectedYear());
       this.dayValues.set(dayValues);
       this.nightValues.set(nightValues);
+      if (metadata?.warnings?.length) {
+        console.warn(`⚠️ Patienten/Pflegekraft Hinweise (${station} ${this.selectedYear()}): ${metadata.warnings.join(' | ')}`);
+      }
       this.refreshChart();
-    } catch (e) {
-      // ignore
+    } catch (error) {
+      console.error('Fehler beim Laden der Patienten/Pflegekraft Übersicht:', error);
+      this.dayValues.set(Array(12).fill(0));
+      this.nightValues.set(Array(12).fill(0));
+      this.refreshChart();
     } finally {
       this.chartLoading.set(false);
     }
   }
 
-  private async fetchMonthlyValues(station: string, year: number, mitaAverage: number | null, minaAverage: number | null): Promise<{ dayValues: number[]; nightValues: number[] }> {
+  private async fetchMonthlyValues(station: string, year: number): Promise<{ dayValues: number[]; nightValues: number[]; metadata?: PatientenPflegekraftOverviewResponse['metadata'] }> {
     const cacheKey = `${station}::${year}`;
     const cached = this.comparisonCache.get(cacheKey);
     if (cached) {
-      return { dayValues: [...cached.day], nightValues: [...cached.night] };
+      return { dayValues: [...cached.day], nightValues: [...cached.night], metadata: cached.metadata };
     }
 
-    const dayVals: number[] = Array(12).fill(0);
-    const nightVals: number[] = Array(12).fill(0);
-    const requests: Promise<void>[] = [];
-
-    for (let month = 1; month <= 12; month++) {
-      requests.push(
-        this.api.getManualEntryData(station, year, month, 'PFK').toPromise()
-          .then(res => { dayVals[month - 1] = this.computePatientenProPflegekraftTag(res, mitaAverage); })
-          .catch(() => { dayVals[month - 1] = 0; })
-      );
-      requests.push(
-        this.api.getManualEntryNachtData(station, year, month, 'PFK').toPromise()
-          .then(res => { nightVals[month - 1] = this.computePatientenProPflegekraftNacht(res, minaAverage); })
-          .catch(() => { nightVals[month - 1] = 0; })
-      );
-    }
-
-    await Promise.all(requests);
-    this.comparisonCache.set(cacheKey, { day: [...dayVals], night: [...nightVals] });
-    return { dayValues: dayVals, nightValues: nightVals };
+    const overview = await this.api.getPatientenPflegekraftOverview(station, year).toPromise();
+    const dayVals = overview?.values?.day ?? Array(12).fill(0);
+    const nightVals = overview?.values?.night ?? Array(12).fill(0);
+    this.comparisonCache.set(cacheKey, { day: [...dayVals], night: [...nightVals], metadata: overview?.metadata });
+    return { dayValues: [...dayVals], nightValues: [...nightVals], metadata: overview?.metadata };
   }
 
   async openComparisonDialog(event?: MouseEvent) {
@@ -372,84 +351,29 @@ export class PatientenPflegekraftCharts implements OnInit {
       const series: ComparisonSeries[] = [];
 
       for (const station of stations) {
-        const [mita, mina] = await Promise.all([
-          this.api.getStationMitaAverage(station).toPromise(),
-          this.api.getStationMinaAverage(station).toPromise()
-        ]);
-        const mitaAvg = mita?.mitaDurchschnitt ?? null;
-        const minaAvg = mina?.minaDurchschnitt ?? null;
-        const { dayValues, nightValues } = await this.fetchMonthlyValues(station, year, mitaAvg, minaAvg);
+        try {
+          const { dayValues, nightValues } = await this.fetchMonthlyValues(station, year);
 
-        series.push({
-          id: station,
-          label: station,
-          monthlyData: dayValues.map((day, index) => ({
-            month: index + 1,
-            metrics: {
-              pfkTag: day,
-              pfkNacht: nightValues[index] ?? null
-            }
-          }))
-        });
+          series.push({
+            id: station,
+            label: station,
+            monthlyData: dayValues.map((day, index) => ({
+              month: index + 1,
+              metrics: {
+                pfkTag: day,
+                pfkNacht: nightValues[index] ?? null
+              }
+            }))
+          });
+        } catch (error) {
+          console.warn(`Übersicht für ${station} konnte nicht geladen werden`, error);
+        }
       }
 
       this.comparisonSeries.set(series);
     } finally {
       this.comparisonLoading.set(false);
     }
-  }
-
-  private computePatientenProPflegekraftTag(res: ManualEntryDataResponse | undefined, mitaAverage: number | null): number {
-    if (!res || !res.data || !mitaAverage || mitaAverage === 0) return 0;
-    const dayEntries = res.data.filter(d => d.Tag > 0);
-    if (dayEntries.length === 0) return 0;
-
-    let totalMinutes = 0;
-    let daysWithData = 0;
-    dayEntries.forEach(d => {
-      const minutes = (Number(d.Stunden) || 0) * 60 + (Number(d.Minuten) || 0);
-      if (minutes > 0) { totalMinutes += minutes; daysWithData++; }
-    });
-    if (daysWithData === 0) return 0;
-    const avgPfkHours = (totalMinutes / daysWithData) / 60;
-
-    let tatsaechlichAnrechenbar = 0;
-    if (res.phkTageswerte && Array.isArray(res.phkTageswerte) && res.phkTageswerte.length > 0) {
-      const values: number[] = [];
-      dayEntries.forEach(entry => {
-        const tagData = res.phkTageswerte!.find(t => t.tag === entry.Tag);
-        if (!tagData) return;
-        const phkAnr = entry.PHK_Anrechenbar_Stunden ?? 0;
-        const dez = tagData.gesamtDezimal ?? 0;
-        values.push(dez >= phkAnr ? phkAnr : dez);
-      });
-      if (values.length > 0) tatsaechlichAnrechenbar = values.reduce((a,b)=>a+b,0) / values.length;
-    } else {
-      const avgRow = res.data.find(d => d.Tag === 0);
-      tatsaechlichAnrechenbar = Number(avgRow?.PHK_Anrechenbar_Stunden) || 0;
-    }
-
-    const gesamt = avgPfkHours + tatsaechlichAnrechenbar;
-    const examPflege = gesamt / 16;
-    return examPflege / mitaAverage;
-  }
-
-  private computePatientenProPflegekraftNacht(res: ManualEntryDataResponse | undefined, minaAverage: number | null): number {
-    if (!res || !res.data || !minaAverage || minaAverage === 0) return 0;
-    const dayEntries = res.data.filter(d => d.Tag > 0);
-    if (dayEntries.length === 0) return 0;
-    let totalMinutes = 0; let daysWithData = 0;
-    dayEntries.forEach(d => {
-      const minutes = (Number(d.Stunden) || 0) * 60 + (Number(d.Minuten) || 0);
-      if (minutes > 0) { totalMinutes += minutes; daysWithData++; }
-    });
-    if (daysWithData === 0) return 0;
-    const avgPfkHours = (totalMinutes / daysWithData) / 60;
-    const avgRow = res.data.find(d => d.Tag === 0);
-    const phkAnr = Number(avgRow?.PHK_Anrechenbar_Stunden) || 0;
-    const gesamt = avgPfkHours + phkAnr;
-    const examPflege = gesamt / 8;
-    return examPflege / minaAverage;
   }
 
   private refreshChart() {

@@ -81,6 +81,29 @@ export interface ManualEntryDataResponse {
   }>;
 }
 
+export interface PatientenPflegekraftOverviewResponse {
+  station: string;
+  jahr: number;
+  values: {
+    day: number[];
+    night: number[];
+  };
+  averages: {
+    day: number;
+    night: number;
+  };
+  metadata: {
+    mitaDurchschnitt: number | null;
+    minaDurchschnitt: number | null;
+    monthsWithData: {
+      day: number[];
+      night: number[];
+    };
+    availableYears: number[];
+    warnings: string[];
+  };
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -149,6 +172,14 @@ export class Api {
   // Manuelle Stundeneingabe API
   getManualEntryStations(): Observable<{ stations: string[] }> {
     return this.http.get<{ stations: string[] }>(`${this.baseUrl}/manual-entry/stations`);
+  }
+
+  getPatientenPflegekraftOverview(station: string, jahr?: number): Observable<PatientenPflegekraftOverviewResponse> {
+    let params = new HttpParams().set('station', station);
+    if (typeof jahr === 'number' && !Number.isNaN(jahr)) {
+      params = params.set('jahr', jahr.toString());
+    }
+    return this.http.get<PatientenPflegekraftOverviewResponse>(`${this.baseUrl}/manual-entry/patienten-pflegekraft/overview`, { params });
   }
 
   getManualEntryData(station: string, jahr: number, monat: number, kategorie: string): Observable<ManualEntryDataResponse> {
