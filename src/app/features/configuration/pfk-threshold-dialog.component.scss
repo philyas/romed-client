@@ -1,0 +1,58 @@
+.dialog-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 8px;
+
+  .full-width {
+    width: 100%;
+  }
+
+  .field-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+  }
+
+  .station-suggestions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 13px;
+    color: #555;
+
+    mat-chip-set {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .station-chip {
+      cursor: pointer;
+      background-color: #f0f7ff;
+      color: #007c91;
+      transition: background-color 0.2s ease, color 0.2s ease;
+
+      &.active-chip {
+        background: linear-gradient(135deg, #00acc1 0%, #007c91 100%);
+        color: #fff;
+      }
+    }
+  }
+}
+
+mat-dialog-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  mat-icon {
+    color: #ff9800;
+  }
+}
+
+mat-dialog-actions {
+  padding: 16px 0 0;
+  gap: 12px;
+}
+

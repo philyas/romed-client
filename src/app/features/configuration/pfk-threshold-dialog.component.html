@@ -1,0 +1,130 @@
+<h2 mat-dialog-title>
+  <mat-icon>tips_and_updates</mat-icon>
+  {{ isEditMode ? 'Grenzwert bearbeiten' : 'Grenzwert hinzufügen' }}
+</h2>
+
+<mat-dialog-content>
+  <div class="dialog-form">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Station</mat-label>
+      <input
+        matInput
+        [(ngModel)]="stationInput"
+        name="stationInput"
+        placeholder="z. B. BABBELEG oder * für alle"
+        autocomplete="off">
+      <mat-hint>* = alle Stationen</mat-hint>
+    </mat-form-field>
+
+    <div class="station-suggestions" *ngIf="stationSuggestions.length > 0">
+      <span>Station auswählen:</span>
+      <mat-chip-set>
+        <mat-chip
+          class="station-chip"
+          [ngClass]="{ 'active-chip': stationInput.trim() === '*' }"
+          (click)="selectGlobalStation()">
+          Alle Stationen (*)
+        </mat-chip>
+        <mat-chip
+          class="station-chip"
+          *ngFor="let option of stationSuggestions; trackBy: trackByValue"
+          [ngClass]="{ 'active-chip': stationInput.trim() === option }"
+          (click)="selectStation(option)">
+          {{ option }}
+        </mat-chip>
+      </mat-chip-set>
+    </div>
+
+    <div class="field-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Schicht</mat-label>
+        <mat-select [(ngModel)]="schicht" name="schicht">
+          <mat-option value="day">Tag</mat-option>
+          <mat-option value="night">Nacht</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Jahr (optional)</mat-label>
+        <input
+          matInput
+          type="number"
+          [(ngModel)]="yearInput"
+          name="yearInput"
+          placeholder="z. B. 2025">
+      </mat-form-field>
+    </div>
+
+    <div class="field-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Unterer Grenzwert</mat-label>
+        <input
+          matInput
+          type="number"
+          step="0.001"
+          [(ngModel)]="lowerLimitInput"
+          name="lowerLimitInput">
+        <mat-hint>Leer lassen, wenn nicht benötigt</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Oberer Grenzwert</mat-label>
+        <input
+          matInput
+          type="number"
+          step="0.001"
+          [(ngModel)]="upperLimitInput"
+          name="upperLimitInput">
+        <mat-hint>Leer lassen, wenn nicht benötigt</mat-hint>
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Monate (optional)</mat-label>
+      <mat-select multiple [(ngModel)]="months" name="months">
+        <mat-option *ngFor="let option of monthOptions" [value]="option.value">
+          {{ option.label }}
+        </mat-option>
+      </mat-select>
+      <mat-hint>Leer lassen für alle Monate</mat-hint>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Empfehlung (optional)</mat-label>
+      <textarea
+        matInput
+        rows="2"
+        [(ngModel)]="recommendation"
+        name="recommendation"
+        placeholder="Konkrete Handlungsempfehlung bei Überschreitung"></textarea>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Notiz (optional)</mat-label>
+      <textarea
+        matInput
+        rows="2"
+        [(ngModel)]="note"
+        name="note"
+        placeholder="Interne Notiz für andere Administratoren"></textarea>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Schweregrad</mat-label>
+      <mat-select [(ngModel)]="severity" name="severity">
+        <mat-option value="info">Info</mat-option>
+        <mat-option value="warning">Warnung</mat-option>
+        <mat-option value="critical">Kritisch</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">Abbrechen</button>
+  <button mat-raised-button color="primary" (click)="save()" [disabled]="!canSave">
+    <mat-icon>save</mat-icon>
+    Speichern
+  </button>
+</mat-dialog-actions>
+

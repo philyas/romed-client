@@ -186,6 +186,151 @@
           </div>
         </mat-tab>
         
+        <mat-tab label="PFK Warnungen & Empfehlungen">
+          <div class="tab-content pfk-thresholds-tab">
+            <div class="thresholds-header">
+              <h3>
+                <mat-icon>campaign</mat-icon>
+                Warn- & Empfehlungskonfiguration
+              </h3>
+              <div class="header-actions">
+                <button
+                  mat-raised-button
+                  color="primary"
+                  (click)="openThresholdCreateDialog()"
+                  [disabled]="pfkThresholdsLoading() || pfkThresholdsSaving()">
+                  <mat-icon>add_alert</mat-icon>
+                  Neuer Grenzwert
+                </button>
+              </div>
+            </div>
+
+            <div class="thresholds-hint">
+              <p>Definieren Sie Grenzwerte für Patienten/Pflegekraft (PFK), um Warnungen und Empfehlungen in den Charts auszulösen.</p>
+              <ul>
+                <li><strong>*</strong> als Station verwenden, um Regeln für alle Stationen anzuwenden.</li>
+                <li>Optional können Jahr und Monate angegeben werden, um Regeln zeitlich einzugrenzen.</li>
+                <li>Empfehlungen erscheinen zusammen mit Warnungen direkt in den Auswertungen.</li>
+              </ul>
+            </div>
+
+            <div class="table-section">
+              <div class="table-header">
+                <h4>
+                  <mat-icon>rule</mat-icon>
+                  Grenzwerte ({{ pfkThresholds().length }})
+                </h4>
+              </div>
+
+              <div class="loading-spinner" *ngIf="pfkThresholdsLoading()">
+                <mat-spinner diameter="40"></mat-spinner>
+                <p>Grenzwerte werden geladen...</p>
+              </div>
+
+              <div class="table-container" *ngIf="!pfkThresholdsLoading() && pfkThresholds().length > 0">
+                <table mat-table [dataSource]="pfkThresholdDataSource" class="thresholds-table">
+                  <ng-container matColumnDef="station">
+                    <th mat-header-cell *matHeaderCellDef>Station</th>
+                    <td mat-cell *matCellDef="let element">
+                      <strong>{{ stationLabel(element.station) }}</strong>
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="schicht">
+                    <th mat-header-cell *matHeaderCellDef>Schicht</th>
+                    <td mat-cell *matCellDef="let element">
+                      {{ pfkSchichtLabel(element.schicht) }}
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="year">
+                    <th mat-header-cell *matHeaderCellDef>Jahr</th>
+                    <td mat-cell *matCellDef="let element">
+                      {{ element.year ?? 'Alle' }}
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="months">
+                    <th mat-header-cell *matHeaderCellDef>Monate</th>
+                    <td mat-cell *matCellDef="let element">
+                      <ng-container *ngIf="element.months?.length; else allMonths">
+                        <mat-chip-set>
+                          <mat-chip *ngFor="let month of element.months">{{ monthLabel(month) }}</mat-chip>
+                        </mat-chip-set>
+                      </ng-container>
+                      <ng-template #allMonths>Alle</ng-template>
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="limits">
+                    <th mat-header-cell *matHeaderCellDef>Grenzwerte</th>
+                    <td mat-cell *matCellDef="let element">
+                      {{ formatThresholdRange(element) }}
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="severity">
+                    <th mat-header-cell *matHeaderCellDef>Schweregrad</th>
+                    <td mat-cell *matCellDef="let element">
+                      <mat-chip [ngClass]="pfkSeverityClass(element.severity)">
+                        {{ pfkSeverityLabel(element.severity) }}
+                      </mat-chip>
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="recommendation">
+                    <th mat-header-cell *matHeaderCellDef>Empfehlung</th>
+                    <td mat-cell *matCellDef="let element">
+                      <div class="recommendation-cell">
+                        <span class="recommendation-text">{{ element.recommendation || '–' }}</span>
+                        <span class="note-text" *ngIf="element.note">Notiz: {{ element.note }}</span>
+                      </div>
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="updatedAt">
+                    <th mat-header-cell *matHeaderCellDef>Aktualisiert</th>
+                    <td mat-cell *matCellDef="let element">
+                      {{ element.updatedAt ? (element.updatedAt | date:'dd.MM.yyyy HH:mm') : '–' }}
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="actions">
+                    <th mat-header-cell *matHeaderCellDef>Aktionen</th>
+                    <td mat-cell *matCellDef="let element">
+                      <button
+                        mat-icon-button
+                        color="primary"
+                        matTooltip="Bearbeiten"
+                        (click)="openThresholdEditDialog(element)"
+                        [disabled]="pfkThresholdsSaving()">
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                      <button
+                        mat-icon-button
+                        color="warn"
+                        matTooltip="Löschen"
+                        (click)="deletePfkThreshold(element)"
+                        [disabled]="pfkThresholdsSaving()">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </td>
+                  </ng-container>
+
+                  <tr mat-header-row *matHeaderRowDef="pfkThresholdColumns"></tr>
+                  <tr mat-row *matRowDef="let row; columns: pfkThresholdColumns"></tr>
+                </table>
+              </div>
+
+              <div class="empty-state" *ngIf="!pfkThresholdsLoading() && pfkThresholds().length === 0">
+                <mat-icon>lightbulb</mat-icon>
+                <p>Noch keine Grenzwerte hinterlegt</p>
+                <p class="hint">Legen Sie den ersten Grenzwert an, um Warnungen in den PFK-Charts zu erhalten.</p>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
         <mat-tab label="Allgemein">
           <div class="tab-content">
             <p>Allgemeine Konfigurationseinstellungen</p>

@@ -81,6 +81,41 @@ export interface ManualEntryDataResponse {
   }>;
 }
 
+export type PfkSchicht = 'day' | 'night';
+export type PfkAlertTrigger = 'lower' | 'upper';
+export type PfkSeverity = 'info' | 'warning' | 'critical';
+
+export interface PfkThresholdConfig {
+  id: string;
+  station: string;
+  schicht: PfkSchicht;
+  year: number | null;
+  lowerLimit: number | null;
+  upperLimit: number | null;
+  recommendation: string | null;
+  note: string | null;
+  severity: PfkSeverity;
+  months: number[];
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
+export interface PfkAlert {
+  id: string;
+  thresholdId: string;
+  station: string;
+  year: number;
+  month: number;
+  schicht: PfkSchicht;
+  trigger: PfkAlertTrigger;
+  thresholdValue: number;
+  actualValue: number;
+  severity: PfkSeverity;
+  recommendation: string | null;
+  note: string | null;
+  message: string;
+}
+
 export interface PatientenPflegekraftOverviewResponse {
   station: string;
   jahr: number;
@@ -101,6 +136,8 @@ export interface PatientenPflegekraftOverviewResponse {
     };
     availableYears: number[];
     warnings: string[];
+    thresholds?: PfkThresholdConfig[];
+    alerts?: PfkAlert[];
   };
 }
 
@@ -172,6 +209,42 @@ export class Api {
   // Manuelle Stundeneingabe API
   getManualEntryStations(): Observable<{ stations: string[] }> {
     return this.http.get<{ stations: string[] }>(`${this.baseUrl}/manual-entry/stations`);
+  }
+
+  getPfkThresholds(): Observable<{ success: boolean; data: PfkThresholdConfig[] }> {
+    return this.http.get<{ success: boolean; data: PfkThresholdConfig[] }>(`${this.baseUrl}/configuration/pfk-thresholds`);
+  }
+
+  createPfkThreshold(payload: {
+    station: string;
+    schicht: PfkSchicht;
+    year?: number | null;
+    lowerLimit?: number | null;
+    upperLimit?: number | null;
+    recommendation?: string | null;
+    note?: string | null;
+    severity?: PfkSeverity;
+    months?: number[];
+  }): Observable<{ success: boolean; data: PfkThresholdConfig }> {
+    return this.http.post<{ success: boolean; data: PfkThresholdConfig }>(`${this.baseUrl}/configuration/pfk-thresholds`, payload);
+  }
+
+  updatePfkThreshold(id: string, payload: {
+    station?: string;
+    schicht?: PfkSchicht;
+    year?: number | null;
+    lowerLimit?: number | null;
+    upperLimit?: number | null;
+    recommendation?: string | null;
+    note?: string | null;
+    severity?: PfkSeverity;
+    months?: number[];
+  }): Observable<{ success: boolean; data: PfkThresholdConfig }> {
+    return this.http.put<{ success: boolean; data: PfkThresholdConfig }>(`${this.baseUrl}/configuration/pfk-thresholds/${encodeURIComponent(id)}`, payload);
+  }
+
+  deletePfkThreshold(id: string): Observable<{ success: boolean; deleted: string }> {
+    return this.http.delete<{ success: boolean; deleted: string }>(`${this.baseUrl}/configuration/pfk-thresholds/${encodeURIComponent(id)}`);
   }
 
   getPatientenPflegekraftOverview(station: string, jahr?: number): Observable<PatientenPflegekraftOverviewResponse> {
