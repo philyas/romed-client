@@ -18,8 +18,10 @@ import Chart from 'chart.js/auto';
 
 interface MonthlyData {
   [standort: string]: {
-    [typ: string]: {
-      [zeitraum: string]: number;
+    [station: string]: {
+      [typ: string]: {
+        [zeitraum: string]: number;
+      };
     };
   };
 }
@@ -66,6 +68,16 @@ interface COChartData {
               [value]="selectedStandort()"
               [displayWith]="standortDisplayName"
               (valueChange)="onStandortChange($event)"
+            ></app-searchable-select>
+
+            <app-searchable-select
+              class="station-selector"
+              label="Station"
+              icon="business"
+              [options]="stationOptions()"
+              [value]="selectedStation()"
+              [displayWith]="stationDisplayName"
+              (valueChange)="onStationChange($event)"
             ></app-searchable-select>
 
             <button
@@ -258,6 +270,7 @@ export class COCharts implements OnInit, OnChanges {
 
   chartData = signal<COChartData | null>(null);
   selectedStandort = signal<string>('AIB');
+  selectedStation = signal<string | null>(null);
   flippedCards = signal<{ [key: string]: boolean }>({});
   dataInfoItems = signal<DataInfoItem[]>([]);
   chartLoading = signal<boolean>(true);
@@ -274,6 +287,12 @@ export class COCharts implements OnInit, OnChanges {
   };
   readonly standortOptions = ['AIB', 'PRI', 'ROS', 'WAS'] as const;
   readonly standortDisplayName = (value: string) => this.standortNames[value] || value;
+  readonly stationDisplayName = (value: string | null) => value || 'Alle Stationen';
+  
+  // Helper: Convert AIB to BAB for data lookup (AIB and BAB are the same)
+  private getDataStandort(standort: string): string {
+    return standort === 'AIB' ? 'BAB' : standort;
+  }
 
   ngOnInit() {
     Chart.register(...registerables);
@@ -366,11 +385,14 @@ export class COCharts implements OnInit, OnChanges {
       if (file.values && Array.isArray(file.values)) {
         file.values.forEach((row) => {
           // Parse the row structure for CO data
-          const haus = row['Haus'] as string;
+          // Use Standort if available, otherwise fall back to Haus
+          const standort = (row['Standort'] as string) || (row['Haus'] as string);
           const typ = row['Typ'] as string;
           const zeitraum = row['Zeitraum'] as string;
 
-          if (haus && typ && zeitraum) {
+          const station = row['Station'] as string;
+          
+          if (standort && typ && zeitraum) {
             // Map months (1-12) to their values
             const months = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 
                            'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
@@ -381,13 +403,19 @@ export class COCharts implements OnInit, OnChanges {
               
               if (!isNaN(value) && value !== null && value !== undefined) {
                 // Initialize structure if needed
-                if (!monthlyData[monthNum][haus]) {
-                  monthlyData[monthNum][haus] = {};
+                if (!monthlyData[monthNum][standort]) {
+                  monthlyData[monthNum][standort] = {};
                 }
-                if (!monthlyData[monthNum][haus][typ]) {
-                  monthlyData[monthNum][haus][typ] = {};
+                const stationKey = station || 'UNKNOWN';
+                if (!monthlyData[monthNum][standort][stationKey]) {
+                  monthlyData[monthNum][standort][stationKey] = {};
                 }
-                monthlyData[monthNum][haus][typ][zeitraum] = value;
+                if (!monthlyData[monthNum][standort][stationKey][typ]) {
+                  monthlyData[monthNum][standort][stationKey][typ] = {};
+                }
+                // Store values per station
+                const existingValue = monthlyData[monthNum][standort][stationKey][typ][zeitraum] || 0;
+                monthlyData[monthNum][standort][stationKey][typ][zeitraum] = existingValue + value;
               }
             });
           }
@@ -403,7 +431,36 @@ export class COCharts implements OnInit, OnChanges {
   onStandortChange(standort: string) {
     this.chartLoading.set(true);
     this.selectedStandort.set(standort);
+    // Reset station selection when standort changes
+    this.selectedStation.set(null);
   }
+
+  onStationChange(station: string | null) {
+    this.chartLoading.set(true);
+    this.selectedStation.set(station);
+  }
+
+  stationOptions = computed<string[]>(() => {
+    const data = this.chartData();
+    if (!data || !data.monthlyData) return [];
+    
+    const standort = this.selectedStandort();
+    const dataStandort = this.getDataStandort(standort); // AIB -> BAB
+    const stations = new Set<string>();
+    
+    for (let month = 1; month <= 12; month++) {
+      const monthData = data.monthlyData[month]?.[dataStandort];
+      if (monthData) {
+        Object.keys(monthData).forEach(station => {
+          if (station !== 'UNKNOWN') {
+            stations.add(station);
+          }
+        });
+      }
+    }
+    
+    return Array.from(stations).sort();
+  });
 
   toggleFlip(cardType: string) {
     const current = this.flippedCards();
@@ -421,19 +478,41 @@ export class COCharts implements OnInit, OnChanges {
 
     const months = [...this.monthLabels];
     const selectedStandort = this.selectedStandort();
+    const dataStandort = this.getDataStandort(selectedStandort); // AIB -> BAB
+    const selectedStation = this.selectedStation();
     const datasets: ChartData<'bar'>['datasets'] = [];
     
     const vor11: number[] = [];
     const nach11: number[] = [];
 
     for (let month = 1; month <= 12; month++) {
-      const monthData = data.monthlyData[month]?.[selectedStandort]?.['Entlassungen'];
-      vor11.push(monthData?.['vor 11 Uhr'] || 0);
-      nach11.push(monthData?.['nach 11 Uhr'] || 0);
+      const monthData = data.monthlyData[month]?.[dataStandort];
+      let vor11Value = 0;
+      let nach11Value = 0;
+      
+      if (selectedStation && monthData?.[selectedStation]) {
+        // Filter by specific station
+        const stationData = monthData[selectedStation]['Entlassungen'];
+        vor11Value = stationData?.['vor 11 Uhr'] || 0;
+        nach11Value = stationData?.['nach 11 Uhr'] || 0;
+      } else {
+        // Aggregate all stations for this standort
+        Object.values(monthData || {}).forEach((stationData: any) => {
+          const entlassungen = stationData['Entlassungen'];
+          if (entlassungen) {
+            vor11Value += entlassungen['vor 11 Uhr'] || 0;
+            nach11Value += entlassungen['nach 11 Uhr'] || 0;
+          }
+        });
+      }
+      
+      vor11.push(vor11Value);
+      nach11.push(nach11Value);
     }
 
+    const stationLabel = selectedStation ? ` - ${selectedStation}` : '';
     datasets.push({
-      label: `${this.standortNames[selectedStandort] || selectedStandort} - vor 11 Uhr`,
+      label: `${this.standortNames[selectedStandort] || selectedStandort}${stationLabel} - vor 11 Uhr`,
       data: vor11,
       backgroundColor: '#FF6B6B',
       borderColor: '#FF6B6B',
@@ -441,7 +520,7 @@ export class COCharts implements OnInit, OnChanges {
     });
 
     datasets.push({
-      label: `${this.standortNames[selectedStandort] || selectedStandort} - nach 11 Uhr`,
+      label: `${this.standortNames[selectedStandort] || selectedStandort}${stationLabel} - nach 11 Uhr`,
       data: nach11,
       backgroundColor: '#FF8E8E',
       borderColor: '#FF8E8E',
@@ -459,18 +538,40 @@ export class COCharts implements OnInit, OnChanges {
 
     const months = [...this.monthLabels];
     const selectedStandort = this.selectedStandort();
+    const dataStandort = this.getDataStandort(selectedStandort); // AIB -> BAB
+    const selectedStation = this.selectedStation();
     const datasets: ChartData<'bar'>['datasets'] = [];
     const vor11: number[] = [];
     const nach11: number[] = [];
 
     for (let month = 1; month <= 12; month++) {
-      const monthData = data.monthlyData[month]?.[selectedStandort]?.['Aufnahmen'];
-      vor11.push(monthData?.['vor 11 Uhr'] || 0);
-      nach11.push(monthData?.['nach 11 Uhr'] || 0);
+      const monthData = data.monthlyData[month]?.[dataStandort];
+      let vor11Value = 0;
+      let nach11Value = 0;
+      
+      if (selectedStation && monthData?.[selectedStation]) {
+        // Filter by specific station
+        const stationData = monthData[selectedStation]['Aufnahmen'];
+        vor11Value = stationData?.['vor 11 Uhr'] || 0;
+        nach11Value = stationData?.['nach 11 Uhr'] || 0;
+      } else {
+        // Aggregate all stations for this standort
+        Object.values(monthData || {}).forEach((stationData: any) => {
+          const aufnahmen = stationData['Aufnahmen'];
+          if (aufnahmen) {
+            vor11Value += aufnahmen['vor 11 Uhr'] || 0;
+            nach11Value += aufnahmen['nach 11 Uhr'] || 0;
+          }
+        });
+      }
+      
+      vor11.push(vor11Value);
+      nach11.push(nach11Value);
     }
 
+    const stationLabel = selectedStation ? ` - ${selectedStation}` : '';
     datasets.push({
-      label: `${this.standortNames[selectedStandort] || selectedStandort} - vor 11 Uhr`,
+      label: `${this.standortNames[selectedStandort] || selectedStandort}${stationLabel} - vor 11 Uhr`,
       data: vor11,
       backgroundColor: '#4ECDC4',
       borderColor: '#4ECDC4',
@@ -478,7 +579,7 @@ export class COCharts implements OnInit, OnChanges {
     });
 
     datasets.push({
-      label: `${this.standortNames[selectedStandort] || selectedStandort} - nach 11 Uhr`,
+      label: `${this.standortNames[selectedStandort] || selectedStandort}${stationLabel} - nach 11 Uhr`,
       data: nach11,
       backgroundColor: '#7EDDD8',
       borderColor: '#7EDDD8',
@@ -511,27 +612,51 @@ export class COCharts implements OnInit, OnChanges {
     for (let month = 1; month <= 12; month++) {
       const monthData = data.monthlyData[month];
       if (!monthData) continue;
-      Object.keys(monthData).forEach(standort => standorteSet.add(standort));
+      Object.keys(monthData).forEach(standort => {
+        // Convert BAB to AIB for display (they are the same)
+        const displayStandort = standort === 'BAB' ? 'AIB' : standort;
+        standorteSet.add(displayStandort);
+      });
     }
 
-    return Array.from(standorteSet).sort().map(standort => ({
-      id: standort,
-      label: this.standortNames[standort] || standort,
-      monthlyData: Array.from({ length: 12 }, (_, index) => {
-        const month = index + 1;
-        const entlassungen = data.monthlyData[month]?.[standort]?.['Entlassungen'] || {};
-        const aufnahmen = data.monthlyData[month]?.[standort]?.['Aufnahmen'] || {};
-        return {
-          month,
-          metrics: {
-            entlassungenVor11: this.toNumberOrNull(entlassungen['vor 11 Uhr']),
-            entlassungenNach11: this.toNumberOrNull(entlassungen['nach 11 Uhr']),
-            aufnahmenVor11: this.toNumberOrNull(aufnahmen['vor 11 Uhr']),
-            aufnahmenNach11: this.toNumberOrNull(aufnahmen['nach 11 Uhr'])
-          }
-        };
-      })
-    }));
+    return Array.from(standorteSet).sort().map(displayStandort => {
+      // Convert AIB back to BAB for data lookup
+      const dataStandort = displayStandort === 'AIB' ? 'BAB' : displayStandort;
+      
+      // Aggregate all stations for comparison
+      return {
+        id: displayStandort,
+        label: this.standortNames[displayStandort] || displayStandort,
+        monthlyData: Array.from({ length: 12 }, (_, index) => {
+          const month = index + 1;
+          const monthData = data.monthlyData[month]?.[dataStandort] || {};
+          
+          let entlassungenVor11 = 0;
+          let entlassungenNach11 = 0;
+          let aufnahmenVor11 = 0;
+          let aufnahmenNach11 = 0;
+          
+          Object.values(monthData).forEach((stationData: any) => {
+            const entlassungen = stationData['Entlassungen'] || {};
+            const aufnahmen = stationData['Aufnahmen'] || {};
+            entlassungenVor11 += entlassungen['vor 11 Uhr'] || 0;
+            entlassungenNach11 += entlassungen['nach 11 Uhr'] || 0;
+            aufnahmenVor11 += aufnahmen['vor 11 Uhr'] || 0;
+            aufnahmenNach11 += aufnahmen['nach 11 Uhr'] || 0;
+          });
+          
+          return {
+            month,
+            metrics: {
+              entlassungenVor11: this.toNumberOrNull(entlassungenVor11),
+              entlassungenNach11: this.toNumberOrNull(entlassungenNach11),
+              aufnahmenVor11: this.toNumberOrNull(aufnahmenVor11),
+              aufnahmenNach11: this.toNumberOrNull(aufnahmenNach11)
+            }
+          };
+        })
+      };
+    });
   });
 
   private readonly comparisonMetrics: ComparisonMetricConfig[] = [
@@ -634,12 +759,27 @@ export class COCharts implements OnInit, OnChanges {
     if (!data || !data.monthlyData) return 0;
 
     const standort = this.selectedStandort();
+    const selectedStation = this.selectedStation();
     let total = 0;
 
     for (let month = 1; month <= 12; month++) {
-      const monthData = data.monthlyData[month]?.[standort]?.[type === 'entlassungen' ? 'Entlassungen' : 'Aufnahmen'];
+      const monthData = data.monthlyData[month]?.[standort];
       const zeitKey = zeit === 'vor' ? 'vor 11 Uhr' : 'nach 11 Uhr';
-      total += monthData?.[zeitKey] || 0;
+      const typKey = type === 'entlassungen' ? 'Entlassungen' : 'Aufnahmen';
+      
+      if (selectedStation && monthData?.[selectedStation]) {
+        // Filter by specific station
+        const stationData = monthData[selectedStation][typKey];
+        total += stationData?.[zeitKey] || 0;
+      } else {
+        // Aggregate all stations
+        Object.values(monthData || {}).forEach((stationData: any) => {
+          const typData = stationData[typKey];
+          if (typData) {
+            total += typData[zeitKey] || 0;
+          }
+        });
+      }
     }
 
     return total;
@@ -652,7 +792,9 @@ export class COCharts implements OnInit, OnChanges {
     const standorte = new Set<string>();
     for (let month = 1; month <= 12; month++) {
       Object.keys(data.monthlyData[month] || {}).forEach(standort => {
-        standorte.add(standort);
+        // Convert BAB to AIB for display (they are the same)
+        const displayStandort = standort === 'BAB' ? 'AIB' : standort;
+        standorte.add(displayStandort);
       });
     }
     
@@ -664,10 +806,21 @@ export class COCharts implements OnInit, OnChanges {
     if (!data || !data.monthlyData) return 0;
 
     let total = 0;
+    const dataStandort = this.getDataStandort(standort); // AIB -> BAB
+    const typKey = type === 'entlassungen' ? 'Entlassungen' : 'Aufnahmen';
+    const zeitKey = zeit === 'vor' ? 'vor 11 Uhr' : 'nach 11 Uhr';
+    
     for (let month = 1; month <= 12; month++) {
-      const monthData = data.monthlyData[month]?.[standort]?.[type === 'entlassungen' ? 'Entlassungen' : 'Aufnahmen'];
-      const zeitKey = zeit === 'vor' ? 'vor 11 Uhr' : 'nach 11 Uhr';
-      total += monthData?.[zeitKey] || 0;
+      const monthData = data.monthlyData[month]?.[dataStandort];
+      if (monthData) {
+        // Aggregate all stations for this standort
+        Object.values(monthData).forEach((stationData: any) => {
+          const typData = stationData[typKey];
+          if (typData) {
+            total += typData[zeitKey] || 0;
+          }
+        });
+      }
     }
 
     return total;
