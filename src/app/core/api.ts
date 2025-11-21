@@ -337,6 +337,31 @@ export class Api {
     return this.http.post<{ success: boolean; message: string; imported: number }>(`${this.baseUrl}/kostenstellen/import-sample`, {});
   }
 
+  // Station Mapping
+  getStationMapping(): Observable<{ success: boolean; data: any[]; count: number }> {
+    return this.http.get<{ success: boolean; data: any[]; count: number }>(`${this.baseUrl}/station-mapping`);
+  }
+
+  getStationMappingByDienstplanStation(dienstplanStation: string): Observable<{ success: boolean; data: any }> {
+    return this.http.get<{ success: boolean; data: any }>(`${this.baseUrl}/station-mapping/${encodeURIComponent(dienstplanStation)}`);
+  }
+
+  saveStationMapping(data: { dienstplanStation: string; minaMitaStation?: string | null; beschreibung?: string | null }): Observable<{ success: boolean; message: string; data: any }> {
+    return this.http.post<{ success: boolean; message: string; data: any }>(`${this.baseUrl}/station-mapping`, data);
+  }
+
+  updateStationMapping(dienstplanStation: string, data: { minaMitaStation?: string | null; beschreibung?: string | null }): Observable<{ success: boolean; message: string; data: any }> {
+    return this.http.patch<{ success: boolean; message: string; data: any }>(`${this.baseUrl}/station-mapping/${encodeURIComponent(dienstplanStation)}`, data);
+  }
+
+  deleteStationMapping(dienstplanStation: string): Observable<{ success: boolean; message: string }> {
+    return this.http.delete<{ success: boolean; message: string }>(`${this.baseUrl}/station-mapping/${encodeURIComponent(dienstplanStation)}`);
+  }
+
+  importStationMappingFromJson(): Observable<{ success: boolean; message: string; imported: number; skipped: number; total: number }> {
+    return this.http.post<{ success: boolean; message: string; imported: number; skipped: number; total: number }>(`${this.baseUrl}/station-mapping/import-json`, {});
+  }
+
   private resolveBaseUrl(): string {
     if (isDevMode()) {
       return 'http://localhost:3000';

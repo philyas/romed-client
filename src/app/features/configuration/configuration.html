@@ -186,6 +186,110 @@
           </div>
         </mat-tab>
 
+        <mat-tab label="Stations-Mapping">
+          <div class="tab-content station-mapping-tab">
+            <div class="station-mapping-header">
+              <h3>
+                <mat-icon>compare_arrows</mat-icon>
+                Stations-Mapping
+              </h3>
+              <div class="header-actions">
+                <button 
+                  mat-raised-button 
+                  color="accent" 
+                  (click)="openCreateStationMappingDialog()" 
+                  [disabled]="stationMappingLoading() || stationMappingSaving()">
+                  <mat-icon>add</mat-icon>
+                  Neues Mapping
+                </button>
+                <button 
+                  mat-raised-button 
+                  color="primary" 
+                  (click)="importStationMappingsFromJson()" 
+                  [disabled]="stationMappingLoading() || stationMappingSaving()">
+                  <mat-icon>download</mat-icon>
+                  {{ stationMappingLoading() ? 'Lädt...' : 'Aus JSON-Datei importieren' }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Data Table -->
+            <div class="table-section">
+              <div class="table-header">
+                <h4>
+                  <mat-icon>table_chart</mat-icon>
+                  Stations-Mappings ({{ stationMappings().length }})
+                </h4>
+              </div>
+
+              <div class="loading-spinner" *ngIf="stationMappingLoading()">
+                <mat-spinner diameter="40"></mat-spinner>
+                <p>Daten werden geladen...</p>
+              </div>
+
+              <div class="table-container" *ngIf="!stationMappingLoading() && stationMappings().length > 0">
+                <table mat-table [dataSource]="stationMappingDataSource" class="station-mapping-table">
+                  <!-- Dienstplan Station Column -->
+                  <ng-container matColumnDef="dienstplanStation">
+                    <th mat-header-cell *matHeaderCellDef>Dienstplan-Station</th>
+                    <td mat-cell *matCellDef="let item">
+                      <strong>{{ item.dienstplanStation }}</strong>
+                    </td>
+                  </ng-container>
+
+                  <!-- MiNa/MiTa Station Column -->
+                  <ng-container matColumnDef="minaMitaStation">
+                    <th mat-header-cell *matHeaderCellDef>MiNa/MiTa-Station</th>
+                    <td mat-cell *matCellDef="let item">
+                      {{ item.minaMitaStation || '-' }}
+                    </td>
+                  </ng-container>
+
+                  <!-- Beschreibung Column -->
+                  <ng-container matColumnDef="beschreibung">
+                    <th mat-header-cell *matHeaderCellDef>Beschreibung</th>
+                    <td mat-cell *matCellDef="let item">
+                      {{ item.beschreibung || '-' }}
+                    </td>
+                  </ng-container>
+
+                  <!-- Actions Column -->
+                  <ng-container matColumnDef="actions">
+                    <th mat-header-cell *matHeaderCellDef>Aktionen</th>
+                    <td mat-cell *matCellDef="let item">
+                      <button 
+                        mat-icon-button 
+                        color="primary" 
+                        (click)="openEditStationMappingDialog(item)"
+                        [disabled]="stationMappingSaving()"
+                        matTooltip="Bearbeiten">
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                      <button 
+                        mat-icon-button 
+                        color="warn" 
+                        (click)="deleteStationMapping(item.dienstplanStation)"
+                        [disabled]="stationMappingSaving()"
+                        matTooltip="Löschen">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </td>
+                  </ng-container>
+
+                  <tr mat-header-row *matHeaderRowDef="displayedStationMappingColumns"></tr>
+                  <tr mat-row *matRowDef="let row; columns: displayedStationMappingColumns"></tr>
+                </table>
+              </div>
+
+              <div class="empty-state" *ngIf="!stationMappingLoading() && stationMappings().length === 0">
+                <mat-icon>info</mat-icon>
+                <p>Keine Stations-Mappings vorhanden</p>
+                <p class="hint">Erstellen Sie ein neues Mapping oder importieren Sie aus der JSON-Datei</p>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
         <mat-tab label="Allgemein">
           <div class="tab-content">
             <p>Allgemeine Konfigurationseinstellungen</p>

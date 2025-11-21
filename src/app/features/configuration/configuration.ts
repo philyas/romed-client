@@ -17,6 +17,7 @@ import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { Api } from '../../core/api';
 import { KostenstelleDialogComponent, KostenstelleDialogResult } from './kostenstelle-dialog.component';
+import { StationMappingDialogComponent, StationMappingDialogResult } from './station-mapping-dialog.component';
 
 interface Kostenstelle {
   kostenstelle: string;
@@ -25,6 +26,12 @@ interface Kostenstelle {
   standortnummer?: string | number | null;
   ik?: string | number | null;
   paediatrie?: string | null;
+}
+
+interface StationMapping {
+  dienstplanStation: string;
+  minaMitaStation?: string | null;
+  beschreibung?: string | null;
 }
 
 @Component({
@@ -62,10 +69,19 @@ export class Configuration implements OnInit {
   
   displayedColumns: string[] = ['kostenstelle', 'stations', 'standorte', 'standortnummer', 'ik', 'paediatrie', 'actions'];
 
+  // Station Mapping
+  stationMappings = signal<StationMapping[]>([]);
+  stationMappingDataSource = new MatTableDataSource<StationMapping>([]);
+  stationMappingLoading = signal(false);
+  stationMappingSaving = signal(false);
+  
+  displayedStationMappingColumns: string[] = ['dienstplanStation', 'minaMitaStation', 'beschreibung', 'actions'];
+
   stationOptions = signal<string[]>([]);
 
   ngOnInit() {
     this.loadKostenstellen();
+    this.loadStationMappings();
     void this.loadStationOptions();
   }
 
@@ -237,6 +253,140 @@ export class Configuration implements OnInit {
     if (input) {
       input.value = '';
     }
+  }
+
+  // Station Mapping Methods
+  loadStationMappings() {
+    this.stationMappingLoading.set(true);
+    this.api.getStationMapping().subscribe({
+      next: (response) => {
+        this.stationMappings.set(response.data);
+        this.stationMappingDataSource.data = response.data;
+        this.stationMappingLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Error loading station mappings:', err);
+        this.snackBar.open('Fehler beim Laden der Stations-Mappings', 'Schließen', { duration: 3000 });
+        this.stationMappingLoading.set(false);
+      }
+    });
+  }
+
+  openCreateStationMappingDialog() {
+    this.openStationMappingDialog();
+  }
+
+  openEditStationMappingDialog(mapping: StationMapping) {
+    this.openStationMappingDialog(mapping);
+  }
+
+  private openStationMappingDialog(existing?: StationMapping) {
+    const dialogRef = this.dialog.open(StationMappingDialogComponent, {
+      width: '520px',
+      data: existing ? { ...existing } : null
+    });
+
+    dialogRef.afterClosed().subscribe((result: StationMappingDialogResult | null) => {
+      if (!result) {
+        return;
+      }
+      
+      if (existing) {
+        this.updateStationMapping(result);
+      } else {
+        this.saveStationMapping(result);
+      }
+    });
+  }
+
+  private saveStationMapping(result: StationMappingDialogResult) {
+    this.stationMappingSaving.set(true);
+
+    const payload = {
+      dienstplanStation: result.dienstplanStation,
+      minaMitaStation: result.minaMitaStation,
+      beschreibung: result.beschreibung
+    };
+
+    this.api.saveStationMapping(payload).subscribe({
+      next: (response) => {
+        this.snackBar.open(response.message, 'Schließen', { duration: 3000 });
+        this.stationMappingSaving.set(false);
+        this.loadStationMappings();
+      },
+      error: (err) => {
+        console.error('Error saving station mapping:', err);
+        const errorMessage = err.error?.error || err.message || 'Fehler beim Speichern';
+        this.snackBar.open(errorMessage, 'Schließen', { duration: 5000 });
+        this.stationMappingSaving.set(false);
+      }
+    });
+  }
+
+  private updateStationMapping(result: StationMappingDialogResult) {
+    this.stationMappingSaving.set(true);
+
+    const payload = {
+      minaMitaStation: result.minaMitaStation,
+      beschreibung: result.beschreibung
+    };
+
+    this.api.updateStationMapping(result.dienstplanStation, payload).subscribe({
+      next: (response) => {
+        this.snackBar.open(response.message, 'Schließen', { duration: 3000 });
+        this.stationMappingSaving.set(false);
+        this.loadStationMappings();
+      },
+      error: (err) => {
+        console.error('Error updating station mapping:', err);
+        const errorMessage = err.error?.error || err.message || 'Fehler beim Aktualisieren';
+        this.snackBar.open(errorMessage, 'Schließen', { duration: 5000 });
+        this.stationMappingSaving.set(false);
+      }
+    });
+  }
+
+  deleteStationMapping(dienstplanStation: string) {
+    if (!confirm(`Möchten Sie das Mapping für Station "${dienstplanStation}" wirklich löschen?`)) {
+      return;
+    }
+
+    this.stationMappingSaving.set(true);
+
+    this.api.deleteStationMapping(dienstplanStation).subscribe({
+      next: (response) => {
+        this.snackBar.open(response.message, 'Schließen', { duration: 3000 });
+        this.stationMappingSaving.set(false);
+        this.loadStationMappings();
+      },
+      error: (err) => {
+        console.error('Error deleting station mapping:', err);
+        const errorMessage = err.error?.error || err.message || 'Fehler beim Löschen';
+        this.snackBar.open(errorMessage, 'Schließen', { duration: 3000 });
+        this.stationMappingSaving.set(false);
+      }
+    });
+  }
+
+  importStationMappingsFromJson() {
+    if (!confirm('Möchten Sie die Stations-Mappings aus der JSON-Datei importieren? Bestehende Einträge werden aktualisiert.')) {
+      return;
+    }
+
+    this.stationMappingLoading.set(true);
+    this.api.importStationMappingFromJson().subscribe({
+      next: (response) => {
+        this.stationMappingLoading.set(false);
+        this.snackBar.open(`${response.message} (${response.imported} importiert, ${response.skipped} übersprungen)`, 'Schließen', { duration: 5000 });
+        this.loadStationMappings();
+      },
+      error: (err) => {
+        this.stationMappingLoading.set(false);
+        console.error('Error importing station mappings:', err);
+        const errorMessage = err.error?.error || err.message || 'Fehler beim Importieren';
+        this.snackBar.open(errorMessage, 'Schließen', { duration: 5000 });
+      }
+    });
   }
 
 }
