@@ -211,41 +211,6 @@ export class Api {
     return this.http.get<{ stations: string[] }>(`${this.baseUrl}/manual-entry/stations`);
   }
 
-  getPfkThresholds(): Observable<{ success: boolean; data: PfkThresholdConfig[] }> {
-    return this.http.get<{ success: boolean; data: PfkThresholdConfig[] }>(`${this.baseUrl}/configuration/pfk-thresholds`);
-  }
-
-  createPfkThreshold(payload: {
-    station: string;
-    schicht: PfkSchicht;
-    year?: number | null;
-    lowerLimit?: number | null;
-    upperLimit?: number | null;
-    recommendation?: string | null;
-    note?: string | null;
-    severity?: PfkSeverity;
-    months?: number[];
-  }): Observable<{ success: boolean; data: PfkThresholdConfig }> {
-    return this.http.post<{ success: boolean; data: PfkThresholdConfig }>(`${this.baseUrl}/configuration/pfk-thresholds`, payload);
-  }
-
-  updatePfkThreshold(id: string, payload: {
-    station?: string;
-    schicht?: PfkSchicht;
-    year?: number | null;
-    lowerLimit?: number | null;
-    upperLimit?: number | null;
-    recommendation?: string | null;
-    note?: string | null;
-    severity?: PfkSeverity;
-    months?: number[];
-  }): Observable<{ success: boolean; data: PfkThresholdConfig }> {
-    return this.http.put<{ success: boolean; data: PfkThresholdConfig }>(`${this.baseUrl}/configuration/pfk-thresholds/${encodeURIComponent(id)}`, payload);
-  }
-
-  deletePfkThreshold(id: string): Observable<{ success: boolean; deleted: string }> {
-    return this.http.delete<{ success: boolean; deleted: string }>(`${this.baseUrl}/configuration/pfk-thresholds/${encodeURIComponent(id)}`);
-  }
 
   getPatientenPflegekraftOverview(station: string, jahr?: number): Observable<PatientenPflegekraftOverviewResponse> {
     let params = new HttpParams().set('station', station);
