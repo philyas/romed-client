@@ -1151,8 +1151,9 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
     this.sharedScales.pflegetage.aggregated.max = addPadding(aggregatedMaxPflegetage);
     this.sharedScales.pflegetage.station.max = addPadding(stationMaxPflegetage);
 
-    this.sharedScales.verweildauer.aggregated.max = addPadding(aggregatedMaxVerweildauer);
-    this.sharedScales.verweildauer.station.max = addPadding(stationMaxVerweildauer);
+    // Verweildauer: Fix auf 30 Tage für Skala (sowohl aggregiert als auch Station)
+    this.sharedScales.verweildauer.aggregated.max = 30;
+    this.sharedScales.verweildauer.station.max = 30;
 
     // Stationsauslastung is always represented as a percentage
     this.sharedScales.stationsauslastung.aggregated.max = 100;

@@ -482,6 +482,20 @@ export class ComparisonDialogComponent implements OnInit {
   private buildChartOptions(metric: ComparisonMetricConfig): ChartConfiguration['options'] {
     const decimals = metric.decimals ?? (metric.unit === '%' ? 1 : metric.unit === 'Tage' ? 2 : 0);
 
+    // Y-axis configuration
+    const yAxisConfig: any = {
+      beginAtZero: true,
+      title: {
+        display: !!metric.unit,
+        text: metric.unit ?? metric.label
+      }
+    };
+
+    // Verweildauer: Fix auf 30 Tage für Skala
+    if (metric.key === 'verweildauer' || (metric.unit === 'Tage' && metric.chartTitle?.includes('Verweildauer'))) {
+      yAxisConfig.max = 30;
+    }
+
     return {
       responsive: true,
       maintainAspectRatio: false,
@@ -531,13 +545,7 @@ export class ComparisonDialogComponent implements OnInit {
             text: 'Monat'
           }
         },
-        y: {
-          beginAtZero: true,
-          title: {
-            display: !!metric.unit,
-            text: metric.unit ?? metric.label
-          }
-        }
+        y: yAxisConfig
       }
     };
   }
