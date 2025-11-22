@@ -150,9 +150,17 @@ export class Api {
 
   constructor() {
     const mode = isDevMode() ? 'DEVELOPMENT' : 'PRODUCTION';
+    const isDockerNetwork = this.baseUrl === '' || this.baseUrl === window.location.origin;
+    const connectionInfo = isDockerNetwork 
+      ? `via nginx → backend:3000 (Docker Netzwerk)`
+      : this.baseUrl;
+    
     console.log(`🚀 API Service initialisiert`);
     console.log(`📍 Modus: ${mode}`);
-    console.log(`🌐 Server: ${this.baseUrl}`);
+    console.log(`🌐 Server: ${connectionInfo}`);
+    if (isDockerNetwork) {
+      console.log(`🔗 Browser → nginx (${window.location.origin}) → backend:3000 → db:5432`);
+    }
   }
 
   getSchemas(): Observable<{ schemas: SchemaDef[] }> {
@@ -367,10 +375,17 @@ export class Api {
       return 'http://localhost:3000';
     }
 
-    // Wenn wir auf localhost laufen, verwende lokales Backend
-    if (typeof window !== 'undefined' && 
-        (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-      return 'http://localhost:3000';
+    // Im Docker-Netzwerk: Verwende relative URLs, die über nginx Proxy gehen
+    // nginx leitet diese an backend:3000 weiter
+    if (typeof window !== 'undefined') {
+      // Wenn wir im Docker-Container laufen (oder auf localhost mit Docker)
+      // verwende relative URLs für Docker-Netzwerk-Kommunikation
+      if (window.location.hostname === 'localhost' || 
+          window.location.hostname === '127.0.0.1' ||
+          window.location.port === '4200') {
+        // Relative URL - wird von nginx an backend:3000 weitergeleitet
+        return '';
+      }
     }
 
     // Sonst: Cloud-Backend
