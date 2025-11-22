@@ -367,23 +367,13 @@ export class Api {
       return 'http://localhost:3000';
     }
 
-    const globalOverride = (globalThis as Record<string, unknown>)?.['__ROMED_BACKEND_URL__'];
-    if (typeof globalOverride === 'string' && globalOverride.trim().length > 0) {
-      return globalOverride;
+    // Wenn wir auf localhost laufen, verwende lokales Backend
+    if (typeof window !== 'undefined' && 
+        (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+      return 'http://localhost:3000';
     }
 
-    const importMetaEnv = (import.meta as unknown as { env?: { NG_APP_BACKEND_URL?: string } })?.env;
-    if (importMetaEnv?.NG_APP_BACKEND_URL) {
-      return importMetaEnv.NG_APP_BACKEND_URL;
-    }
-
-    const processEnvUrl = typeof (globalThis as any)?.process !== 'undefined'
-      ? (globalThis as any)?.process?.env?.NG_APP_BACKEND_URL
-      : undefined;
-    if (typeof processEnvUrl === 'string' && processEnvUrl.trim().length > 0) {
-      return processEnvUrl;
-    }
-
+    // Sonst: Cloud-Backend
     return 'https://romed-server.onrender.com';
   }
 }
