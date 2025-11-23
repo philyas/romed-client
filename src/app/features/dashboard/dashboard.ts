@@ -1,5 +1,6 @@
 import { Component, inject, signal, Inject, computed, AfterViewInit } from '@angular/core';
 import { CommonModule, NgIf } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
@@ -9,6 +10,8 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatDialogModule, MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { Api, ResultsResponse, UploadRecord, MitternachtsstatistikResponse, SchemaStatistics } from '../../core/api';
 import { MitternachtsstatistikCharts } from '../mitternachtsstatistik-charts/mitternachtsstatistik-charts';
@@ -161,7 +164,8 @@ export class Dashboard implements AfterViewInit {
 
   openResetDialog() {
     const dialogRef = this.dialog.open(ResetConfirmDialog, {
-      width: '400px',
+      width: '550px',
+      maxWidth: '90vw',
       disableClose: true
     });
 
@@ -194,25 +198,107 @@ export class Dashboard implements AfterViewInit {
 @Component({
   selector: 'reset-confirm-dialog',
   template: `
-    <h2 mat-dialog-title>Daten zurücksetzen</h2>
+    <h2 mat-dialog-title>
+      <mat-icon color="warn" style="vertical-align: middle; margin-right: 8px;">warning</mat-icon>
+      Daten zurücksetzen
+    </h2>
     <mat-dialog-content>
-      <p>Sind Sie sicher, dass Sie alle hochgeladenen Daten zurücksetzen möchten?</p>
-      <p><strong>Diese Aktion kann nicht rückgängig gemacht werden!</strong></p>
-      <ul>
-        <li>Alle hochgeladenen Excel-Dateien werden gelöscht</li>
-        <li>Alle verarbeiteten Daten werden entfernt</li>
-        <li>Das System kehrt zum ursprünglichen Zustand zurück</li>
-      </ul>
+      <div class="warning-box">
+        <p><strong>⚠️ Diese Aktion kann nicht rückgängig gemacht werden!</strong></p>
+        <p>Sind Sie sicher, dass Sie alle Daten zurücksetzen möchten?</p>
+      </div>
+      
+      <div class="deletion-list">
+        <p><strong>Folgende Daten werden gelöscht:</strong></p>
+        <ul>
+          <li>Alle hochgeladenen Excel-Dateien</li>
+          <li>Alle Datenbankeinträge (Statistiken, Uploads, etc.)</li>
+          <li>Alle manuellen Stundeneingaben</li>
+          <li>Alle Referenzdaten (Stationen, Standorte, Kostenstellen)</li>
+          <li>Alle verarbeiteten und gespeicherten Daten</li>
+        </ul>
+        <p class="note">Hinweis: Schema-Konfigurationen und Mapping-Tabellen bleiben erhalten.</p>
+      </div>
+
+      <div class="confirmation-input">
+        <p><strong>Zur Bestätigung geben Sie bitte "LÖSCHEN" ein:</strong></p>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Bestätigungstext</mat-label>
+          <input 
+            matInput 
+            [(ngModel)]="confirmationText" 
+            (input)="onInputChange()"
+            placeholder="LÖSCHEN eingeben"
+            autocomplete="off">
+        </mat-form-field>
+      </div>
     </mat-dialog-content>
     <mat-dialog-actions align="end" class="dialog-actions">
       <button mat-button (click)="onCancel()" class="cancel-button">Abbrechen</button>
-      <button mat-raised-button color="warn" (click)="onConfirm()" class="delete-button">
+      <button 
+        mat-raised-button 
+        color="warn" 
+        (click)="onConfirm()" 
+        class="delete-button"
+        [disabled]="!isConfirmed()">
         <mat-icon>delete_forever</mat-icon>
         Zurücksetzen
       </button>
     </mat-dialog-actions>
   `,
   styles: [`
+    .warning-box {
+      background-color: #fff3cd;
+      border: 2px solid #ffc107;
+      border-radius: 4px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+    
+    .warning-box p {
+      margin: 8px 0;
+    }
+    
+    .deletion-list {
+      background-color: #f5f5f5;
+      border-radius: 4px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+    
+    .deletion-list ul {
+      margin: 12px 0;
+      padding-left: 24px;
+    }
+    
+    .deletion-list li {
+      margin: 8px 0;
+    }
+    
+    .note {
+      font-style: italic;
+      color: #666;
+      font-size: 0.9em;
+      margin-top: 12px;
+    }
+    
+    .confirmation-input {
+      margin-top: 24px;
+      padding: 16px;
+      background-color: #fff;
+      border: 2px solid #f44336;
+      border-radius: 4px;
+    }
+    
+    .confirmation-input p {
+      margin-bottom: 12px;
+      color: #d32f2f;
+    }
+    
+    .full-width {
+      width: 100%;
+    }
+    
     .dialog-actions {
       display: flex !important;
       justify-content: flex-end !important;
@@ -249,10 +335,17 @@ export class Dashboard implements AfterViewInit {
       transition: all 0.3s ease !important;
     }
     
-    .delete-button:hover {
+    .delete-button:hover:not(:disabled) {
       background-color: #d32f2f !important;
       transform: translateY(-1px) !important;
       box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4) !important;
+    }
+    
+    .delete-button:disabled {
+      background-color: #ccc !important;
+      color: #999 !important;
+      cursor: not-allowed !important;
+      box-shadow: none !important;
     }
     
     .delete-button mat-icon {
@@ -260,21 +353,38 @@ export class Dashboard implements AfterViewInit {
       font-size: 18px !important;
       color: white !important;
     }
+    
+    mat-dialog-content {
+      max-width: 500px;
+    }
   `],
-  imports: [MatDialogModule, MatButtonModule, MatIconModule],
+  imports: [MatDialogModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, FormsModule, CommonModule],
   standalone: true
 })
 export class ResetConfirmDialog {
+  confirmationText: string = '';
+  private readonly CONFIRMATION_WORD = 'LÖSCHEN';
+
   constructor(
     public dialogRef: MatDialogRef<ResetConfirmDialog>,
     @Inject(MAT_DIALOG_DATA) public data: any
   ) {}
+
+  onInputChange(): void {
+    // Optional: Add real-time validation feedback
+  }
+
+  isConfirmed(): boolean {
+    return this.confirmationText.trim().toUpperCase() === this.CONFIRMATION_WORD;
+  }
 
   onCancel(): void {
     this.dialogRef.close('cancel');
   }
 
   onConfirm(): void {
-    this.dialogRef.close('confirm');
+    if (this.isConfirmed()) {
+      this.dialogRef.close('confirm');
+    }
   }
 }
