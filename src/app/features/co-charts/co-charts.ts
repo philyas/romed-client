@@ -759,11 +759,12 @@ export class COCharts implements OnInit, OnChanges {
     if (!data || !data.monthlyData) return 0;
 
     const standort = this.selectedStandort();
+    const dataStandort = this.getDataStandort(standort); // AIB -> BAB
     const selectedStation = this.selectedStation();
     let total = 0;
 
     for (let month = 1; month <= 12; month++) {
-      const monthData = data.monthlyData[month]?.[standort];
+      const monthData = data.monthlyData[month]?.[dataStandort];
       const zeitKey = zeit === 'vor' ? 'vor 11 Uhr' : 'nach 11 Uhr';
       const typKey = type === 'entlassungen' ? 'Entlassungen' : 'Aufnahmen';
       
