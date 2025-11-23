@@ -209,16 +209,20 @@ export class MinaMitaCharts implements OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes['uploads'] && !changes['uploads'].firstChange) {
+    if (changes['uploads']) {
+      // Process uploads whenever they change, including the first time
       this.processUploads();
     }
   }
 
   private processUploads() {
     const minaMinaUploads = this.uploads.filter(u => u.schemaId === 'ppugv_bestaende');
+    console.log('[MinaMitaCharts] processUploads: Found', minaMinaUploads.length, 'ppugv_bestaende uploads');
+    
     if (minaMinaUploads.length > 0) {
       const latestUpload = minaMinaUploads[0];
       this.upload.set(latestUpload);
+      console.log('[MinaMitaCharts] Using upload:', latestUpload.uploadId, 'with', latestUpload.files?.length || 0, 'files');
 
       if (latestUpload.files && latestUpload.files.length > 0) {
         const file = latestUpload.files[0];
@@ -232,7 +236,10 @@ export class MinaMitaCharts implements OnChanges {
           console.log('[MinaMitaCharts] Found monthlyAverages:', averages.length, 'entries');
           averages.forEach((row: any) => {
             if (row.Station) {
-              stationSet.add(String(row.Station).trim());
+              const station = String(row.Station).trim();
+              if (station) {
+                stationSet.add(station);
+              }
             }
           });
         } else if ((file as any).values && Array.isArray((file as any).values)) {
@@ -241,9 +248,14 @@ export class MinaMitaCharts implements OnChanges {
           console.log('[MinaMitaCharts] Using values array:', values.length, 'entries');
           values.forEach((row: any) => {
             if (row.Station) {
-              stationSet.add(String(row.Station).trim());
+              const station = String(row.Station).trim();
+              if (station) {
+                stationSet.add(station);
+              }
             }
           });
+        } else {
+          console.warn('[MinaMitaCharts] File has neither monthlyAverages nor values:', file);
         }
         
         const stations = Array.from(stationSet).sort((a, b) => {
@@ -258,6 +270,11 @@ export class MinaMitaCharts implements OnChanges {
         
         console.log('[MinaMitaCharts] Extracted stations:', stations.length, stations.slice(0, 5));
         this.availableStations.set(stations);
+        
+        // If no stations found but data exists, there might be an issue with station mapping
+        if (stations.length === 0 && ((file as any).monthlyAverages?.length > 0 || (file as any).values?.length > 0)) {
+          console.warn('[MinaMitaCharts] WARNING: Data exists but no stations could be extracted. This might indicate a station mapping issue.');
+        }
       } else {
         console.warn('[MinaMitaCharts] No files found in upload');
         this.availableStations.set([]);
@@ -266,7 +283,8 @@ export class MinaMitaCharts implements OnChanges {
       // Prepare data info items
       this.prepareDataInfoItems(latestUpload);
     } else {
-      console.log('[MinaMitaCharts] No ppugv_bestaende uploads found');
+      console.log('[MinaMitaCharts] No ppugv_bestaende uploads found in', this.uploads.length, 'total uploads');
+      console.log('[MinaMitaCharts] Available schemaIds:', this.uploads.map(u => u.schemaId));
       this.upload.set(null);
       this.availableStations.set([]);
       this.dataInfoItems.set([]);
