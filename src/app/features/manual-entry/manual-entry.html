@@ -118,6 +118,27 @@
         <p class="upload-description">
           Laden Sie eine Dienstplan-Excel-Datei (DP9) hoch, um Arbeitszeiten automatisch zu importieren.
         </p>
+        <div class="variant-selection" style="margin-bottom: 16px;">
+          <mat-form-field appearance="outline" style="width: 100%;">
+            <mat-label>Berechnungsvariante</mat-label>
+            <mat-select [value]="selectedVariant()" (selectionChange)="selectedVariant.set($event.value)">
+              <mat-option value="legacy">
+                <div style="display: flex; flex-direction: column;">
+                  <strong>Legacy (bis 2025)</strong>
+                  <span style="font-size: 0.85em; color: #666;">Verwendet "Ist"-Zeilen direkt</span>
+                </div>
+              </mat-option>
+              <mat-option value="2026">
+                <div style="display: flex; flex-direction: column;">
+                  <strong>2026 (ab 2026)</strong>
+                  <span style="font-size: 0.85em; color: #666;">Verwendet PPUG-Zeilen nach neuen Regeln</span>
+                </div>
+              </mat-option>
+            </mat-select>
+            <mat-icon matSuffix>settings</mat-icon>
+            <mat-hint>Wählen Sie die Berechnungsvariante basierend auf dem Jahr der Daten</mat-hint>
+          </mat-form-field>
+        </div>
         <div class="upload-controls">
           <input 
             #fileInput 

@@ -274,10 +274,11 @@ export class Api {
     return this.http.get<{ station: string; mitaDurchschnitt: number | null; message?: string }>(`${this.baseUrl}/manual-entry/station-mita-average/${encodeURIComponent(station)}`);
   }
 
-  uploadDienstplan(file: File): Observable<{ success: boolean; message: string; uploaded: any[]; totalEntries: number }> {
+  uploadDienstplan(file: File, variant: '2026' | 'legacy' = 'legacy'): Observable<{ success: boolean; message: string; uploaded: any[]; totalEntries: number }> {
     const form = new FormData();
     form.append('file', file);
     form.append('schicht', 'tag'); // Default to tag, can be changed if needed
+    form.append('variant', variant);
     return this.http.post<{ success: boolean; message: string; uploaded: any[]; totalEntries: number }>(`${this.baseUrl}/manual-entry/upload-dienstplan`, form);
   }
 
