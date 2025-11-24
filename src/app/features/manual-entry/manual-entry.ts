@@ -74,6 +74,7 @@ export class ManualEntry {
   saving = signal<boolean>(false);
   uploading = signal<boolean>(false);
   selectedFile = signal<File | null>(null);
+  selectedVariant = signal<'2026' | 'legacy'>('legacy');
   
   // Konstante für Patienten-Berechnung (Mitternachtsstatistik Tag / Belegte Betten)
   belegteBettenKonstante = signal<number>(25); // Default-Wert
@@ -709,7 +710,7 @@ export class ManualEntry {
 
     this.uploading.set(true);
 
-    this.api.uploadDienstplan(file).subscribe({
+    this.api.uploadDienstplan(file, this.selectedVariant()).subscribe({
       next: (response) => {
         this.uploading.set(false);
         this.dialog.open(DienstplanUploadSuccessDialog, {

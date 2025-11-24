@@ -574,10 +574,11 @@ export class MinaMitaChart implements OnInit, OnChanges {
       if (upload.files && upload.files.length > 0) {
         const file = upload.files[0];
         
-        // Check if we have pre-calculated monthlyAverages
-        if ((file as any).metadata && (file as any).monthlyAverages) {
-          const metadata = (file as any).metadata;
-          let averages = (file as any).monthlyAverages;
+        // Check if we have pre-calculated monthlyAverages (directly on file or in metadata)
+        const monthlyAverages = (file as any).monthlyAverages || (file as any).metadata?.monthlyAverages;
+        if (monthlyAverages && Array.isArray(monthlyAverages) && monthlyAverages.length > 0) {
+          const metadata = (file as any).metadata || {};
+          let averages = monthlyAverages;
 
           // Filter by selected station if not 'all'
           if (this.selectedStation !== 'all') {
@@ -589,15 +590,16 @@ export class MinaMitaChart implements OnInit, OnChanges {
             year: number;
             totalMiNa: number;
             totalMiTa: number;
+            count: number;
             totalDays: number;
             stationDetails: any[];
           }>();
 
           averages.forEach((row: any) => {
-            const monthNumber = Number(row.Monat ?? metadata.month);
-            const yearNumber = Number(row.Jahr ?? metadata.year ?? currentYear);
+            const monthNumber = Number(row.Monat);
+            const yearNumber = Number(row.Jahr);
 
-            if (!monthNumber || monthNumber < 1 || monthNumber > 12) {
+            if (!monthNumber || monthNumber < 1 || monthNumber > 12 || !yearNumber) {
               return;
             }
 
@@ -608,6 +610,7 @@ export class MinaMitaChart implements OnInit, OnChanges {
                 year: yearNumber,
                 totalMiNa: 0,
                 totalMiTa: 0,
+                count: 0,
                 totalDays: 0,
                 stationDetails: []
               });
@@ -625,20 +628,22 @@ export class MinaMitaChart implements OnInit, OnChanges {
 
             group.totalMiNa += normalizedRow.MiNa_Durchschnitt;
             group.totalMiTa += normalizedRow.MiTa_Durchschnitt;
+            group.count++;
             group.totalDays = Math.max(group.totalDays, normalizedRow.Anzahl_Tage);
             group.stationDetails.push(normalizedRow);
           });
 
           grouped.forEach(group => {
-            if (group.month >= 1 && group.month <= 12) {
+            if (group.month >= 1 && group.month <= 12 && group.count > 0) {
               const monthIndex = group.month - 1;
+              // Calculate average over all stations for this month
               monthlyData[monthIndex] = {
                 month: group.month,
                 year: group.year,
-                minaAverage: group.totalMiNa,
-                mitaAverage: group.totalMiTa,
+                minaAverage: group.totalMiNa / group.count,
+                mitaAverage: group.totalMiTa / group.count,
                 totalStations: group.stationDetails.length,
-                totalDays: group.totalDays || metadata.totalDays || 0,
+                totalDays: group.totalDays || 0,
                 stationDetails: group.stationDetails
               };
             }
