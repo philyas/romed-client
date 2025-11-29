@@ -237,7 +237,7 @@ export class MinaMitaCharts implements OnChanges {
           averages.forEach((row: any) => {
             if (row.Station) {
               const station = String(row.Station).trim();
-              if (station) {
+              if (station && station !== 'WASZNA') {
                 stationSet.add(station);
               }
             }
@@ -249,7 +249,7 @@ export class MinaMitaCharts implements OnChanges {
           values.forEach((row: any) => {
             if (row.Station) {
               const station = String(row.Station).trim();
-              if (station) {
+              if (station && station !== 'WASZNA') {
                 stationSet.add(station);
               }
             }
