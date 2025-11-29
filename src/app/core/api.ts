@@ -210,6 +210,10 @@ export class Api {
     return this.http.delete<{ success: boolean; message: string; timestamp: string }>(`${this.baseUrl}/data/reset`);
   }
 
+  deleteSchemaData(schemaId: string): Observable<{ success: boolean; message: string; schemaId: string; schemaName: string; timestamp: string }> {
+    return this.http.delete<{ success: boolean; message: string; schemaId: string; schemaName: string; timestamp: string }>(`${this.baseUrl}/data/schema/${encodeURIComponent(schemaId)}`);
+  }
+
   getAufgestellteBetten(): Observable<ResultsResponse> {
     return this.http.get<ResultsResponse>(`${this.baseUrl}/data?schemaId=mitteilungen_betten`);
   }

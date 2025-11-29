@@ -32,6 +32,18 @@
         class="mitternachtsstatistik-charts-section" 
         [class.highlighted]="highlightedSchemaId() === 'mitternachtsstatistik'"
         *ngIf="mitternachtsstatistikData() && mitternachtsstatistikData()!.uploads.length > 0">
+        <div class="schema-header">
+          <h2 class="schema-title">Mitternachtsstatistik</h2>
+          <button 
+            mat-stroked-button 
+            color="warn" 
+            (click)="openDeleteSchemaDialog('mitternachtsstatistik', 'Mitternachtsstatistik')"
+            class="delete-schema-button"
+            matTooltip="Alle Daten für dieses Schema zurücksetzen">
+            <mat-icon>delete</mat-icon>
+            <span>Daten zurücksetzen</span>
+          </button>
+        </div>
         <app-mitternachtsstatistik-charts 
           [mitternachtsstatistikData]="mitternachtsstatistikData()">
         </app-mitternachtsstatistik-charts>
@@ -50,6 +62,18 @@
         class="mina-mita-charts-section" 
         [class.highlighted]="highlightedSchemaId() === 'ppugv_bestaende'"
         *ngIf="hasMinaMitaData()">
+        <div class="schema-header">
+          <h2 class="schema-title">CO PPUGV MiNa/MiTa-Bestände</h2>
+          <button 
+            mat-stroked-button 
+            color="warn" 
+            (click)="openDeleteSchemaDialog('ppugv_bestaende', 'CO PPUGV MiNa/MiTa-Bestände')"
+            class="delete-schema-button"
+            matTooltip="Alle Daten für dieses Schema zurücksetzen">
+            <mat-icon>delete</mat-icon>
+            <span>Daten zurücksetzen</span>
+          </button>
+        </div>
         <app-mina-mita-charts 
           [uploads]="data()?.uploads || []">
         </app-mina-mita-charts>
@@ -61,6 +85,18 @@
         class="co-charts-section" 
         [class.highlighted]="highlightedSchemaId() === 'co_entlass_aufnahmezeiten'"
         *ngIf="hasCOData()">
+        <div class="schema-header">
+          <h2 class="schema-title">CO Entlass-/Aufnahmezeiten</h2>
+          <button 
+            mat-stroked-button 
+            color="warn" 
+            (click)="openDeleteSchemaDialog('co_entlass_aufnahmezeiten', 'CO Entlass-/Aufnahmezeiten')"
+            class="delete-schema-button"
+            matTooltip="Alle Daten für dieses Schema zurücksetzen">
+            <mat-icon>delete</mat-icon>
+            <span>Daten zurücksetzen</span>
+          </button>
+        </div>
         <app-co-charts 
           [uploads]="data()?.uploads || []"
           [statistics]="statistics()"
@@ -75,6 +111,18 @@
         class="pflegestufenstatistik-charts-section" 
         [class.highlighted]="highlightedSchemaId() === 'pflegestufenstatistik'"
         *ngIf="hasPflegestufenData()">
+        <div class="schema-header">
+          <h2 class="schema-title">Pflegestufenstatistik</h2>
+          <button 
+            mat-stroked-button 
+            color="warn" 
+            (click)="openDeleteSchemaDialog('pflegestufenstatistik', 'Pflegestufenstatistik')"
+            class="delete-schema-button"
+            matTooltip="Alle Daten für dieses Schema zurücksetzen">
+            <mat-icon>delete</mat-icon>
+            <span>Daten zurücksetzen</span>
+          </button>
+        </div>
         <app-pflegestufenstatistik-charts 
           [uploads]="data()?.uploads || []">
         </app-pflegestufenstatistik-charts>
@@ -86,6 +134,18 @@
         class="salden-zeitkonten-charts-section" 
         [class.highlighted]="highlightedSchemaId() === 'salden_zeitkonten'"
         *ngIf="hasSaldenData()">
+        <div class="schema-header">
+          <h2 class="schema-title">Salden Zeitkonten u Urlaub</h2>
+          <button 
+            mat-stroked-button 
+            color="warn" 
+            (click)="openDeleteSchemaDialog('salden_zeitkonten', 'Salden Zeitkonten u Urlaub')"
+            class="delete-schema-button"
+            matTooltip="Alle Daten für dieses Schema zurücksetzen">
+            <mat-icon>delete</mat-icon>
+            <span>Daten zurücksetzen</span>
+          </button>
+        </div>
         <app-salden-zeitkonten-charts 
           [uploads]="data()?.uploads || []">
         </app-salden-zeitkonten-charts>
@@ -97,6 +157,18 @@
         class="mitteilungen-betten-charts-section" 
         [class.highlighted]="highlightedSchemaId() === 'mitteilungen_betten'"
         *ngIf="hasMitteilungenBettenData()">
+        <div class="schema-header">
+          <h2 class="schema-title">Aufgestellte Betten</h2>
+          <button 
+            mat-stroked-button 
+            color="warn" 
+            (click)="openDeleteSchemaDialog('mitteilungen_betten', 'Aufgestellte Betten')"
+            class="delete-schema-button"
+            matTooltip="Alle Daten für dieses Schema zurücksetzen">
+            <mat-icon>delete</mat-icon>
+            <span>Daten zurücksetzen</span>
+          </button>
+        </div>
         <app-mitteilungen-betten-charts 
           [data]="data()"
           [selectedYearInput]="globalSelectedYear()">
@@ -109,6 +181,18 @@
         class="ausfallstatistik-charts-section" 
         [class.highlighted]="highlightedSchemaId() === 'ausfallstatistik'"
         *ngIf="hasAusfallstatistikData()">
+        <div class="schema-header">
+          <h2 class="schema-title">Ausfallstatistik</h2>
+          <button 
+            mat-stroked-button 
+            color="warn" 
+            (click)="openDeleteSchemaDialog('ausfallstatistik', 'Ausfallstatistik')"
+            class="delete-schema-button"
+            matTooltip="Alle Daten für dieses Schema zurücksetzen">
+            <mat-icon>delete</mat-icon>
+            <span>Daten zurücksetzen</span>
+          </button>
+        </div>
         <app-ausfallstatistik-charts 
           [uploads]="data()?.uploads || []"
           [selectedYear]="globalSelectedYear()">
