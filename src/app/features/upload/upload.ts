@@ -308,15 +308,16 @@ export class Upload {
     });
   }
 
-  private handleUploadSuccess(response: { uploadId: string; files: UploadFileResult[] }) {
+  private handleUploadSuccess(response: { uploadId: string; files: UploadFileResult[]; uploadedAt?: string; schemaId?: string; schemaName?: string }) {
     this.lastResponse.set(response);
     
     // Calculate summary
     const successfulFiles = response.files.filter(file => !file.error);
     const failedFiles = response.files.filter(file => file.error);
     
-    // Get the current schema ID
-    const currentSchemaId = this.selectedSchemaId();
+    // Get the current schema ID (fallback to response or selected)
+    const currentSchemaId = response.schemaId || this.selectedSchemaId();
+    const schemaName = response.schemaName || this.getSelectedSchema()?.name;
     
     // Determine dialog type based on results
     let dialogType: 'success' | 'warning' | 'error';
@@ -338,6 +339,7 @@ export class Upload {
       data: {
         type: dialogType,
         schemaId: currentSchemaId,
+        schemaName: schemaName,
         summary: {
           totalFiles: response.files.length,
           successfulFiles: successfulFiles.length,
@@ -345,6 +347,7 @@ export class Upload {
         },
         files: response.files,
         uploadId: response.uploadId,
+        uploadedAt: response.uploadedAt,
         // Add error message if all files failed
         errorMessage: dialogType === 'error' && failedFiles.length > 0 
           ? failedFiles.map(file => file.error).join('\n\n') 
@@ -436,6 +439,18 @@ export class Upload {
       <div class="upload-result-content">
         <!-- Success/Warning Summary -->
         <div *ngIf="data.type === 'success' || data.type === 'warning'" class="upload-summary">
+          <!-- Upload Info Header -->
+          <div class="upload-info-header">
+            <div class="info-row" *ngIf="data.schemaName">
+              <mat-icon>category</mat-icon>
+              <span><strong>Schema:</strong> {{ data.schemaName }}</span>
+            </div>
+            <div class="info-row" *ngIf="data.uploadedAt">
+              <mat-icon>schedule</mat-icon>
+              <span><strong>Hochgeladen am:</strong> {{ formatDate(data.uploadedAt) }}</span>
+            </div>
+          </div>
+          
           <div class="summary-stats">
             <div class="stat-item">
               <mat-icon>folder</mat-icon>
@@ -524,6 +539,38 @@ export class Upload {
     
     .upload-summary {
       margin-bottom: 24px;
+    }
+    
+    .upload-info-header {
+      background: #e3f2fd;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      border-left: 3px solid #0066cc;
+    }
+    
+    .info-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #333;
+    }
+    
+    .info-row:last-child {
+      margin-bottom: 0;
+    }
+    
+    .info-row mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      color: #0066cc;
+    }
+    
+    .info-row strong {
+      color: #0066cc;
     }
     
     .summary-stats {
@@ -615,6 +662,9 @@ export class UploadResultDialog {
       summary: { totalFiles: number; successfulFiles: number; failedFiles: number };
       files: any[];
       uploadId: string | null;
+      uploadedAt?: string;
+      schemaId?: string;
+      schemaName?: string;
       errorMessage?: string;
     }
   ) {}
@@ -629,6 +679,23 @@ export class UploadResultDialog {
         return 'Upload fehlgeschlagen';
       default:
         return 'Upload-Ergebnis';
+    }
+  }
+
+  formatDate(dateString: string | undefined): string {
+    if (!dateString) return '';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleString('de-DE', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    } catch {
+      return dateString;
     }
   }
 
