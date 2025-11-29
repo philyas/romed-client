@@ -861,14 +861,24 @@ export class COCharts implements OnInit, OnChanges {
         }
       });
 
+      // Build fileName from all files - show actual filenames, not schema name
+      const fileNames = upload.files
+        .map(f => f.originalName || f.storedName || 'Unbekannte Datei')
+        .filter(name => name && name !== 'Unbekannte Datei');
+      
+      const fileName = fileNames.length > 0 
+        ? (fileNames.length === 1 ? fileNames[0] : fileNames.join(', '))
+        : `Upload ${upload.uploadId.substring(0, 8)}`;
+
       return {
-        fileName: upload.files.map(f => f.originalName).join(', ') || `Upload ${upload.uploadId.substring(0, 8)}`,
+        fileName: fileName,
         uploadDate: upload.createdAt,
         dataMonth,
         dataYear: this.selectedYear,
         recordCount: totalRecords,
         status: 'success' as const,
-        rawData: allRawData
+        rawData: allRawData,
+        fileCount: upload.files.length
       };
     });
 

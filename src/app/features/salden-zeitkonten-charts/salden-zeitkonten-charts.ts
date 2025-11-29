@@ -796,8 +796,11 @@ export class SaldenZeitkontenCharts implements OnInit, OnChanges {
           dataYear = parseInt(monthMatch[2]);
         }
 
+        // Build fileName with fallback
+        const fileName = file.originalName || file.storedName || 'Unbekannte Datei';
+
         items.push({
-          fileName: file.originalName || 'Unbekannt',
+          fileName: fileName,
           uploadDate: upload.createdAt,
           dataMonth,
           dataYear,

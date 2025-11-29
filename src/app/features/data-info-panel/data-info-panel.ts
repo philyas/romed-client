@@ -59,7 +59,7 @@ export interface DataInfoItem {
             <div class="file-info">
               <mat-icon class="file-icon">description</mat-icon>
               <div class="file-details">
-                <div class="file-name">
+                <div class="file-name" [matTooltip]="item.fileName" [matTooltipDisabled]="!isFileNameTruncated(item.fileName)">
                   {{ item.fileName }}
                   <mat-icon class="detail-icon" *ngIf="item.rawData && item.rawData.length > 0">
                     open_in_new
@@ -244,6 +244,8 @@ export interface DataInfoItem {
       display: flex;
       align-items: center;
       gap: 8px;
+      cursor: default;
+      word-break: break-all;
 
       .detail-icon {
         font-size: 16px;
@@ -252,6 +254,7 @@ export interface DataInfoItem {
         color: #1976d2;
         opacity: 0.7;
         transition: opacity 0.2s ease;
+        flex-shrink: 0;
       }
     }
 
@@ -484,6 +487,11 @@ export class DataInfoPanel {
     } catch {
       return dateStr;
     }
+  }
+
+  isFileNameTruncated(fileName: string): boolean {
+    // Check if filename is likely truncated (rough estimate based on typical container width)
+    return fileName.length > 50;
   }
 
   openDetailModal(item: DataInfoItem, event: Event) {

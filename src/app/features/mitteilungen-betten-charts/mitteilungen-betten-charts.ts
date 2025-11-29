@@ -292,8 +292,19 @@ export class MitteilungenBettenCharts {
           });
         });
 
+        // Build fileName from all files - show actual filenames, not schema name
+        const fileNames = (upload.files || [])
+          .map((f: any) => f.originalName || f.storedName || 'Unbekannte Datei')
+          .filter((name: string) => name && name !== 'Unbekannte Datei');
+        
+        const fileName = fileNames.length > 0 
+          ? (fileNames.length === 1 
+              ? fileNames[0] 
+              : `${fileNames.length} Dateien: ${fileNames.join(', ')}`)
+          : `${upload.schemaName} (${fileCount} ${fileCount === 1 ? 'Datei' : 'Dateien'})`;
+
         items.push({
-          fileName: `${upload.schemaName} (${fileCount} ${fileCount === 1 ? 'Datei' : 'Dateien'})`,
+          fileName: fileName,
           uploadDate: upload.createdAt,
           dataYear: upload.jahr,
           recordCount: totalRecords,

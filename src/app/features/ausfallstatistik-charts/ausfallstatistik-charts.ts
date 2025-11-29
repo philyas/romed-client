@@ -964,7 +964,7 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
           }
 
           items.push({
-            fileName: file.originalName || 'Unbekannt',
+            fileName: file.originalName || file.storedName || 'Unbekannte Datei',
             uploadDate: upload.createdAt,
             dataMonth: dataMonth,
             dataYear: dataYear,

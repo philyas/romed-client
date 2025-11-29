@@ -358,8 +358,11 @@ export class MinaMitaCharts implements OnChanges {
       // Use monthlyAverages or raw values as rawData
       const rawData = (file as any).monthlyAverages || file.values || [];
 
+      // Build fileName with fallback
+      const fileName = file.originalName || file.storedName || 'Unbekannte Datei';
+
       return {
-        fileName: file.originalName,
+        fileName: fileName,
         uploadDate: upload.createdAt,
         dataMonth,
         recordCount: totalRecords,

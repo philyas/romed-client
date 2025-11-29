@@ -1530,6 +1530,17 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
       // Get locations
       const locations = upload.locations?.join(', ') || '';
 
+      // Build fileName from all files - show actual filenames, not schema name
+      const fileNames = (upload.files || [])
+        .map(f => f.originalName || f.storedName || 'Unbekannte Datei')
+        .filter(name => name && name !== 'Unbekannte Datei');
+      
+      const fileName = fileNames.length > 0 
+        ? (fileNames.length === 1 
+            ? fileNames[0] 
+            : `${fileNames.length} Dateien: ${fileNames.join(', ')}`)
+        : `${upload.schemaName} (${fileCount} ${fileCount === 1 ? 'Datei' : 'Dateien'})`;
+
       // Collect all raw data from all locations
       const allRawData: any[] = [];
       if (upload.locationsData) {
@@ -1543,7 +1554,7 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
       }
 
       return {
-        fileName: `${upload.schemaName} (${fileCount} ${fileCount === 1 ? 'Datei' : 'Dateien'})`,
+        fileName: fileName,
         uploadDate: upload.createdAt,
         dataMonth,
         dataYear,

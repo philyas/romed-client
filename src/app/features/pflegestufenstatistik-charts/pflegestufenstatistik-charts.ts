@@ -602,8 +602,11 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
           }
         }
 
+        // Build fileName with fallback
+        const fileName = file.originalName || file.storedName || 'Unbekannte Datei';
+
         items.push({
-          fileName: file.originalName,
+          fileName: fileName,
           uploadDate: upload.createdAt,
           dataMonth,
           dataYear,
