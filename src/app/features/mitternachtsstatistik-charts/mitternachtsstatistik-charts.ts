@@ -44,7 +44,7 @@ interface StationChartData {
   monthlyData: {
     month: number;
     pflegetage: number;
-    betten: number; // Aufgestellte Betten (aus mitteilungen_betten) oder Planbetten als Fallback
+    betten: number; // Aufgestellte Betten (aus mitteilungen_betten), 0 wenn nicht verfügbar
     verweildauer: number;
     stationsauslastung: number;
   }[];
@@ -903,7 +903,7 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
       return match.Bettenanzahl;
     }
 
-    console.warn(`⚠️ Keine aufgestellten Betten gefunden für Station "${stationName}" in ${standort}`);
+    // Keine aufgestellten Betten gefunden - wird als 0 behandelt (keine Planbetten als Fallback)
     return null;
   }
 
@@ -963,7 +963,7 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
 
         const locationFiles = upload.locationsData[location];
         let totalPflegetage = 0;
-        let totalBetten = 0; // Aufgestellte Betten (aus mitteilungen_betten) oder Planbetten als Fallback
+        let totalBetten = 0; // Aufgestellte Betten (aus mitteilungen_betten), 0 wenn nicht verfügbar
         let totalStations = 0;
         let totalVerweildauer = 0;
         let verweildauerCount = 0;
@@ -980,11 +980,10 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
             totalPflegetage += pflegetage;
 
             const stationName = row['Station'].toString();
-            const planbetten = Number(row['Planbetten']) || 0;
             
-            // Verwende aufgestellte Betten (aus Schema mitteilungen_betten) falls verfügbar, sonst Planbetten als Fallback
+            // Verwende nur aufgestellte Betten (aus Schema mitteilungen_betten), keine Planbetten als Fallback
             const aufgestellteBetten = this.findAufgestellteBetten(stationName, location, year);
-            const betten = aufgestellteBetten !== null ? aufgestellteBetten : planbetten;
+            const betten = aufgestellteBetten !== null ? aufgestellteBetten : 0;
             totalBetten += betten;
 
             const verweildauer = Number(row['VD.inkl.']) || 0;
@@ -1017,14 +1016,14 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
             const monthIndex = monthNumber - 1;
             const kalendertage = new Date(year, monthNumber, 0).getDate();
             
-            // Verwende bereits berechnete 'betten' Variable (aufgestellte Betten aus mitteilungen_betten oder Planbetten als Fallback)
+            // Verwende nur aufgestellte Betten aus mitteilungen_betten (keine Planbetten als Fallback)
             const maxStationPflegetage = betten * kalendertage;
             const stationAuslastung = maxStationPflegetage > 0 ? (pflegetage / maxStationPflegetage) * 100 : 0;
             
             stationData.monthlyData[monthIndex] = {
               month: monthNumber,
               pflegetage,
-              betten, // Aufgestellte Betten oder Planbetten als Fallback
+              betten, // Aufgestellte Betten (aus mitteilungen_betten), 0 wenn nicht verfügbar
               verweildauer,
               stationsauslastung: stationAuslastung
             };
