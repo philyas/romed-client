@@ -899,7 +899,6 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
     }
 
     if (match) {
-      console.log(`📊 Matched Station "${stationName}" -> "${match.Station}" (${match.Bettenanzahl} Betten)`);
       return match.Bettenanzahl;
     }
 
