@@ -24,6 +24,7 @@ export class App {
   }
 
   toggleMenu() {
+    // test comment
     this.menuOpen.set(!this.menuOpen());
   }
 
