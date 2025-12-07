@@ -14,6 +14,7 @@ import { MitternachtsstatistikResponse, Api, ResultsResponse } from '../../core/
 import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel';
 import { ComparisonDialogComponent, ComparisonMetricConfig, ComparisonSeries } from '../shared/comparison-dialog/comparison-dialog.component';
 import { SearchableSelectComponent } from '../shared/searchable-select/searchable-select.component';
+import { StationGruppenService } from '../../core/station-gruppen.service';
 
 // Register Chart.js components
 import Chart from 'chart.js/auto';
@@ -659,6 +660,7 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
 
   private api = inject(Api);
   private dialog = inject(MatDialog);
+  private stationGruppenService = inject(StationGruppenService);
 
   chartDataByLocation = signal<LocationChartData[]>([]);
   selectedLocation = signal<string>('BAB');
@@ -702,19 +704,71 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
     }
 
     if (this.selectedStation() !== 'all') {
-      const stationData = baseLocation.stations?.find(s => s.stationName === this.selectedStation());
-      if (stationData) {
+      // Check if selection is a group
+      if (this.stationGruppenService.isGruppeName(this.selectedStation())) {
+        // Aggregate data for all stations in the group
+        const stationNames = this.stationGruppenService.getStationNamesForSelection(this.selectedStation());
+        const aggregatedData: LocationChartData['monthlyData'] = [];
+        
+        // Initialize 12 months
+        for (let month = 1; month <= 12; month++) {
+          let totalPflegetage = 0;
+          let totalBetten = 0;
+          let totalVerweildauer = 0;
+          let verweildauerCount = 0;
+          let stationCount = 0;
+          
+          stationNames.forEach(stationName => {
+            const stationData = baseLocation.stations?.find(s => s.stationName === stationName);
+            if (stationData) {
+              const monthData = stationData.monthlyData.find(m => m.month === month);
+              if (monthData) {
+                totalPflegetage += monthData.pflegetage;
+                totalBetten += monthData.betten;
+                if (monthData.verweildauer > 0) {
+                  totalVerweildauer += monthData.verweildauer;
+                  verweildauerCount++;
+                }
+                stationCount++;
+              }
+            }
+          });
+          
+          const avgVerweildauer = verweildauerCount > 0 ? totalVerweildauer / verweildauerCount : 0;
+          const year = this.currentYear();
+          const kalendertage = new Date(year, month, 0).getDate();
+          const maxPflegetage = totalBetten * kalendertage;
+          const auslastung = maxPflegetage > 0 ? (totalPflegetage / maxPflegetage) * 100 : 0;
+          
+          aggregatedData.push({
+            month,
+            pflegetage: totalPflegetage,
+            stationsauslastung: auslastung,
+            verweildauer: avgVerweildauer,
+            stationCount
+          });
+        }
+        
         return {
           ...baseLocation,
-          monthlyData: stationData.monthlyData.map(m => ({
-            month: m.month,
-            pflegetage: m.pflegetage,
-            stationsauslastung: m.stationsauslastung,
-            verweildauer: m.verweildauer,
-            stationCount: 1,
-            betten: m.betten
-          }))
+          monthlyData: aggregatedData
         };
+      } else {
+        // Single station
+        const stationData = baseLocation.stations?.find(s => s.stationName === this.selectedStation());
+        if (stationData) {
+          return {
+            ...baseLocation,
+            monthlyData: stationData.monthlyData.map(m => ({
+              month: m.month,
+              pflegetage: m.pflegetage,
+              stationsauslastung: m.stationsauslastung,
+              verweildauer: m.verweildauer,
+              stationCount: 1,
+              betten: m.betten
+            }))
+          };
+        }
       }
     }
 
@@ -808,8 +862,9 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
   };
 
   // Shared Y-axis scales for visual comparison (separate for aggregated vs. stations)
-  ngOnInit() {
+  async ngOnInit() {
     Chart.register(...registerables);
+    await this.stationGruppenService.loadStationGruppen();
     this.loadAufgestellteBetten();
     this.processChartData();
   }
@@ -1113,8 +1168,10 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
   private updateAvailableStations() {
     const locationData = this.chartDataByLocation().find(loc => loc.location === this.selectedLocation());
     if (locationData && locationData.stations) {
-      const stations = locationData.stations.map(s => s.stationName).sort();
-      this.availableStations.set(stations);
+      const allStations = locationData.stations.map(s => s.stationName);
+      // Use service to get grouped station options
+      const options = this.stationGruppenService.getStationOptions(allStations);
+      this.availableStations.set(options);
     } else {
       this.availableStations.set([]);
     }
@@ -1450,15 +1507,41 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
   getAuslastungTableData(locationData: LocationChartData) {
     const monthLabels = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
     
-    // Wenn eine einzelne Station ausgewählt ist, zeige deren Betten
+    // Wenn eine einzelne Station oder Gruppe ausgewählt ist
     if (this.selectedStation() !== 'all') {
-      const stationData = locationData.stations?.find(s => s.stationName === this.selectedStation());
-      if (stationData) {
-        return stationData.monthlyData.map((data, index) => ({
-          month: monthLabels[data.month - 1],
-          betten: data.betten,
-          value: data.stationsauslastung
-        }));
+      if (this.stationGruppenService.isGruppeName(this.selectedStation())) {
+        // Group: aggregate betten
+        const stationNames = this.stationGruppenService.getStationNamesForSelection(this.selectedStation());
+        return locationData.monthlyData.map((data, index) => {
+          const monthNumber = index + 1;
+          let totalBetten = 0;
+          
+          stationNames.forEach(stationName => {
+            const stationData = locationData.stations?.find(s => s.stationName === stationName);
+            if (stationData) {
+              const monthData = stationData.monthlyData.find(m => m.month === monthNumber);
+              if (monthData && monthData.betten > 0) {
+                totalBetten += monthData.betten;
+              }
+            }
+          });
+          
+          return {
+            month: monthLabels[index],
+            betten: totalBetten,
+            value: data.stationsauslastung
+          };
+        });
+      } else {
+        // Single station
+        const stationData = locationData.stations?.find(s => s.stationName === this.selectedStation());
+        if (stationData) {
+          return stationData.monthlyData.map((data, index) => ({
+            month: monthLabels[data.month - 1],
+            betten: data.betten,
+            value: data.stationsauslastung
+          }));
+        }
       }
     }
     

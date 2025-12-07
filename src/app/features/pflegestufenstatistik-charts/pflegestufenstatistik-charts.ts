@@ -12,6 +12,7 @@ import { UploadRecord } from '../../core/api';
 import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel';
 import { ComparisonDialogComponent, ComparisonMetricConfig, ComparisonSeries } from '../shared/comparison-dialog/comparison-dialog.component';
 import { SearchableSelectComponent } from '../shared/searchable-select/searchable-select.component';
+import { StationGruppenService } from '../../core/station-gruppen.service';
 
 interface PflegestufenData {
   Station: string;
@@ -202,6 +203,7 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
   dataInfoItems = signal<DataInfoItem[]>([]);
   chartLoading = signal<boolean>(true);
   private dialog = inject(MatDialog);
+  private stationGruppenService = inject(StationGruppenService);
   
   availableStandorte = computed(() => {
     const standorte = new Set<string>();
@@ -210,20 +212,33 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
   });
   
   availableStations = computed(() => {
-    const stations = new Set<string>();
-    stations.add('Alle'); // Add "All stations" option
+    const allStations = new Set<string>();
     this.pflegestufenData()
       .filter(d => d.Standort === this.selectedStandort() && d.Kategorie === 'Gesamt')
-      .forEach(d => stations.add(d.Station));
-    return Array.from(stations).sort();
+      .forEach(d => allStations.add(d.Station));
+    
+    const stationList = Array.from(allStations);
+    const options = this.stationGruppenService.getStationOptions(stationList);
+    return ['Alle', ...options];
   });
 
   altersgruppenChartData = computed<ChartData<'bar'>>(() => {
-    const allMonthsData = this.pflegestufenData().filter(d =>
+    let filteredData = this.pflegestufenData().filter(d =>
       d.Standort === this.selectedStandort() &&
-      d.Kategorie !== 'Gesamt' &&
-      (this.selectedStation() === 'Alle' || d.Station === this.selectedStation())
+      d.Kategorie !== 'Gesamt'
     );
+    
+    // Apply station filter (handle groups)
+    if (this.selectedStation() !== 'Alle') {
+      if (this.stationGruppenService.isGruppeName(this.selectedStation())) {
+        const stationNames = this.stationGruppenService.getStationNamesForSelection(this.selectedStation());
+        filteredData = filteredData.filter(d => stationNames.includes(d.Station));
+      } else {
+        filteredData = filteredData.filter(d => d.Station === this.selectedStation());
+      }
+    }
+    
+    const allMonthsData = filteredData;
 
     const monthData: Record<number, { A1: number; A2: number; A3: number; A4: number; ohne: number }> = {};
     for (let i = 1; i <= 12; i++) {
@@ -405,7 +420,8 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
     }
   ];
 
-  ngOnInit() {
+  async ngOnInit() {
+    await this.stationGruppenService.loadStationGruppen();
     this.loadData();
   }
 
@@ -452,7 +468,12 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
 
     // Apply station filter if not "Alle"
     if (this.selectedStation() !== 'Alle') {
-      return filtered.filter(d => d.Station === this.selectedStation());
+      if (this.stationGruppenService.isGruppeName(this.selectedStation())) {
+        const stationNames = this.stationGruppenService.getStationNamesForSelection(this.selectedStation());
+        return filtered.filter(d => stationNames.includes(d.Station));
+      } else {
+        return filtered.filter(d => d.Station === this.selectedStation());
+      }
     }
     return filtered;
   }
@@ -465,7 +486,12 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
 
     // Apply station filter if not "Alle"
     if (this.selectedStation() !== 'Alle') {
-      return filtered.filter(d => d.Station === this.selectedStation());
+      if (this.stationGruppenService.isGruppeName(this.selectedStation())) {
+        const stationNames = this.stationGruppenService.getStationNamesForSelection(this.selectedStation());
+        return filtered.filter(d => stationNames.includes(d.Station));
+      } else {
+        return filtered.filter(d => d.Station === this.selectedStation());
+      }
     }
     return filtered;
   }
@@ -525,11 +551,20 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
 
   getAltersgruppeTotal(gruppe: string): number {
     // Get data for ALL months (not filtered by selectedMonth)
-    const allMonthsData = this.pflegestufenData().filter(d => 
+    let allMonthsData = this.pflegestufenData().filter(d => 
       d.Standort === this.selectedStandort() &&
-      d.Kategorie !== 'Gesamt' &&
-      (this.selectedStation() === 'Alle' || d.Station === this.selectedStation())
+      d.Kategorie !== 'Gesamt'
     );
+    
+    // Apply station filter
+    if (this.selectedStation() !== 'Alle') {
+      if (this.stationGruppenService.isGruppeName(this.selectedStation())) {
+        const stationNames = this.stationGruppenService.getStationNamesForSelection(this.selectedStation());
+        allMonthsData = allMonthsData.filter(d => stationNames.includes(d.Station));
+      } else {
+        allMonthsData = allMonthsData.filter(d => d.Station === this.selectedStation());
+      }
+    }
     
     let total = 0;
     
@@ -556,11 +591,20 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
 
   getTotalEinstufungenForAltersgruppen(): number {
     // Get data for ALL months (not filtered by selectedMonth)
-    const allMonthsData = this.pflegestufenData().filter(d => 
+    let allMonthsData = this.pflegestufenData().filter(d => 
       d.Standort === this.selectedStandort() &&
-      d.Kategorie !== 'Gesamt' &&
-      (this.selectedStation() === 'Alle' || d.Station === this.selectedStation())
+      d.Kategorie !== 'Gesamt'
     );
+    
+    // Apply station filter
+    if (this.selectedStation() !== 'Alle') {
+      if (this.stationGruppenService.isGruppeName(this.selectedStation())) {
+        const stationNames = this.stationGruppenService.getStationNamesForSelection(this.selectedStation());
+        allMonthsData = allMonthsData.filter(d => stationNames.includes(d.Station));
+      } else {
+        allMonthsData = allMonthsData.filter(d => d.Station === this.selectedStation());
+      }
+    }
     
     return allMonthsData.reduce((sum, d) => sum + d['Einstufungen absolut'], 0);
   }

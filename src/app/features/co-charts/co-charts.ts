@@ -12,6 +12,7 @@ import { UploadRecord, SchemaStatistics } from '../../core/api';
 import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel';
 import { ComparisonDialogComponent, ComparisonMetricConfig, ComparisonSeries } from '../shared/comparison-dialog/comparison-dialog.component';
 import { SearchableSelectComponent } from '../shared/searchable-select/searchable-select.component';
+import { StationGruppenService } from '../../core/station-gruppen.service';
 
 // Register Chart.js components
 import Chart from 'chart.js/auto';
@@ -277,6 +278,7 @@ export class COCharts implements OnInit, OnChanges {
   private selectedYearState = signal<number>(this.selectedYear);
   private readonly monthLabels = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'] as const;
   private dialog = inject(MatDialog);
+  private stationGruppenService = inject(StationGruppenService);
 
   // Standort-Mapping: AIB = BAB
   standortNames: { [key: string]: string } = {
@@ -294,8 +296,9 @@ export class COCharts implements OnInit, OnChanges {
     return standort === 'AIB' ? 'BAB' : standort;
   }
 
-  ngOnInit() {
+  async ngOnInit() {
     Chart.register(...registerables);
+    await this.stationGruppenService.loadStationGruppen();
     this.processChartData();
   }
 
@@ -459,7 +462,9 @@ export class COCharts implements OnInit, OnChanges {
       }
     }
     
-    return Array.from(stations).sort();
+    const stationList = Array.from(stations).sort();
+    // Use service to get grouped station options
+    return this.stationGruppenService.getStationOptions(stationList);
   });
 
   toggleFlip(cardType: string) {
@@ -490,11 +495,26 @@ export class COCharts implements OnInit, OnChanges {
       let vor11Value = 0;
       let nach11Value = 0;
       
-      if (selectedStation && monthData?.[selectedStation]) {
-        // Filter by specific station
-        const stationData = monthData[selectedStation]['Entlassungen'];
-        vor11Value = stationData?.['vor 11 Uhr'] || 0;
-        nach11Value = stationData?.['nach 11 Uhr'] || 0;
+      if (selectedStation && monthData) {
+        // Check if selection is a group
+        if (this.stationGruppenService.isGruppeName(selectedStation)) {
+          // Aggregate data for all stations in the group
+          const stationNames = this.stationGruppenService.getStationNamesForSelection(selectedStation);
+          stationNames.forEach(stationName => {
+            if (monthData[stationName]) {
+              const stationData = monthData[stationName]['Entlassungen'];
+              if (stationData) {
+                vor11Value += stationData['vor 11 Uhr'] || 0;
+                nach11Value += stationData['nach 11 Uhr'] || 0;
+              }
+            }
+          });
+        } else if (monthData[selectedStation]) {
+          // Filter by specific station
+          const stationData = monthData[selectedStation]['Entlassungen'];
+          vor11Value = stationData?.['vor 11 Uhr'] || 0;
+          nach11Value = stationData?.['nach 11 Uhr'] || 0;
+        }
       } else {
         // Aggregate all stations for this standort
         Object.values(monthData || {}).forEach((stationData: any) => {
@@ -549,11 +569,26 @@ export class COCharts implements OnInit, OnChanges {
       let vor11Value = 0;
       let nach11Value = 0;
       
-      if (selectedStation && monthData?.[selectedStation]) {
-        // Filter by specific station
-        const stationData = monthData[selectedStation]['Aufnahmen'];
-        vor11Value = stationData?.['vor 11 Uhr'] || 0;
-        nach11Value = stationData?.['nach 11 Uhr'] || 0;
+      if (selectedStation && monthData) {
+        // Check if selection is a group
+        if (this.stationGruppenService.isGruppeName(selectedStation)) {
+          // Aggregate data for all stations in the group
+          const stationNames = this.stationGruppenService.getStationNamesForSelection(selectedStation);
+          stationNames.forEach(stationName => {
+            if (monthData[stationName]) {
+              const stationData = monthData[stationName]['Aufnahmen'];
+              if (stationData) {
+                vor11Value += stationData['vor 11 Uhr'] || 0;
+                nach11Value += stationData['nach 11 Uhr'] || 0;
+              }
+            }
+          });
+        } else if (monthData[selectedStation]) {
+          // Filter by specific station
+          const stationData = monthData[selectedStation]['Aufnahmen'];
+          vor11Value = stationData?.['vor 11 Uhr'] || 0;
+          nach11Value = stationData?.['nach 11 Uhr'] || 0;
+        }
       } else {
         // Aggregate all stations for this standort
         Object.values(monthData || {}).forEach((stationData: any) => {
@@ -768,10 +803,24 @@ export class COCharts implements OnInit, OnChanges {
       const zeitKey = zeit === 'vor' ? 'vor 11 Uhr' : 'nach 11 Uhr';
       const typKey = type === 'entlassungen' ? 'Entlassungen' : 'Aufnahmen';
       
-      if (selectedStation && monthData?.[selectedStation]) {
-        // Filter by specific station
-        const stationData = monthData[selectedStation][typKey];
-        total += stationData?.[zeitKey] || 0;
+      if (selectedStation && monthData) {
+        // Check if selection is a group
+        if (this.stationGruppenService.isGruppeName(selectedStation)) {
+          // Aggregate data for all stations in the group
+          const stationNames = this.stationGruppenService.getStationNamesForSelection(selectedStation);
+          stationNames.forEach(stationName => {
+            if (monthData[stationName]) {
+              const stationData = monthData[stationName][typKey];
+              if (stationData) {
+                total += stationData[zeitKey] || 0;
+              }
+            }
+          });
+        } else if (monthData[selectedStation]) {
+          // Filter by specific station
+          const stationData = monthData[selectedStation][typKey];
+          total += stationData?.[zeitKey] || 0;
+        }
       } else {
         // Aggregate all stations
         Object.values(monthData || {}).forEach((stationData: any) => {

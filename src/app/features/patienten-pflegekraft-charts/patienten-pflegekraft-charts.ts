@@ -13,6 +13,7 @@ import Chart from 'chart.js/auto';
 import { Api, PatientenPflegekraftOverviewResponse, PfkAlert, PfkThresholdConfig, PfkSeverity, PfkSchicht } from '../../core/api';
 import { ComparisonDialogComponent, ComparisonMetricConfig, ComparisonSeries } from '../shared/comparison-dialog/comparison-dialog.component';
 import { SearchableSelectComponent } from '../shared/searchable-select/searchable-select.component';
+import { StationGruppenService } from '../../core/station-gruppen.service';
 
 @Component({
   selector: 'app-patienten-pflegekraft-charts',
@@ -207,6 +208,7 @@ import { SearchableSelectComponent } from '../shared/searchable-select/searchabl
 export class PatientenPflegekraftCharts implements OnInit {
   private api = inject(Api);
   private dialog = inject(MatDialog);
+  private stationGruppenService = inject(StationGruppenService);
 
   stations = signal<string[]>([]);
   selectedStation = signal<string>(''); // will default to BABBELEG if vorhanden
@@ -265,8 +267,9 @@ export class PatientenPflegekraftCharts implements OnInit {
     critical: 3
   };
 
-  ngOnInit() {
+  async ngOnInit() {
     Chart.register(...registerables);
+    await this.stationGruppenService.loadStationGruppen();
     this.loadStations();
   }
 
@@ -295,22 +298,35 @@ export class PatientenPflegekraftCharts implements OnInit {
       this.api.getManualEntryNachtStations().toPromise()
     ]).then(([day, night]) => {
       const set = new Set<string>([...(day?.stations || []), ...(night?.stations || [])]);
-      const list = Array.from(set).sort();
-      this.stations.set(list);
+      const allStations = Array.from(set).sort();
+      // Use service to get grouped station options
+      const options = this.stationGruppenService.getStationOptions(allStations);
+      this.stations.set(options);
 
-      // Default auswählen: BABBELEG, wenn vorhanden
-      if (!this.selectedStation() && list.includes('BABBELEG')) {
-        this.selectedStation.set('BABBELEG');
-        this.loadAveragesAndData();
+      // Default auswählen: BABBELEG, wenn vorhanden, oder erste Option
+      if (!this.selectedStation()) {
+        if (options.includes('BABBELEG')) {
+          this.selectedStation.set('BABBELEG');
+          this.loadAveragesAndData();
+        } else if (options.length > 0) {
+          this.selectedStation.set(options[0]);
+          this.loadAveragesAndData();
+        }
       }
     }).catch(() => {
       // Fallback: nur Tag
       this.api.getManualEntryStations().subscribe(res => {
-        const list = res.stations || [];
-        this.stations.set(list);
-        if (!this.selectedStation() && list.includes('BABBELEG')) {
-          this.selectedStation.set('BABBELEG');
-          this.loadAveragesAndData();
+        const allStations = res.stations || [];
+        const options = this.stationGruppenService.getStationOptions(allStations);
+        this.stations.set(options);
+        if (!this.selectedStation()) {
+          if (options.includes('BABBELEG')) {
+            this.selectedStation.set('BABBELEG');
+            this.loadAveragesAndData();
+          } else if (options.length > 0) {
+            this.selectedStation.set(options[0]);
+            this.loadAveragesAndData();
+          }
         }
       });
     });
@@ -322,15 +338,66 @@ export class PatientenPflegekraftCharts implements OnInit {
     this.chartLoading.set(true);
 
     try {
-      const { dayValues, nightValues, metadata } = await this.fetchMonthlyValues(station, this.selectedYear());
-      this.dayValues.set(dayValues);
-      this.nightValues.set(nightValues);
-      const alerts = metadata?.alerts;
-      const thresholds = metadata?.thresholds;
-      this.alerts.set(Array.isArray(alerts) ? [...alerts] : []);
-      this.thresholds.set(Array.isArray(thresholds) ? [...thresholds] : []);
-      if (metadata?.warnings?.length) {
-        console.warn(`⚠️ Patienten/Pflegekraft Hinweise (${station} ${this.selectedYear()}): ${metadata.warnings.join(' | ')}`);
+      // Check if selection is a group
+      if (this.stationGruppenService.isGruppeName(station)) {
+        // Aggregate data for all stations in the group
+        const stationNames = this.stationGruppenService.getStationNamesForSelection(station);
+        const aggregatedDayValues = Array(12).fill(0);
+        const aggregatedNightValues = Array(12).fill(0);
+        const allAlerts: PfkAlert[] = [];
+        const allThresholds: PfkThresholdConfig[] = [];
+        const allWarnings: string[] = [];
+
+        for (const stationName of stationNames) {
+          try {
+            const { dayValues, nightValues, metadata } = await this.fetchMonthlyValues(stationName, this.selectedYear());
+            // Aggregate values (sum for now, could be average depending on requirement)
+            for (let i = 0; i < 12; i++) {
+              aggregatedDayValues[i] += dayValues[i] || 0;
+              aggregatedNightValues[i] += nightValues[i] || 0;
+            }
+            if (metadata?.alerts) {
+              allAlerts.push(...metadata.alerts);
+            }
+            if (metadata?.thresholds) {
+              allThresholds.push(...metadata.thresholds);
+            }
+            if (metadata?.warnings) {
+              allWarnings.push(...metadata.warnings);
+            }
+          } catch (error) {
+            console.warn(`Fehler beim Laden der Daten für Station ${stationName}:`, error);
+          }
+        }
+
+        // Average the values (divide by number of stations)
+        const stationCount = stationNames.length;
+        if (stationCount > 0) {
+          for (let i = 0; i < 12; i++) {
+            aggregatedDayValues[i] = aggregatedDayValues[i] / stationCount;
+            aggregatedNightValues[i] = aggregatedNightValues[i] / stationCount;
+          }
+        }
+
+        this.dayValues.set(aggregatedDayValues);
+        this.nightValues.set(aggregatedNightValues);
+        this.alerts.set(allAlerts);
+        this.thresholds.set(allThresholds);
+        if (allWarnings.length > 0) {
+          console.warn(`⚠️ Patienten/Pflegekraft Hinweise (${station} ${this.selectedYear()}): ${allWarnings.join(' | ')}`);
+        }
+      } else {
+        // Single station
+        const { dayValues, nightValues, metadata } = await this.fetchMonthlyValues(station, this.selectedYear());
+        this.dayValues.set(dayValues);
+        this.nightValues.set(nightValues);
+        const alerts = metadata?.alerts;
+        const thresholds = metadata?.thresholds;
+        this.alerts.set(Array.isArray(alerts) ? [...alerts] : []);
+        this.thresholds.set(Array.isArray(thresholds) ? [...thresholds] : []);
+        if (metadata?.warnings?.length) {
+          console.warn(`⚠️ Patienten/Pflegekraft Hinweise (${station} ${this.selectedYear()}): ${metadata.warnings.join(' | ')}`);
+        }
       }
       this.refreshChart();
     } catch (error) {

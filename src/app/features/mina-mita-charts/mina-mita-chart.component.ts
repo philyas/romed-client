@@ -1,4 +1,4 @@
-import { Component, Input, signal, effect, Inject, OnInit, OnChanges } from '@angular/core';
+import { Component, Input, signal, effect, Inject, OnInit, OnChanges, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -8,6 +8,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatTableModule } from '@angular/material/table';
 import { BaseChartDirective } from 'ng2-charts';
 import { Chart, ChartConfiguration, ChartData, registerables } from 'chart.js';
+import { StationGruppenService } from '../../core/station-gruppen.service';
 
 interface ChartDataPoint {
   month: number;
@@ -418,8 +419,11 @@ export class MinaMitaChart implements OnInit, OnChanges {
   chartOptions: ChartConfiguration['options'] = {};
   isFlipped = signal<boolean>(false);
   chartLoading = signal<boolean>(false);
+  
+  private dialog = inject(MatDialog);
+  private stationGruppenService = inject(StationGruppenService);
 
-  constructor(private dialog: MatDialog) {
+  constructor() {
     effect(() => {
       this.processChartData();
     });
@@ -580,9 +584,14 @@ export class MinaMitaChart implements OnInit, OnChanges {
           const metadata = (file as any).metadata || {};
           let averages = monthlyAverages;
 
-          // Filter by selected station if not 'all'
+          // Filter by selected station if not 'all' (handle groups)
           if (this.selectedStation !== 'all') {
-            averages = averages.filter((row: any) => row.Station === this.selectedStation);
+            if (this.stationGruppenService.isGruppeName(this.selectedStation)) {
+              const stationNames = this.stationGruppenService.getStationNamesForSelection(this.selectedStation);
+              averages = averages.filter((row: any) => stationNames.includes(row.Station));
+            } else {
+              averages = averages.filter((row: any) => row.Station === this.selectedStation);
+            }
           }
 
           const grouped = new Map<string, {
@@ -692,9 +701,16 @@ export class MinaMitaChart implements OnInit, OnChanges {
               return;
             }
             
-            // Filter by selected station if not 'all'
-            if (this.selectedStation !== 'all' && row.Station !== this.selectedStation) {
-              return;
+            // Filter by selected station if not 'all' (handle groups)
+            if (this.selectedStation !== 'all') {
+              if (this.stationGruppenService.isGruppeName(this.selectedStation)) {
+                const stationNames = this.stationGruppenService.getStationNamesForSelection(this.selectedStation);
+                if (!stationNames.includes(row.Station)) {
+                  return;
+                }
+              } else if (row.Station !== this.selectedStation) {
+                return;
+              }
             }
             
             const key = row.Station;

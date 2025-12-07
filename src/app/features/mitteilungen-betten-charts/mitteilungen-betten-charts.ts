@@ -13,6 +13,7 @@ import { ResultsResponse } from '../../core/api';
 import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel';
 import { ComparisonDialogComponent, ComparisonMetricConfig, ComparisonSeries } from '../shared/comparison-dialog/comparison-dialog.component';
 import { SearchableSelectComponent } from '../shared/searchable-select/searchable-select.component';
+import { StationGruppenService } from '../../core/station-gruppen.service';
 
 interface BettenData {
   IK: string;
@@ -52,6 +53,7 @@ export class MitteilungenBettenCharts {
   
   flippedCards: { [key: string]: boolean } = {};
   private dialog = inject(MatDialog);
+  private stationGruppenService = inject(StationGruppenService);
   chartLoading = signal<boolean>(true);
 
   private readonly comparisonMetrics: ComparisonMetricConfig[] = [
@@ -65,6 +67,9 @@ export class MitteilungenBettenCharts {
   ];
   
   constructor() {
+    // Load station groups on init
+    this.stationGruppenService.loadStationGruppen();
+    
     // Update selected year when input changes
     effect(() => {
       if (this.selectedYearInput) {
@@ -159,9 +164,14 @@ export class MitteilungenBettenCharts {
       data = data.filter(d => d.Standort === this.selectedStandort());
     }
     
-    // Filter by Station
+    // Filter by Station (handle groups)
     if (this.selectedStation() !== 'all') {
-      data = data.filter(d => d.Station === this.selectedStation());
+      if (this.stationGruppenService.isGruppeName(this.selectedStation())) {
+        const stationNames = this.stationGruppenService.getStationNamesForSelection(this.selectedStation());
+        data = data.filter(d => stationNames.includes(d.Station));
+      } else {
+        data = data.filter(d => d.Station === this.selectedStation());
+      }
     }
     
     return data;
@@ -182,8 +192,10 @@ export class MitteilungenBettenCharts {
     }
     const data = this.bettenData()
       .filter(d => d.Jahr === this.selectedYear() && d.Standort === standort);
-    const stations = new Set(data.map(d => d.Station));
-    return Array.from(stations).sort();
+    const allStations = new Set(data.map(d => d.Station));
+    const stationList = Array.from(allStations);
+    // Use service to get grouped station options
+    return this.stationGruppenService.getStationOptions(stationList);
   });
 
   comparisonSeries = computed<ComparisonSeries[]>(() => {

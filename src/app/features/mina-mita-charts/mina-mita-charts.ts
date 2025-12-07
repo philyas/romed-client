@@ -1,4 +1,4 @@
-import { Component, Input, signal, effect, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, signal, effect, OnChanges, SimpleChanges, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -10,6 +10,7 @@ import { MinaMitaChart } from './mina-mita-chart.component';
 import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel';
 import { MinaMitaComparisonDialogComponent } from './mina-mita-comparison-dialog.component';
 import { SearchableSelectComponent } from '../shared/searchable-select/searchable-select.component';
+import { StationGruppenService } from '../../core/station-gruppen.service';
 
 @Component({
   selector: 'app-mina-mita-charts',
@@ -202,8 +203,13 @@ export class MinaMitaCharts implements OnChanges {
   selectedStation = signal<string>('all');
   availableStations = signal<string[]>([]);
   dataInfoItems = signal<DataInfoItem[]>([]);
+  
+  private dialog = inject(MatDialog);
+  private stationGruppenService = inject(StationGruppenService);
 
-  constructor(private dialog: MatDialog) {
+  constructor() {
+    // Load station groups on init
+    this.stationGruppenService.loadStationGruppen();
     // Process data when component initializes
     this.processUploads();
   }
@@ -269,7 +275,9 @@ export class MinaMitaCharts implements OnChanges {
         });
         
         console.log('[MinaMitaCharts] Extracted stations:', stations.length, stations.slice(0, 5));
-        this.availableStations.set(stations);
+        // Use service to get grouped station options
+        const options = this.stationGruppenService.getStationOptions(stations);
+        this.availableStations.set(options);
         
         // If no stations found but data exists, there might be an issue with station mapping
         if (stations.length === 0 && ((file as any).monthlyAverages?.length > 0 || (file as any).values?.length > 0)) {
