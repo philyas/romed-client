@@ -208,16 +208,20 @@ export class MinaMitaCharts implements OnChanges {
   private stationGruppenService = inject(StationGruppenService);
 
   constructor() {
-    // Load station groups on init
-    this.stationGruppenService.loadStationGruppen();
-    // Process data when component initializes
-    this.processUploads();
+    // Load station groups on init and wait for them to be loaded
+    this.stationGruppenService.loadStationGruppen().then(() => {
+      // Process data after station groups are loaded
+      this.processUploads();
+    });
   }
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['uploads']) {
       // Process uploads whenever they change, including the first time
-      this.processUploads();
+      // Make sure station groups are loaded first
+      this.stationGruppenService.loadStationGruppen().then(() => {
+        this.processUploads();
+      });
     }
   }
 
