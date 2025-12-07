@@ -1,0 +1,127 @@
+<h2 mat-dialog-title>
+  <mat-icon>{{ isEditMode() ? 'edit' : 'add' }}</mat-icon>
+  {{ isEditMode() ? 'Station-Gruppe bearbeiten' : 'Neue Station-Gruppe' }}
+</h2>
+
+<mat-dialog-content>
+  <div class="dialog-form">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Name</mat-label>
+      <input 
+        matInput 
+        [(ngModel)]="name" 
+        placeholder="z.B. Station 112"
+        required>
+      <mat-icon matPrefix>group</mat-icon>
+      <mat-hint>Name der Station-Gruppe (z.B. "Station 112")</mat-hint>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Beschreibung</mat-label>
+      <textarea 
+        matInput 
+        [(ngModel)]="beschreibung" 
+        placeholder="z.B. Zusammengehörige Stationen 112 und 112 Haus 6-E-S"
+        rows="2">
+      </textarea>
+      <mat-icon matPrefix>description</mat-icon>
+      <mat-hint>Optionale Beschreibung der Gruppierung</mat-hint>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Hauptstation (optional)</mat-label>
+      <mat-select [(ngModel)]="hauptstationId">
+        <mat-option [value]="null">
+          <span class="station-option">
+            <mat-icon>remove</mat-icon>
+            <span>Keine Hauptstation</span>
+          </span>
+        </mat-option>
+        <mat-option *ngFor="let station of availableStations()" [value]="station.id">
+          <span class="station-option">
+            <mat-icon>local_hospital</mat-icon>
+            <span>
+              <strong>Station:</strong> {{ station.name }}
+              <span *ngIf="station.standortName" class="standort-badge">({{ station.standortName }})</span>
+            </span>
+          </span>
+        </mat-option>
+      </mat-select>
+      <mat-icon matPrefix>star</mat-icon>
+      <mat-hint>Optionale Referenz auf eine "Hauptstation"</mat-hint>
+    </mat-form-field>
+
+    <mat-checkbox [(ngModel)]="istAktiv" class="full-width">
+      <mat-icon>check_circle</mat-icon>
+      Aktiv
+    </mat-checkbox>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Station hinzufügen</mat-label>
+      <mat-select (selectionChange)="addStation($event.value)" [value]="null">
+        <mat-option [value]="null" disabled>
+          <span class="station-option">
+            <mat-icon>local_hospital</mat-icon>
+            <span>Station auswählen...</span>
+          </span>
+        </mat-option>
+        <mat-option 
+          *ngFor="let station of availableStations()" 
+          [value]="station.id"
+          [disabled]="selectedStationIds().includes(station.id)">
+          <span class="station-option">
+            <mat-icon>local_hospital</mat-icon>
+            <span>
+              <strong>Station:</strong> {{ station.name }}
+              <span *ngIf="station.standortName" class="standort-badge">({{ station.standortName }})</span>
+            </span>
+          </span>
+        </mat-option>
+      </mat-select>
+      <mat-icon matPrefix>add_circle</mat-icon>
+      <mat-hint>Wählen Sie eine Station aus, die zu dieser Gruppe gehören soll</mat-hint>
+    </mat-form-field>
+
+    <div class="selected-stations" *ngIf="selectedStationIds().length > 0">
+      <h4>
+        <mat-icon>local_hospital</mat-icon>
+        Zugeordnete Stationen ({{ selectedStationIds().length }})
+      </h4>
+      <mat-chip-set>
+        <mat-chip 
+          *ngFor="let stationId of selectedStationIds()" 
+          (removed)="removeStation(stationId)"
+          [removable]="true"
+          class="station-chip">
+          <mat-icon class="chip-icon">local_hospital</mat-icon>
+          <span class="chip-label">
+            <strong>Station:</strong> {{ getStationDisplay(stationId) }}
+          </span>
+          <button matChipRemove>
+            <mat-icon>cancel</mat-icon>
+          </button>
+        </mat-chip>
+      </mat-chip-set>
+    </div>
+
+    <div class="no-stations" *ngIf="selectedStationIds().length === 0">
+      <mat-icon>info</mat-icon>
+      <p>Noch keine Stationen zugeordnet</p>
+    </div>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">
+    <mat-icon>close</mat-icon>
+    Abbrechen
+  </button>
+  <button 
+    mat-raised-button 
+    color="primary" 
+    (click)="save()" 
+    [disabled]="!canSave()">
+    <mat-icon>{{ isEditMode() ? 'save' : 'add' }}</mat-icon>
+    {{ isEditMode() ? 'Speichern' : 'Erstellen' }}
+  </button>
+</mat-dialog-actions>

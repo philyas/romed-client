@@ -18,6 +18,8 @@ import { firstValueFrom } from 'rxjs';
 import { Api } from '../../core/api';
 import { KostenstelleDialogComponent, KostenstelleDialogResult } from './kostenstelle-dialog.component';
 import { StationMappingDialogComponent, StationMappingDialogResult } from './station-mapping-dialog.component';
+import { StationGruppenDialogComponent, StationGruppenDialogResult } from './station-gruppen-dialog.component';
+import { StationGruppe } from '../../core/api';
 
 interface Kostenstelle {
   kostenstelle: string;
@@ -79,9 +81,18 @@ export class Configuration implements OnInit {
 
   stationOptions = signal<string[]>([]);
 
+  // Station Groups
+  stationGruppen = signal<StationGruppe[]>([]);
+  stationGruppenDataSource = new MatTableDataSource<StationGruppe>([]);
+  stationGruppenLoading = signal(false);
+  stationGruppenSaving = signal(false);
+  
+  displayedStationGruppenColumns: string[] = ['name', 'beschreibung', 'mitglieder', 'istAktiv', 'actions'];
+
   ngOnInit() {
     this.loadKostenstellen();
     this.loadStationMappings();
+    this.loadStationGruppen();
     void this.loadStationOptions();
   }
 
@@ -385,6 +396,139 @@ export class Configuration implements OnInit {
         console.error('Error importing station mappings:', err);
         const errorMessage = err.error?.error || err.message || 'Fehler beim Importieren';
         this.snackBar.open(errorMessage, 'Schließen', { duration: 5000 });
+      }
+    });
+  }
+
+  // Station Groups Methods
+  loadStationGruppen() {
+    this.stationGruppenLoading.set(true);
+    this.api.getStationGruppen().subscribe({
+      next: (response) => {
+        this.stationGruppen.set(response.data);
+        this.stationGruppenDataSource.data = response.data;
+        this.stationGruppenLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Error loading station groups:', err);
+        this.snackBar.open('Fehler beim Laden der Station-Gruppen', 'Schließen', { duration: 3000 });
+        this.stationGruppenLoading.set(false);
+      }
+    });
+  }
+
+  openCreateStationGruppeDialog() {
+    this.openStationGruppeDialog();
+  }
+
+  openEditStationGruppeDialog(gruppe: StationGruppe) {
+    this.openStationGruppeDialog(gruppe);
+  }
+
+  private openStationGruppeDialog(existing?: StationGruppe) {
+    const dialogRef = this.dialog.open(StationGruppenDialogComponent, {
+      width: '600px',
+      maxWidth: '90vw',
+      data: existing ? {
+        id: existing.id,
+        name: existing.name,
+        beschreibung: existing.beschreibung,
+        hauptstationId: existing.hauptstationId,
+        istAktiv: existing.istAktiv,
+        mitglieder: existing.mitglieder?.map(m => ({
+          stationId: m.stationId,
+          stationName: m.stationName,
+          standortName: m.standortName
+        }))
+      } : null
+    });
+
+    dialogRef.afterClosed().subscribe((result: StationGruppenDialogResult | null) => {
+      if (!result) {
+        return;
+      }
+      
+      if (existing) {
+        this.updateStationGruppe(result);
+      } else {
+        this.createStationGruppe(result);
+      }
+    });
+  }
+
+  private createStationGruppe(result: StationGruppenDialogResult) {
+    this.stationGruppenSaving.set(true);
+
+    const payload = {
+      name: result.name,
+      beschreibung: result.beschreibung,
+      hauptstationId: result.hauptstationId,
+      istAktiv: result.istAktiv,
+      stationIds: result.stationIds
+    };
+
+    this.api.createStationGruppe(payload).subscribe({
+      next: (response) => {
+        this.snackBar.open(response.message, 'Schließen', { duration: 3000 });
+        this.stationGruppenSaving.set(false);
+        this.loadStationGruppen();
+      },
+      error: (err) => {
+        console.error('Error creating station group:', err);
+        const errorMessage = err.error?.error || err.message || 'Fehler beim Erstellen';
+        this.snackBar.open(errorMessage, 'Schließen', { duration: 5000 });
+        this.stationGruppenSaving.set(false);
+      }
+    });
+  }
+
+  private updateStationGruppe(result: StationGruppenDialogResult) {
+    if (!result.id) {
+      return;
+    }
+
+    this.stationGruppenSaving.set(true);
+
+    const payload = {
+      name: result.name,
+      beschreibung: result.beschreibung,
+      hauptstationId: result.hauptstationId,
+      istAktiv: result.istAktiv
+    };
+
+    this.api.updateStationGruppe(result.id, payload).subscribe({
+      next: (response) => {
+        this.snackBar.open(response.message, 'Schließen', { duration: 3000 });
+        this.stationGruppenSaving.set(false);
+        this.loadStationGruppen();
+      },
+      error: (err) => {
+        console.error('Error updating station group:', err);
+        const errorMessage = err.error?.error || err.message || 'Fehler beim Aktualisieren';
+        this.snackBar.open(errorMessage, 'Schließen', { duration: 5000 });
+        this.stationGruppenSaving.set(false);
+      }
+    });
+  }
+
+  deleteStationGruppe(id: number) {
+    if (!confirm(`Möchten Sie die Station-Gruppe wirklich löschen? Alle zugeordneten Stationen werden ebenfalls entfernt.`)) {
+      return;
+    }
+
+    this.stationGruppenSaving.set(true);
+
+    this.api.deleteStationGruppe(id).subscribe({
+      next: (response) => {
+        this.snackBar.open(response.message, 'Schließen', { duration: 3000 });
+        this.stationGruppenSaving.set(false);
+        this.loadStationGruppen();
+      },
+      error: (err) => {
+        console.error('Error deleting station group:', err);
+        const errorMessage = err.error?.error || err.message || 'Fehler beim Löschen';
+        this.snackBar.open(errorMessage, 'Schließen', { duration: 3000 });
+        this.stationGruppenSaving.set(false);
       }
     });
   }

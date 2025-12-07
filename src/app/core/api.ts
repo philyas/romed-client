@@ -141,6 +141,32 @@ export interface PatientenPflegekraftOverviewResponse {
   };
 }
 
+export interface StationGruppeMitglied {
+  id: number;
+  gruppeId: number;
+  stationId: number;
+  stationName: string;
+  standortName?: string | null;
+  createdAt: string;
+}
+
+export interface StationGruppe {
+  id: number;
+  name: string;
+  beschreibung?: string | null;
+  hauptstationId?: number | null;
+  istAktiv: boolean;
+  createdAt: string;
+  updatedAt: string;
+  mitglieder?: StationGruppeMitglied[];
+}
+
+export interface AvailableStation {
+  id: number;
+  name: string;
+  standortName?: string | null;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -373,6 +399,43 @@ export class Api {
 
   importStationMappingFromJson(): Observable<{ success: boolean; message: string; imported: number; skipped: number; total: number }> {
     return this.http.post<{ success: boolean; message: string; imported: number; skipped: number; total: number }>(`${this.baseUrl}/station-mapping/import-json`, {});
+  }
+
+  // Station Groups API
+  getStationGruppen(includeInactive?: boolean): Observable<{ success: boolean; data: StationGruppe[]; count: number }> {
+    let params = new HttpParams();
+    if (includeInactive) {
+      params = params.set('includeInactive', 'true');
+    }
+    return this.http.get<{ success: boolean; data: StationGruppe[]; count: number }>(`${this.baseUrl}/station-gruppen`, { params });
+  }
+
+  getStationGruppe(id: number): Observable<{ success: boolean; data: StationGruppe }> {
+    return this.http.get<{ success: boolean; data: StationGruppe }>(`${this.baseUrl}/station-gruppen/${id}`);
+  }
+
+  createStationGruppe(data: { name: string; beschreibung?: string | null; hauptstationId?: number | null; istAktiv?: boolean; stationIds?: number[] }): Observable<{ success: boolean; message: string; data: StationGruppe }> {
+    return this.http.post<{ success: boolean; message: string; data: StationGruppe }>(`${this.baseUrl}/station-gruppen`, data);
+  }
+
+  updateStationGruppe(id: number, data: { name?: string; beschreibung?: string | null; hauptstationId?: number | null; istAktiv?: boolean }): Observable<{ success: boolean; message: string; data: StationGruppe }> {
+    return this.http.patch<{ success: boolean; message: string; data: StationGruppe }>(`${this.baseUrl}/station-gruppen/${id}`, data);
+  }
+
+  deleteStationGruppe(id: number): Observable<{ success: boolean; message: string }> {
+    return this.http.delete<{ success: boolean; message: string }>(`${this.baseUrl}/station-gruppen/${id}`);
+  }
+
+  addStationToGruppe(gruppeId: number, stationId: number): Observable<{ success: boolean; message: string; data: StationGruppeMitglied[] }> {
+    return this.http.post<{ success: boolean; message: string; data: StationGruppeMitglied[] }>(`${this.baseUrl}/station-gruppen/${gruppeId}/mitglieder`, { stationId });
+  }
+
+  removeStationFromGruppe(gruppeId: number, mitgliedId: number): Observable<{ success: boolean; message: string }> {
+    return this.http.delete<{ success: boolean; message: string }>(`${this.baseUrl}/station-gruppen/${gruppeId}/mitglieder/${mitgliedId}`);
+  }
+
+  getAvailableStations(): Observable<{ success: boolean; data: AvailableStation[] }> {
+    return this.http.get<{ success: boolean; data: AvailableStation[] }>(`${this.baseUrl}/station-gruppen/stations/available`);
   }
 
   private resolveBaseUrl(): string {

@@ -1,0 +1,102 @@
+.dialog-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 500px;
+  max-width: 600px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.station-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  .standort-badge {
+    color: rgba(0, 0, 0, 0.6);
+    font-weight: normal;
+  }
+}
+
+.selected-stations {
+  margin-top: 16px;
+  padding: 16px;
+  background-color: rgba(0, 0, 0, 0.02);
+  border-radius: 4px;
+
+  h4 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.87);
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      color: rgba(0, 0, 0, 0.6);
+    }
+  }
+
+  mat-chip-set {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .station-chip {
+    .chip-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      margin-right: 4px;
+    }
+
+    .chip-label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+
+      strong {
+        font-weight: 500;
+      }
+    }
+  }
+}
+
+.no-stations {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  background-color: rgba(0, 0, 0, 0.02);
+  border-radius: 4px;
+  color: rgba(0, 0, 0, 0.6);
+
+  mat-icon {
+    color: rgba(0, 0, 0, 0.4);
+  }
+
+  p {
+    margin: 0;
+    font-size: 14px;
+  }
+}
+
+mat-checkbox {
+  margin: 8px 0;
+}

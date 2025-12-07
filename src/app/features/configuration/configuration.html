@@ -290,6 +290,122 @@
           </div>
         </mat-tab>
 
+        <mat-tab label="Station-Gruppen">
+          <div class="tab-content station-gruppen-tab">
+            <div class="station-gruppen-header">
+              <h3>
+                <mat-icon>group_work</mat-icon>
+                Station-Gruppen
+              </h3>
+              <div class="header-actions">
+                <button 
+                  mat-raised-button 
+                  color="accent" 
+                  (click)="openCreateStationGruppeDialog()" 
+                  [disabled]="stationGruppenLoading() || stationGruppenSaving()">
+                  <mat-icon>add</mat-icon>
+                  Neue Gruppe
+                </button>
+              </div>
+            </div>
+
+            <!-- Data Table -->
+            <div class="table-section">
+              <div class="table-header">
+                <h4>
+                  <mat-icon>table_chart</mat-icon>
+                  Station-Gruppen ({{ stationGruppen().length }})
+                </h4>
+              </div>
+
+              <div class="loading-spinner" *ngIf="stationGruppenLoading()">
+                <mat-spinner diameter="40"></mat-spinner>
+                <p>Daten werden geladen...</p>
+              </div>
+
+              <div class="table-container" *ngIf="!stationGruppenLoading() && stationGruppen().length > 0">
+                <table mat-table [dataSource]="stationGruppenDataSource" class="station-gruppen-table">
+                  <!-- Name Column -->
+                  <ng-container matColumnDef="name">
+                    <th mat-header-cell *matHeaderCellDef>Name</th>
+                    <td mat-cell *matCellDef="let item">
+                      <strong>{{ item.name }}</strong>
+                    </td>
+                  </ng-container>
+
+                  <!-- Beschreibung Column -->
+                  <ng-container matColumnDef="beschreibung">
+                    <th mat-header-cell *matHeaderCellDef>Beschreibung</th>
+                    <td mat-cell *matCellDef="let item">
+                      {{ item.beschreibung || '-' }}
+                    </td>
+                  </ng-container>
+
+                  <!-- Mitglieder Column -->
+                  <ng-container matColumnDef="mitglieder">
+                    <th mat-header-cell *matHeaderCellDef>Stationen</th>
+                    <td mat-cell *matCellDef="let item">
+                      <mat-chip-set>
+                        <mat-chip *ngFor="let mitglied of item.mitglieder || []" class="station-chip">
+                          <mat-icon class="chip-icon">local_hospital</mat-icon>
+                          <span>
+                            <strong>Station:</strong> {{ mitglied.stationName }}
+                            <span *ngIf="mitglied.standortName" class="standort-badge">({{ mitglied.standortName }})</span>
+                          </span>
+                        </mat-chip>
+                        <span *ngIf="!item.mitglieder || item.mitglieder.length === 0" class="empty-text">-</span>
+                      </mat-chip-set>
+                    </td>
+                  </ng-container>
+
+                  <!-- Ist Aktiv Column -->
+                  <ng-container matColumnDef="istAktiv">
+                    <th mat-header-cell *matHeaderCellDef>Aktiv</th>
+                    <td mat-cell *matCellDef="let item">
+                      <mat-icon [class.active]="item.istAktiv" [class.inactive]="!item.istAktiv">
+                        {{ item.istAktiv ? 'check_circle' : 'cancel' }}
+                      </mat-icon>
+                      {{ item.istAktiv ? 'Ja' : 'Nein' }}
+                    </td>
+                  </ng-container>
+
+                  <!-- Actions Column -->
+                  <ng-container matColumnDef="actions">
+                    <th mat-header-cell *matHeaderCellDef>Aktionen</th>
+                    <td mat-cell *matCellDef="let item">
+                      <button 
+                        mat-icon-button 
+                        color="primary" 
+                        (click)="openEditStationGruppeDialog(item)"
+                        [disabled]="stationGruppenSaving()"
+                        matTooltip="Bearbeiten">
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                      <button 
+                        mat-icon-button 
+                        color="warn" 
+                        (click)="deleteStationGruppe(item.id)"
+                        [disabled]="stationGruppenSaving()"
+                        matTooltip="Löschen">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </td>
+                  </ng-container>
+
+                  <tr mat-header-row *matHeaderRowDef="displayedStationGruppenColumns"></tr>
+                  <tr mat-row *matRowDef="let row; columns: displayedStationGruppenColumns"></tr>
+                </table>
+              </div>
+
+              <div class="empty-state" *ngIf="!stationGruppenLoading() && stationGruppen().length === 0">
+                <mat-icon>info</mat-icon>
+                <p>Keine Station-Gruppen vorhanden</p>
+                <p class="hint">Erstellen Sie eine neue Station-Gruppe, um zusammengehörige Stationen zu gruppieren</p>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+
         <mat-tab label="Allgemein">
           <div class="tab-content">
             <p>Allgemeine Konfigurationseinstellungen</p>
