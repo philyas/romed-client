@@ -718,13 +718,31 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
           let verweildauerCount = 0;
           let stationCount = 0;
           
+          // Track unique betten values to avoid double counting when stations share the same aggregated station
+          const bettenValues = new Set<number>();
+          
           stationNames.forEach(stationName => {
             const stationData = baseLocation.stations?.find(s => s.stationName === stationName);
             if (stationData) {
               const monthData = stationData.monthlyData.find(m => m.month === month);
               if (monthData) {
                 totalPflegetage += monthData.pflegetage;
-                totalBetten += monthData.betten;
+                
+                // Für Betten: Wenn mehrere Stationen die gleichen Betten haben (weil sie die gleiche
+                // aggregierte Station in mitteilungen_betten finden), zähle sie nur einmal
+                const bettenValue = Number(monthData.betten) || 0;
+                if (bettenValue > 0) {
+                  if (!bettenValues.has(bettenValue)) {
+                    // Erste Station mit diesen Betten - zähle sie
+                    bettenValues.add(bettenValue);
+                    totalBetten += bettenValue;
+                  } else {
+                    // Diese Betten wurden bereits von einer anderen Station in der Gruppe gezählt
+                    // (wahrscheinlich weil beide die gleiche aggregierte Station gefunden haben)
+                    // Zähle sie nicht nochmal
+                  }
+                }
+                
                 if (monthData.verweildauer > 0) {
                   totalVerweildauer += monthData.verweildauer;
                   verweildauerCount++;
@@ -909,9 +927,10 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
   /**
    * Findet die aufgestellten Betten für eine Station.
    * Matching-Strategie:
-   * 1. Exakte Übereinstimmung (Station === AufgestellteBetten.Station)
-   * 2. Präfix-Match (AufgestellteBetten.Station startet mit Station)
-   * 3. Standort muss übereinstimmen
+   * 1. Prüfe ob Station Teil einer Station-Gruppe ist → suche nach aggregierter Station
+   * 2. Exakte Übereinstimmung (Station === AufgestellteBetten.Station)
+   * 3. Präfix-Match (AufgestellteBetten.Station startet mit Station)
+   * 4. Standort muss übereinstimmen
    */
   private findAufgestellteBetten(stationName: string, standort: string, year: number): number | null {
     const bettenData = this.aufgestellteBettenData();
@@ -927,6 +946,40 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
 
     if (relevantData.length === 0) {
       return null;
+    }
+
+    // 0. Spezialfall: Wenn Station Teil einer Station-Gruppe ist, suche zuerst nach aggregierter Station
+    // z.B. PRNGHZS3 und PRNGHZS4 → suche nach "PRNGHZ Station S3/S4 GHZ" oder ähnlich
+    const gruppe = this.stationGruppenService.getGruppeForStation(stationName);
+    if (gruppe) {
+      // Suche nach aggregierter Station, die die Gruppe repräsentiert
+      // Mögliche Namen: "PRNGHZ Station S3/S4 GHZ", "PRNGHZ S3/S4", etc.
+      const gruppeNameNormalized = gruppe.name.toUpperCase();
+      const stationPrefix = normalizedStation.replace(/S\d+$/, '').trim(); // z.B. "PRNGHZ" aus "PRNGHZS3"
+      
+      // Suche nach Stationen, die den Gruppennamen oder das Präfix enthalten
+      let gruppeMatch = relevantData.find(b => {
+        const bettenStation = b.Station.trim().toUpperCase();
+        // Suche nach "PRNGHZ Station S3/S4" oder ähnlichen Varianten
+        return bettenStation.includes(gruppeNameNormalized) ||
+               (bettenStation.includes(stationPrefix) && 
+                (bettenStation.includes('S3') || bettenStation.includes('S4') || bettenStation.includes('S3/S4')));
+      });
+      
+      if (gruppeMatch) {
+        // Für Station-Gruppen: Teile die Betten durch die Anzahl der Stationen in der Gruppe
+        // um zu vermeiden, dass die Betten doppelt gezählt werden
+        const stationsInGruppe = this.stationGruppenService.getStationsInGruppe(gruppe.name);
+        if (stationsInGruppe.length > 0) {
+          // Wenn beide Stationen die gleiche aggregierte Station finden,
+          // sollte jede Station nur ihren Anteil zurückgeben
+          // Aber eigentlich sollten wir die Betten nicht teilen, sondern nur einmal zählen
+          // Daher: Wenn die Station Teil einer Gruppe ist, gib die Betten zurück,
+          // aber die Aggregation sollte sicherstellen, dass sie nicht doppelt gezählt werden
+          return gruppeMatch.Bettenanzahl;
+        }
+        return gruppeMatch.Bettenanzahl;
+      }
     }
 
     // 1. Versuche exakte Übereinstimmung
@@ -1022,6 +1075,10 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
         let totalVerweildauer = 0;
         let verweildauerCount = 0;
 
+        // Track betten by gruppe to avoid double counting
+        const bettenByGruppe = new Map<string, number>(); // gruppe name -> betten
+        const stationToGruppeMap = new Map<string, string>(); // station name -> gruppe name
+
         locationFiles.forEach(file => {
           if (!file.values || !Array.isArray(file.values)) return;
 
@@ -1038,7 +1095,26 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
             // Verwende nur aufgestellte Betten (aus Schema mitteilungen_betten), keine Planbetten als Fallback
             const aufgestellteBetten = this.findAufgestellteBetten(stationName, location, year);
             const betten = aufgestellteBetten !== null ? aufgestellteBetten : 0;
-            totalBetten += betten;
+            
+            // Prüfe ob Station Teil einer Gruppe ist
+            const gruppe = this.stationGruppenService.getGruppeForStation(stationName);
+            if (gruppe && betten > 0) {
+              // Wenn Station Teil einer Gruppe ist und Betten gefunden wurden,
+              // prüfe ob andere Stationen aus derselben Gruppe bereits die gleichen Betten haben
+              const gruppeName = gruppe.name;
+              if (bettenByGruppe.has(gruppeName)) {
+                // Gruppe wurde bereits gezählt, überspringe diese Station für totalBetten
+                // (aber behalte die Betten für die einzelne Station, damit die Stationsauslastung korrekt ist)
+              } else {
+                // Erste Station aus dieser Gruppe mit Betten
+                bettenByGruppe.set(gruppeName, betten);
+                stationToGruppeMap.set(stationName, gruppeName);
+                totalBetten += betten;
+              }
+            } else {
+              // Station ist nicht in einer Gruppe oder hat keine Betten
+              totalBetten += betten;
+            }
 
             const verweildauer = Number(row['VD.inkl.']) || 0;
             if (verweildauer > 0) {
@@ -1510,18 +1586,25 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
     // Wenn eine einzelne Station oder Gruppe ausgewählt ist
     if (this.selectedStation() !== 'all') {
       if (this.stationGruppenService.isGruppeName(this.selectedStation())) {
-        // Group: aggregate betten
+        // Group: aggregate betten (vermeide doppeltes Zählen wenn Stationen die gleiche aggregierte Station haben)
         const stationNames = this.stationGruppenService.getStationNamesForSelection(this.selectedStation());
         return locationData.monthlyData.map((data, index) => {
           const monthNumber = index + 1;
           let totalBetten = 0;
+          const bettenValues = new Set<number>(); // Track eindeutige Betten-Werte
           
           stationNames.forEach(stationName => {
             const stationData = locationData.stations?.find(s => s.stationName === stationName);
             if (stationData) {
               const monthData = stationData.monthlyData.find(m => m.month === monthNumber);
               if (monthData && monthData.betten > 0) {
-                totalBetten += monthData.betten;
+                const bettenValue = Number(monthData.betten) || 0;
+                if (bettenValue > 0 && !bettenValues.has(bettenValue)) {
+                  // Erste Station mit diesen Betten - zähle sie
+                  bettenValues.add(bettenValue);
+                  totalBetten += bettenValue;
+                }
+                // Wenn bettenValue bereits im Set ist, überspringe (wurde bereits gezählt)
               }
             }
           });
@@ -1548,14 +1631,35 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
     // Für aggregierte Ansicht: Berechne Gesamtbetten für jeden Monat
     return locationData.monthlyData.map((data, index) => {
       // Berechne Gesamtbetten für diesen Monat aus allen Stationen
+      // Wichtig: Vermeide doppeltes Zählen wenn Stationen aus derselben Gruppe die gleichen Betten haben
       let totalBetten = 0;
       const monthNumber = index + 1;
+      const gruppenBetten = new Map<string, number>(); // Track Betten pro Gruppe (um doppeltes Zählen zu vermeiden)
       
       if (locationData.stations) {
         locationData.stations.forEach(station => {
           const monthData = station.monthlyData.find(m => m.month === monthNumber);
           if (monthData && monthData.betten > 0) {
-            totalBetten += monthData.betten;
+            const bettenValue = Number(monthData.betten) || 0;
+            
+            // Prüfe ob Station Teil einer Gruppe ist
+            const gruppe = this.stationGruppenService.getGruppeForStation(station.stationName);
+            if (gruppe) {
+              // Station ist in einer Gruppe
+              const gruppeName = gruppe.name;
+              if (gruppenBetten.has(gruppeName)) {
+                // Gruppe wurde bereits gezählt - überspringe (vermeidet doppeltes Zählen)
+                // z.B. PRNGHZS3 und PRNGHZS4 finden beide "PRNGHZ Station S3/S4 GHZ" mit 16 Betten
+                // → nur einmal zählen
+              } else {
+                // Erste Station aus dieser Gruppe - zähle die Betten
+                gruppenBetten.set(gruppeName, bettenValue);
+                totalBetten += bettenValue;
+              }
+            } else {
+              // Station ist nicht in einer Gruppe - zähle normal
+              totalBetten += bettenValue;
+            }
           }
         });
       }
