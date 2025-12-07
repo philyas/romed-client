@@ -220,15 +220,15 @@ interface KostenstellenMappingItem {
                 <mat-chip-set>
                   <mat-chip class="la1-chip">
                     <mat-icon>sick</mat-icon>
-                    K (Krankenstand): {{ totalLA1() }}
+                    K (Krankenstand): {{ showLohnartenPercentage() ? (totalLA1() | number:'1.2-2') + '%' : (totalLA1() | number:'1.2-2') + 'h' }}
                   </mat-chip>
                   <mat-chip class="la2-chip">
                     <mat-icon>beach_access</mat-icon>
-                    U. (Urlaub/Feiertage): {{ totalLA2() }}
+                    U. (Urlaub/Feiertage): {{ showLohnartenPercentage() ? (totalLA2() | number:'1.2-2') + '%' : (totalLA2() | number:'1.2-2') + 'h' }}
                   </mat-chip>
                   <mat-chip class="la3-chip">
                     <mat-icon>free_breakfast</mat-icon>
-                    Sonstige Ausfälle: {{ totalLA3() }}
+                    Sonstige Ausfälle: {{ showLohnartenPercentage() ? (totalLA3() | number:'1.2-2') + '%' : (totalLA3() | number:'1.2-2') + 'h' }}
                   </mat-chip>
                 </mat-chip-set>
               </div>
@@ -357,6 +357,14 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
           title: {
             display: true,
             text: isPercentage ? 'Prozent (%)' : 'Stunden'
+          },
+          ticks: {
+            callback: (value) => {
+              if (isPercentage) {
+                return `${Number(value).toFixed(1)}%`;
+              }
+              return value;
+            }
           }
         }
       }
@@ -388,9 +396,18 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
       scales: {
         y: {
           beginAtZero: true,
+          max: isPercentage ? 100 : undefined,
           title: {
             display: true,
             text: isPercentage ? 'Prozent (%)' : 'Stunden'
+          },
+          ticks: {
+            callback: (value) => {
+              if (isPercentage) {
+                return `${Number(value).toFixed(1)}%`;
+              }
+              return value;
+            }
           }
         }
       }
@@ -797,6 +814,7 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
     const data = this.getFilteredData();
     const monthlyData = new Map<number, { 
       la1: number; la2: number; la3: number;
+      soll: number;
       la1Percent: number; la2Percent: number; la3Percent: number;
     }>();
     const isPercentage = this.showLohnartenPercentage();
@@ -807,74 +825,75 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
         if (!monthlyData.has(month)) {
           monthlyData.set(month, { 
             la1: 0, la2: 0, la3: 0,
+            soll: 0,
             la1Percent: 0, la2Percent: 0, la3Percent: 0
           });
         }
         const monthData = monthlyData.get(month)!;
         
-        if (isPercentage) {
-          // Use percentage values if available
-          monthData.la1Percent += row.LA1_KR_Prozent || 0;
-          monthData.la2Percent += row.LA2_FT_Prozent || 0;
-          monthData.la3Percent += row.LA3_FB_Prozent || 0;
-        } else {
-          // Use absolute values
-          monthData.la1 += row.LA1_KR_Wert || 0;
-          monthData.la2 += row.LA2_FT_Wert || 0;
-          monthData.la3 += row.LA3_FB_Wert || 0;
-        }
+        // Always accumulate absolute values
+        const sollHours = (row.Soll_Stunden || 0) + ((row.Soll_Minuten || 0) / 60);
+        monthData.soll += sollHours;
+        
+        // LA-Werte sind in Stunden (aus testpprParser)
+        const la1Value = row.LA1_KR_Wert ?? 0;
+        const la2Value = row.LA2_FT_Wert ?? 0;
+        const la3Value = row.LA3_FB_Wert ?? 0;
+        
+        monthData.la1 += la1Value;
+        monthData.la2 += la2Value;
+        monthData.la3 += la3Value;
       }
     });
 
     const months = Array.from(monthlyData.keys()).sort((a, b) => a - b);
     const monthNames = ['', 'Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
 
-    // Calculate averages for percentage mode
-    if (isPercentage) {
-      const rowCounts = new Map<number, number>();
-      data.forEach(row => {
-        if (row.Monat) {
-          rowCounts.set(row.Monat, (rowCounts.get(row.Monat) || 0) + 1);
-        }
-      });
-      
-      months.forEach(month => {
-        const count = rowCounts.get(month) || 1;
-        const monthData = monthlyData.get(month)!;
-        monthData.la1Percent = monthData.la1Percent / count;
-        monthData.la2Percent = monthData.la2Percent / count;
-        monthData.la3Percent = monthData.la3Percent / count;
-      });
-    }
+    // Calculate percentages from absolute values
+    months.forEach(month => {
+      const monthData = monthlyData.get(month)!;
+      if (monthData.soll > 0) {
+        monthData.la1Percent = (monthData.la1 / monthData.soll) * 100;
+        monthData.la2Percent = (monthData.la2 / monthData.soll) * 100;
+        monthData.la3Percent = (monthData.la3 / monthData.soll) * 100;
+      } else {
+        monthData.la1Percent = 0;
+        monthData.la2Percent = 0;
+        monthData.la3Percent = 0;
+      }
+    });
+
+    // Build datasets with correct values based on isPercentage
+    const datasets = [
+      {
+        label: isPercentage ? 'K (Krankenstand) (%)' : 'K (Krankenstand)',
+        data: months.map(m => {
+          const monthData = monthlyData.get(m)!;
+          return isPercentage ? monthData.la1Percent : monthData.la1;
+        }),
+        backgroundColor: 'rgba(255, 99, 132, 0.6)'
+      },
+      {
+        label: isPercentage ? 'U. (Urlaub/Feiertage) (%)' : 'U. (Urlaub/Feiertage)',
+        data: months.map(m => {
+          const monthData = monthlyData.get(m)!;
+          return isPercentage ? monthData.la2Percent : monthData.la2;
+        }),
+        backgroundColor: 'rgba(54, 162, 235, 0.6)'
+      },
+      {
+        label: isPercentage ? 'Sonstige Ausfälle (%)' : 'Sonstige Ausfälle',
+        data: months.map(m => {
+          const monthData = monthlyData.get(m)!;
+          return isPercentage ? monthData.la3Percent : monthData.la3;
+        }),
+        backgroundColor: 'rgba(255, 206, 86, 0.6)'
+      }
+    ];
 
     return {
       labels: months.map(m => monthNames[m]),
-      datasets: [
-        {
-          label: isPercentage ? 'K (Krankenstand) (%)' : 'K (Krankenstand)',
-          data: months.map(m => {
-            const monthData = monthlyData.get(m)!;
-            return isPercentage ? monthData.la1Percent : monthData.la1;
-          }),
-          backgroundColor: 'rgba(255, 99, 132, 0.6)'
-        },
-        {
-          label: isPercentage ? 'U. (Urlaub/Feiertage) (%)' : 'U. (Urlaub/Feiertage)',
-          data: months.map(m => {
-            const monthData = monthlyData.get(m)!;
-            return isPercentage ? monthData.la2Percent : monthData.la2;
-          }),
-          backgroundColor: 'rgba(54, 162, 235, 0.6)'
-        },
-        {
-          label: isPercentage ? 'Sonstige Ausfälle (%)' : 'Sonstige Ausfälle',
-          data: months.map(m => {
-            const monthData = monthlyData.get(m)!;
-            return isPercentage ? monthData.la3Percent : monthData.la3;
-          }),
-          backgroundColor: 'rgba(255, 206, 86, 0.6)'
-        }
-      ]
+      datasets: datasets
     };
   });
 
@@ -930,15 +949,30 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
   });
 
   totalLA1 = computed(() => {
-    return this.getFilteredData().reduce((sum, row) => sum + (row.LA1_KR_Wert || 0), 0);
+    const absoluteValue = this.getFilteredData().reduce((sum, row) => sum + (row.LA1_KR_Wert || 0), 0);
+    if (this.showLohnartenPercentage()) {
+      const soll = this.totalSoll();
+      return soll > 0 ? (absoluteValue / soll) * 100 : 0;
+    }
+    return absoluteValue;
   });
 
   totalLA2 = computed(() => {
-    return this.getFilteredData().reduce((sum, row) => sum + (row.LA2_FT_Wert || 0), 0);
+    const absoluteValue = this.getFilteredData().reduce((sum, row) => sum + (row.LA2_FT_Wert || 0), 0);
+    if (this.showLohnartenPercentage()) {
+      const soll = this.totalSoll();
+      return soll > 0 ? (absoluteValue / soll) * 100 : 0;
+    }
+    return absoluteValue;
   });
 
   totalLA3 = computed(() => {
-    return this.getFilteredData().reduce((sum, row) => sum + (row.LA3_FB_Wert || 0), 0);
+    const absoluteValue = this.getFilteredData().reduce((sum, row) => sum + (row.LA3_FB_Wert || 0), 0);
+    if (this.showLohnartenPercentage()) {
+      const soll = this.totalSoll();
+      return soll > 0 ? (absoluteValue / soll) * 100 : 0;
+    }
+    return absoluteValue;
   });
 
   dataInfoItems = computed(() => {
