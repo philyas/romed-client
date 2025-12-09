@@ -220,15 +220,21 @@ interface KostenstellenMappingItem {
                 <mat-chip-set>
                   <mat-chip class="la1-chip">
                     <mat-icon>sick</mat-icon>
-                    K (Krankenstand): {{ totalLA1() }}
+                    K (Krankenstand): 
+                    <span *ngIf="!showLohnartenPercentage()">{{ totalLA1() | number:'1.0-1' }}h</span>
+                    <span *ngIf="showLohnartenPercentage()">{{ totalLA1Percent() | number:'1.2-2' }}%</span>
                   </mat-chip>
                   <mat-chip class="la2-chip">
                     <mat-icon>beach_access</mat-icon>
-                    U. (Urlaub/Feiertage): {{ totalLA2() }}
+                    U. (Urlaub/Feiertage): 
+                    <span *ngIf="!showLohnartenPercentage()">{{ totalLA2() | number:'1.0-1' }}h</span>
+                    <span *ngIf="showLohnartenPercentage()">{{ totalLA2Percent() | number:'1.2-2' }}%</span>
                   </mat-chip>
                   <mat-chip class="la3-chip">
                     <mat-icon>free_breakfast</mat-icon>
-                    Sonstige Ausfälle: {{ totalLA3() }}
+                    Sonstige Ausfälle: 
+                    <span *ngIf="!showLohnartenPercentage()">{{ totalLA3() | number:'1.0-1' }}h</span>
+                    <span *ngIf="showLohnartenPercentage()">{{ totalLA3Percent() | number:'1.2-2' }}%</span>
                   </mat-chip>
                 </mat-chip-set>
               </div>
@@ -939,6 +945,27 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
 
   totalLA3 = computed(() => {
     return this.getFilteredData().reduce((sum, row) => sum + (row.LA3_FB_Wert || 0), 0);
+  });
+
+  totalLA1Percent = computed(() => {
+    const data = this.getFilteredData();
+    if (data.length === 0) return 0;
+    const sum = data.reduce((sum, row) => sum + (row.LA1_KR_Prozent || 0), 0);
+    return sum / data.length;
+  });
+
+  totalLA2Percent = computed(() => {
+    const data = this.getFilteredData();
+    if (data.length === 0) return 0;
+    const sum = data.reduce((sum, row) => sum + (row.LA2_FT_Prozent || 0), 0);
+    return sum / data.length;
+  });
+
+  totalLA3Percent = computed(() => {
+    const data = this.getFilteredData();
+    if (data.length === 0) return 0;
+    const sum = data.reduce((sum, row) => sum + (row.LA3_FB_Prozent || 0), 0);
+    return sum / data.length;
   });
 
   dataInfoItems = computed(() => {
