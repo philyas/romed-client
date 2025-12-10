@@ -5,6 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatDialog } from '@angular/material/dialog';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType, registerables } from 'chart.js';
@@ -47,6 +48,7 @@ interface COChartData {
     MatChipsModule,
     MatIconModule,
     MatTooltipModule,
+    MatButtonToggleModule,
     BaseChartDirective,
     DataInfoPanel,
     SearchableSelectComponent
@@ -120,6 +122,22 @@ interface COChartData {
                     <mat-card-subtitle>Nur Entlassungsdaten</mat-card-subtitle>
                   </mat-card-header>
                   <mat-card-content class="chart-content">
+                    <div class="chart-toggle" (click)="$event.stopPropagation()">
+                      <mat-button-toggle-group 
+                        [value]="showEntlassungenPercentage() ? 'percent' : 'count'"
+                        (change)="onEntlassungenToggleChange($event.value === 'percent')"
+                        appearance="legacy"
+                        class="entlassungen-toggle">
+                        <mat-button-toggle value="count">
+                          <mat-icon>numbers</mat-icon>
+                          Anzahl
+                        </mat-button-toggle>
+                        <mat-button-toggle value="percent">
+                          <mat-icon>percent</mat-icon>
+                          Prozent
+                        </mat-button-toggle>
+                      </mat-button-toggle-group>
+                    </div>
                     <div class="chart-container">
                       <div class="chart-loading-overlay" *ngIf="chartLoading()">
                         <div class="loading-bar"></div>
@@ -133,14 +151,20 @@ interface COChartData {
                     </div>
                     <div class="chart-info">
                       <mat-chip-set>
-                        <mat-chip class="entlassungen-chip-vor">
+                        <mat-chip class="entlassungen-chip-vor" *ngIf="!showEntlassungenPercentage()">
                           Vor 11h: {{ calculateTotal('entlassungen', 'vor') | number:'1.0-0' }}
                         </mat-chip>
-                        <mat-chip class="entlassungen-chip-nach">
+                        <mat-chip class="entlassungen-chip-vor" *ngIf="showEntlassungenPercentage()">
+                          Vor 11h: {{ calculatePercentage('entlassungen', 'vor') | number:'1.1-1' }}%
+                        </mat-chip>
+                        <mat-chip class="entlassungen-chip-nach" *ngIf="!showEntlassungenPercentage()">
                           Nach 11h: {{ calculateTotal('entlassungen', 'nach') | number:'1.0-0' }}
                         </mat-chip>
+                        <mat-chip class="entlassungen-chip-nach" *ngIf="showEntlassungenPercentage()">
+                          Nach 11h: {{ calculatePercentage('entlassungen', 'nach') | number:'1.1-1' }}%
+                        </mat-chip>
                       </mat-chip-set>
-                      <div class="total-badge entlassungen-total">
+                      <div class="total-badge entlassungen-total" *ngIf="!showEntlassungenPercentage()">
                         Gesamt: {{ calculateTotal('entlassungen', 'vor') + calculateTotal('entlassungen', 'nach') | number:'1.0-0' }}
                       </div>
                     </div>
@@ -163,11 +187,11 @@ interface COChartData {
                           <div class="standort-name">{{ standortNames[standort] || standort }}</div>
                           <div class="standort-stats">
                             <span class="stat-label">Vor 11h:</span>
-                            <span class="stat-value">{{ getStandortTotal(standort, 'entlassungen', 'vor') }}</span>
+                            <span class="stat-value">{{ getStandortTotal(standort, 'entlassungen', 'vor') }} ({{ getStandortPercentage(standort, 'entlassungen', 'vor') | number:'1.1-1' }}%)</span>
                           </div>
                           <div class="standort-stats">
                             <span class="stat-label">Nach 11h:</span>
-                            <span class="stat-value">{{ getStandortTotal(standort, 'entlassungen', 'nach') }}</span>
+                            <span class="stat-value">{{ getStandortTotal(standort, 'entlassungen', 'nach') }} ({{ getStandortPercentage(standort, 'entlassungen', 'nach') | number:'1.1-1' }}%)</span>
                           </div>
                           <div class="standort-total">
                             Gesamt: {{ getStandortTotal(standort, 'entlassungen', 'vor') + getStandortTotal(standort, 'entlassungen', 'nach') }}
@@ -196,6 +220,22 @@ interface COChartData {
                     <mat-card-subtitle>Nur Aufnahmendaten</mat-card-subtitle>
                   </mat-card-header>
                   <mat-card-content class="chart-content">
+                    <div class="chart-toggle" (click)="$event.stopPropagation()">
+                      <mat-button-toggle-group 
+                        [value]="showAufnahmenPercentage() ? 'percent' : 'count'"
+                        (change)="onAufnahmenToggleChange($event.value === 'percent')"
+                        appearance="legacy"
+                        class="aufnahmen-toggle">
+                        <mat-button-toggle value="count">
+                          <mat-icon>numbers</mat-icon>
+                          Anzahl
+                        </mat-button-toggle>
+                        <mat-button-toggle value="percent">
+                          <mat-icon>percent</mat-icon>
+                          Prozent
+                        </mat-button-toggle>
+                      </mat-button-toggle-group>
+                    </div>
                     <div class="chart-container">
                       <div class="chart-loading-overlay" *ngIf="chartLoading()">
                         <div class="loading-bar"></div>
@@ -209,14 +249,20 @@ interface COChartData {
                     </div>
                     <div class="chart-info">
                       <mat-chip-set>
-                        <mat-chip class="aufnahmen-chip-vor">
+                        <mat-chip class="aufnahmen-chip-vor" *ngIf="!showAufnahmenPercentage()">
                           Vor 11h: {{ calculateTotal('aufnahmen', 'vor') | number:'1.0-0' }}
                         </mat-chip>
-                        <mat-chip class="aufnahmen-chip-nach">
+                        <mat-chip class="aufnahmen-chip-vor" *ngIf="showAufnahmenPercentage()">
+                          Vor 11h: {{ calculatePercentage('aufnahmen', 'vor') | number:'1.1-1' }}%
+                        </mat-chip>
+                        <mat-chip class="aufnahmen-chip-nach" *ngIf="!showAufnahmenPercentage()">
                           Nach 11h: {{ calculateTotal('aufnahmen', 'nach') | number:'1.0-0' }}
                         </mat-chip>
+                        <mat-chip class="aufnahmen-chip-nach" *ngIf="showAufnahmenPercentage()">
+                          Nach 11h: {{ calculatePercentage('aufnahmen', 'nach') | number:'1.1-1' }}%
+                        </mat-chip>
                       </mat-chip-set>
-                      <div class="total-badge aufnahmen-total">
+                      <div class="total-badge aufnahmen-total" *ngIf="!showAufnahmenPercentage()">
                         Gesamt: {{ calculateTotal('aufnahmen', 'vor') + calculateTotal('aufnahmen', 'nach') | number:'1.0-0' }}
                       </div>
                     </div>
@@ -239,11 +285,11 @@ interface COChartData {
                           <div class="standort-name">{{ standortNames[standort] || standort }}</div>
                           <div class="standort-stats">
                             <span class="stat-label">Vor 11h:</span>
-                            <span class="stat-value">{{ getStandortTotal(standort, 'aufnahmen', 'vor') }}</span>
+                            <span class="stat-value">{{ getStandortTotal(standort, 'aufnahmen', 'vor') }} ({{ getStandortPercentage(standort, 'aufnahmen', 'vor') | number:'1.1-1' }}%)</span>
                           </div>
                           <div class="standort-stats">
                             <span class="stat-label">Nach 11h:</span>
-                            <span class="stat-value">{{ getStandortTotal(standort, 'aufnahmen', 'nach') }}</span>
+                            <span class="stat-value">{{ getStandortTotal(standort, 'aufnahmen', 'nach') }} ({{ getStandortPercentage(standort, 'aufnahmen', 'nach') | number:'1.1-1' }}%)</span>
                           </div>
                           <div class="standort-total">
                             Gesamt: {{ getStandortTotal(standort, 'aufnahmen', 'vor') + getStandortTotal(standort, 'aufnahmen', 'nach') }}
@@ -274,6 +320,8 @@ export class COCharts implements OnInit, OnChanges {
   flippedCards = signal<{ [key: string]: boolean }>({});
   dataInfoItems = signal<DataInfoItem[]>([]);
   chartLoading = signal<boolean>(true);
+  showEntlassungenPercentage = signal<boolean>(false);
+  showAufnahmenPercentage = signal<boolean>(false);
   private selectedYearState = signal<number>(this.selectedYear);
   private readonly monthLabels = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'] as const;
   private dialog = inject(MatDialog);
@@ -470,6 +518,14 @@ export class COCharts implements OnInit, OnChanges {
     });
   }
 
+  onEntlassungenToggleChange(showPercentage: boolean) {
+    this.showEntlassungenPercentage.set(showPercentage);
+  }
+
+  onAufnahmenToggleChange(showPercentage: boolean) {
+    this.showAufnahmenPercentage.set(showPercentage);
+  }
+
   entlassungenChartData = computed<ChartData<'bar'>>(() => {
     const data = this.chartData();
     if (!data || !data.monthlyData) {
@@ -480,6 +536,7 @@ export class COCharts implements OnInit, OnChanges {
     const selectedStandort = this.selectedStandort();
     const dataStandort = this.getDataStandort(selectedStandort); // AIB -> BAB
     const selectedStation = this.selectedStation();
+    const showPercentage = this.showEntlassungenPercentage();
     const datasets: ChartData<'bar'>['datasets'] = [];
     
     const vor11: number[] = [];
@@ -506,13 +563,20 @@ export class COCharts implements OnInit, OnChanges {
         });
       }
       
-      vor11.push(vor11Value);
-      nach11.push(nach11Value);
+      if (showPercentage) {
+        const total = vor11Value + nach11Value;
+        vor11.push(total > 0 ? (vor11Value / total) * 100 : 0);
+        nach11.push(total > 0 ? (nach11Value / total) * 100 : 0);
+      } else {
+        vor11.push(vor11Value);
+        nach11.push(nach11Value);
+      }
     }
 
     const stationLabel = selectedStation ? ` - ${selectedStation}` : '';
+    const unitLabel = showPercentage ? ' (%)' : '';
     datasets.push({
-      label: `${this.standortNames[selectedStandort] || selectedStandort}${stationLabel} - vor 11 Uhr`,
+      label: `${this.standortNames[selectedStandort] || selectedStandort}${stationLabel} - vor 11 Uhr${unitLabel}`,
       data: vor11,
       backgroundColor: '#FF6B6B',
       borderColor: '#FF6B6B',
@@ -520,7 +584,7 @@ export class COCharts implements OnInit, OnChanges {
     });
 
     datasets.push({
-      label: `${this.standortNames[selectedStandort] || selectedStandort}${stationLabel} - nach 11 Uhr`,
+      label: `${this.standortNames[selectedStandort] || selectedStandort}${stationLabel} - nach 11 Uhr${unitLabel}`,
       data: nach11,
       backgroundColor: '#FF8E8E',
       borderColor: '#FF8E8E',
@@ -540,6 +604,7 @@ export class COCharts implements OnInit, OnChanges {
     const selectedStandort = this.selectedStandort();
     const dataStandort = this.getDataStandort(selectedStandort); // AIB -> BAB
     const selectedStation = this.selectedStation();
+    const showPercentage = this.showAufnahmenPercentage();
     const datasets: ChartData<'bar'>['datasets'] = [];
     const vor11: number[] = [];
     const nach11: number[] = [];
@@ -565,13 +630,20 @@ export class COCharts implements OnInit, OnChanges {
         });
       }
       
-      vor11.push(vor11Value);
-      nach11.push(nach11Value);
+      if (showPercentage) {
+        const total = vor11Value + nach11Value;
+        vor11.push(total > 0 ? (vor11Value / total) * 100 : 0);
+        nach11.push(total > 0 ? (nach11Value / total) * 100 : 0);
+      } else {
+        vor11.push(vor11Value);
+        nach11.push(nach11Value);
+      }
     }
 
     const stationLabel = selectedStation ? ` - ${selectedStation}` : '';
+    const unitLabel = showPercentage ? ' (%)' : '';
     datasets.push({
-      label: `${this.standortNames[selectedStandort] || selectedStandort}${stationLabel} - vor 11 Uhr`,
+      label: `${this.standortNames[selectedStandort] || selectedStandort}${stationLabel} - vor 11 Uhr${unitLabel}`,
       data: vor11,
       backgroundColor: '#4ECDC4',
       borderColor: '#4ECDC4',
@@ -579,7 +651,7 @@ export class COCharts implements OnInit, OnChanges {
     });
 
     datasets.push({
-      label: `${this.standortNames[selectedStandort] || selectedStandort}${stationLabel} - nach 11 Uhr`,
+      label: `${this.standortNames[selectedStandort] || selectedStandort}${stationLabel} - nach 11 Uhr${unitLabel}`,
       data: nach11,
       backgroundColor: '#7EDDD8',
       borderColor: '#7EDDD8',
@@ -589,13 +661,15 @@ export class COCharts implements OnInit, OnChanges {
     return { labels: months, datasets };
   });
 
-  entlassungenChartOptions = computed<ChartConfiguration['options']>(() =>
-    this.buildChartOptions('Entlassungen', 'Anzahl Entlassungen')
-  );
+  entlassungenChartOptions = computed<ChartConfiguration['options']>(() => {
+    const showPercentage = this.showEntlassungenPercentage();
+    return this.buildChartOptions('Entlassungen', showPercentage ? 'Prozent (%)' : 'Anzahl Entlassungen', showPercentage);
+  });
 
-  aufnahmenChartOptions = computed<ChartConfiguration['options']>(() =>
-    this.buildChartOptions('Aufnahmen', 'Anzahl Aufnahmen')
-  );
+  aufnahmenChartOptions = computed<ChartConfiguration['options']>(() => {
+    const showPercentage = this.showAufnahmenPercentage();
+    return this.buildChartOptions('Aufnahmen', showPercentage ? 'Prozent (%)' : 'Anzahl Aufnahmen', showPercentage);
+  });
   private readonly chartReadyEffect = effect(() => {
     this.entlassungenChartData();
     this.aufnahmenChartData();
@@ -717,7 +791,7 @@ export class COCharts implements OnInit, OnChanges {
     return isNaN(num) ? null : num;
   }
 
-  private buildChartOptions(title: string, yLabel: string): ChartConfiguration['options'] {
+  private buildChartOptions(title: string, yLabel: string, isPercentage: boolean = false): ChartConfiguration['options'] {
     const selectedStandort = this.selectedStandort();
     const standortText = ` - ${this.standortNames[selectedStandort] || selectedStandort}`;
     const year = this.selectedYearState();
@@ -732,6 +806,17 @@ export class COCharts implements OnInit, OnChanges {
         },
         legend: {
           display: true
+        },
+        tooltip: {
+          callbacks: {
+            label: (context) => {
+              if (isPercentage) {
+                return `${context.dataset.label}: ${context.parsed.y.toFixed(2)}%`;
+              } else {
+                return `${context.dataset.label}: ${context.parsed.y.toFixed(0)}`;
+              }
+            }
+          }
         }
       },
       scales: {
@@ -748,7 +833,8 @@ export class COCharts implements OnInit, OnChanges {
             display: true,
             text: yLabel
           },
-          beginAtZero: true
+          beginAtZero: true,
+          max: isPercentage ? 100 : undefined
         }
       }
     };
@@ -784,6 +870,17 @@ export class COCharts implements OnInit, OnChanges {
     }
 
     return total;
+  }
+
+  calculatePercentage(type: 'entlassungen' | 'aufnahmen', zeit: 'vor' | 'nach'): number {
+    const vorTotal = this.calculateTotal(type, 'vor');
+    const nachTotal = this.calculateTotal(type, 'nach');
+    const gesamt = vorTotal + nachTotal;
+    
+    if (gesamt === 0) return 0;
+    
+    const zeitTotal = zeit === 'vor' ? vorTotal : nachTotal;
+    return (zeitTotal / gesamt) * 100;
   }
 
   getAvailableStandorte(): string[] {
@@ -825,6 +922,17 @@ export class COCharts implements OnInit, OnChanges {
     }
 
     return total;
+  }
+
+  getStandortPercentage(standort: string, type: 'entlassungen' | 'aufnahmen', zeit: 'vor' | 'nach'): number {
+    const vorTotal = this.getStandortTotal(standort, type, 'vor');
+    const nachTotal = this.getStandortTotal(standort, type, 'nach');
+    const gesamt = vorTotal + nachTotal;
+    
+    if (gesamt === 0) return 0;
+    
+    const zeitTotal = zeit === 'vor' ? vorTotal : nachTotal;
+    return (zeitTotal / gesamt) * 100;
   }
 
   private prepareDataInfoItems() {

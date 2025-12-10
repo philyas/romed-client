@@ -261,6 +261,70 @@
         flex-direction: column;
         min-height: 0;
 
+        .chart-toggle {
+          display: flex;
+          justify-content: flex-end;
+          margin-bottom: 1rem;
+          position: relative;
+          z-index: 10;
+
+          mat-button-toggle-group {
+            border-radius: 24px;
+            overflow: hidden;
+            
+            &.entlassungen-toggle {
+              mat-button-toggle {
+                &.mat-button-toggle-checked {
+                  background-color: #FF6B6B;
+                  color: white;
+                  
+                  mat-icon {
+                    color: white;
+                  }
+                }
+              }
+            }
+
+            &.aufnahmen-toggle {
+              mat-button-toggle {
+                &.mat-button-toggle-checked {
+                  background-color: #4ECDC4;
+                  color: white;
+                  
+                  mat-icon {
+                    color: white;
+                  }
+                }
+              }
+            }
+            
+            mat-button-toggle {
+              display: flex;
+              align-items: center;
+              gap: 0.5rem;
+              padding: 0.5rem 1rem;
+              font-size: 0.875rem;
+              border: none;
+
+              mat-icon {
+                font-size: 1rem;
+                width: 1rem;
+                height: 1rem;
+              }
+
+              &:first-child {
+                border-top-left-radius: 24px;
+                border-bottom-left-radius: 24px;
+              }
+
+              &:last-child {
+                border-top-right-radius: 24px;
+                border-bottom-right-radius: 24px;
+              }
+            }
+          }
+        }
+
         .chart-container {
           flex: 1;
           position: relative;
