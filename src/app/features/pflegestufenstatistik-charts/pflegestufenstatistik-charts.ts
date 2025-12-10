@@ -96,7 +96,7 @@ interface PflegestufenData {
                   <mat-card-header class="metric-header altersgruppen-header">
                     <mat-card-title>
                       <mat-icon>bar_chart</mat-icon>
-                      Vergleich Altersgruppen (A1-A4, KA1-KA4 + ohne Einstufung)
+                      Vergleich Altersgruppen (A1-A4, KA1-KA4, PICU/NICU + ohne Einstufung)
                       <span class="flip-hint-text">Klicken zum Umdrehen</span>
                       <mat-icon class="flip-icon">flip</mat-icon>
                     </mat-card-title>
@@ -124,6 +124,8 @@ interface PflegestufenData {
                         <mat-chip class="info-chip ka2-chip">KA2: {{ getAltersgruppeTotal('KA2') }}</mat-chip>
                         <mat-chip class="info-chip ka3-chip">KA3: {{ getAltersgruppeTotal('KA3') }}</mat-chip>
                         <mat-chip class="info-chip ka4-chip">KA4: {{ getAltersgruppeTotal('KA4') }}</mat-chip>
+                        <mat-chip class="info-chip picu-chip">PICU: {{ getAltersgruppeTotal('PICU') }}</mat-chip>
+                        <mat-chip class="info-chip nicu-chip">NICU: {{ getAltersgruppeTotal('NICU') }}</mat-chip>
                         <mat-chip class="info-chip ohne-chip">ohne: {{ getAltersgruppeTotal('ohne') }}</mat-chip>
                       </mat-chip-set>
                     </div>
@@ -194,6 +196,16 @@ interface PflegestufenData {
                             <td class="number-cell">{{ getAltersgruppeTotal('KA4') }}</td>
                             <td class="number-cell">{{ getAltersgruppePercentage('KA4') }}%</td>
                           </tr>
+                          <tr>
+                            <td class="station-cell">PICU</td>
+                            <td class="number-cell">{{ getAltersgruppeTotal('PICU') }}</td>
+                            <td class="number-cell">{{ getAltersgruppePercentage('PICU') }}%</td>
+                          </tr>
+                          <tr>
+                            <td class="station-cell">NICU</td>
+                            <td class="number-cell">{{ getAltersgruppeTotal('NICU') }}</td>
+                            <td class="number-cell">{{ getAltersgruppePercentage('NICU') }}%</td>
+                          </tr>
                           <tr class="total-row">
                             <td><strong>Gesamt</strong></td>
                             <td class="number-cell"><strong>{{ getTotalEinstufungenForAltersgruppen() }}</strong></td>
@@ -249,9 +261,9 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
       (this.selectedStation() === 'Alle' || d.Station === this.selectedStation())
     );
 
-    const monthData: Record<number, { A1: number; A2: number; A3: number; A4: number; KA1: number; KA2: number; KA3: number; KA4: number; ohne: number }> = {};
+    const monthData: Record<number, { A1: number; A2: number; A3: number; A4: number; KA1: number; KA2: number; KA3: number; KA4: number; PICU: number; NICU: number; ohne: number }> = {};
     for (let i = 1; i <= 12; i++) {
-      monthData[i] = { A1: 0, A2: 0, A3: 0, A4: 0, KA1: 0, KA2: 0, KA3: 0, KA4: 0, ohne: 0 };
+      monthData[i] = { A1: 0, A2: 0, A3: 0, A4: 0, KA1: 0, KA2: 0, KA3: 0, KA4: 0, PICU: 0, NICU: 0, ohne: 0 };
     }
 
     allMonthsData.forEach(row => {
@@ -259,6 +271,7 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
       const kategorie = row.Kategorie;
       if (!kategorie || !monat || monat < 1 || monat > 12) return;
 
+      const kategorieUpper = kategorie.toUpperCase();
       if (kategorie.startsWith('A1')) monthData[monat].A1 += row['Einstufungen absolut'];
       else if (kategorie.startsWith('A2')) monthData[monat].A2 += row['Einstufungen absolut'];
       else if (kategorie.startsWith('A3')) monthData[monat].A3 += row['Einstufungen absolut'];
@@ -267,6 +280,8 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
       else if (kategorie.startsWith('KA2')) monthData[monat].KA2 += row['Einstufungen absolut'];
       else if (kategorie.startsWith('KA3')) monthData[monat].KA3 += row['Einstufungen absolut'];
       else if (kategorie.startsWith('KA4')) monthData[monat].KA4 += row['Einstufungen absolut'];
+      else if (kategorieUpper.includes('PICU')) monthData[monat].PICU += row['Einstufungen absolut'];
+      else if (kategorieUpper.includes('NICU')) monthData[monat].NICU += row['Einstufungen absolut'];
       else if (kategorie.toLowerCase().includes('ohne einstufung')) monthData[monat].ohne += row['Einstufungen absolut'];
     });
 
@@ -337,6 +352,20 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
           data: months.map(m => monthData[m].KA4),
           backgroundColor: 'rgba(141, 110, 99, 0.7)',
           borderColor: 'rgba(141, 110, 99, 1)',
+          borderWidth: 2
+        },
+        {
+          label: 'PICU',
+          data: months.map(m => monthData[m].PICU),
+          backgroundColor: 'rgba(63, 81, 181, 0.7)',
+          borderColor: 'rgba(63, 81, 181, 1)',
+          borderWidth: 2
+        },
+        {
+          label: 'NICU',
+          data: months.map(m => monthData[m].NICU),
+          backgroundColor: 'rgba(205, 220, 57, 0.7)',
+          borderColor: 'rgba(205, 220, 57, 1)',
           borderWidth: 2
         }
       ]
@@ -593,6 +622,7 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
       const kategorie = row.Kategorie;
       if (!kategorie) return;
       
+      const kategorieUpper = kategorie.toUpperCase();
       if (gruppe === 'A1' && kategorie.startsWith('A1')) total += row['Einstufungen absolut'];
       else if (gruppe === 'A2' && kategorie.startsWith('A2')) total += row['Einstufungen absolut'];
       else if (gruppe === 'A3' && kategorie.startsWith('A3')) total += row['Einstufungen absolut'];
@@ -601,6 +631,8 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
       else if (gruppe === 'KA2' && kategorie.startsWith('KA2')) total += row['Einstufungen absolut'];
       else if (gruppe === 'KA3' && kategorie.startsWith('KA3')) total += row['Einstufungen absolut'];
       else if (gruppe === 'KA4' && kategorie.startsWith('KA4')) total += row['Einstufungen absolut'];
+      else if (gruppe === 'PICU' && kategorieUpper.includes('PICU')) total += row['Einstufungen absolut'];
+      else if (gruppe === 'NICU' && kategorieUpper.includes('NICU')) total += row['Einstufungen absolut'];
       else if (gruppe === 'ohne' && kategorie.toLowerCase().includes('ohne einstufung')) total += row['Einstufungen absolut'];
     });
     

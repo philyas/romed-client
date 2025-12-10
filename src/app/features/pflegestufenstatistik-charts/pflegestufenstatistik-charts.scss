@@ -364,6 +364,18 @@
                 color: #5d4037;
                 border: 2px solid rgba(141, 110, 99, 0.5);
               }
+
+              &.picu-chip {
+                background-color: rgba(63, 81, 181, 0.2);
+                color: #303f9f;
+                border: 2px solid rgba(63, 81, 181, 0.5);
+              }
+
+              &.nicu-chip {
+                background-color: rgba(205, 220, 57, 0.3);
+                color: #827717;
+                border: 2px solid rgba(205, 220, 57, 0.6);
+              }
             }
           }
         }
