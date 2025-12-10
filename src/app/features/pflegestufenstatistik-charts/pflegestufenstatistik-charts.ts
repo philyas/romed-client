@@ -96,7 +96,7 @@ interface PflegestufenData {
                   <mat-card-header class="metric-header altersgruppen-header">
                     <mat-card-title>
                       <mat-icon>bar_chart</mat-icon>
-                      Vergleich Altersgruppen (A1-A4 + ohne Einstufung)
+                      Vergleich Altersgruppen (A1-A4, KA1-KA4 + ohne Einstufung)
                       <span class="flip-hint-text">Klicken zum Umdrehen</span>
                       <mat-icon class="flip-icon">flip</mat-icon>
                     </mat-card-title>
@@ -120,6 +120,10 @@ interface PflegestufenData {
                         <mat-chip class="info-chip a2-chip">A2: {{ getAltersgruppeTotal('A2') }}</mat-chip>
                         <mat-chip class="info-chip a3-chip">A3: {{ getAltersgruppeTotal('A3') }}</mat-chip>
                         <mat-chip class="info-chip a4-chip">A4: {{ getAltersgruppeTotal('A4') }}</mat-chip>
+                        <mat-chip class="info-chip ka1-chip">KA1: {{ getAltersgruppeTotal('KA1') }}</mat-chip>
+                        <mat-chip class="info-chip ka2-chip">KA2: {{ getAltersgruppeTotal('KA2') }}</mat-chip>
+                        <mat-chip class="info-chip ka3-chip">KA3: {{ getAltersgruppeTotal('KA3') }}</mat-chip>
+                        <mat-chip class="info-chip ka4-chip">KA4: {{ getAltersgruppeTotal('KA4') }}</mat-chip>
                         <mat-chip class="info-chip ohne-chip">ohne: {{ getAltersgruppeTotal('ohne') }}</mat-chip>
                       </mat-chip-set>
                     </div>
@@ -169,6 +173,26 @@ interface PflegestufenData {
                             <td class="station-cell">ohne Einstufung</td>
                             <td class="number-cell">{{ getAltersgruppeTotal('ohne') }}</td>
                             <td class="number-cell">{{ getAltersgruppePercentage('ohne') }}%</td>
+                          </tr>
+                          <tr>
+                            <td class="station-cell">KA1</td>
+                            <td class="number-cell">{{ getAltersgruppeTotal('KA1') }}</td>
+                            <td class="number-cell">{{ getAltersgruppePercentage('KA1') }}%</td>
+                          </tr>
+                          <tr>
+                            <td class="station-cell">KA2</td>
+                            <td class="number-cell">{{ getAltersgruppeTotal('KA2') }}</td>
+                            <td class="number-cell">{{ getAltersgruppePercentage('KA2') }}%</td>
+                          </tr>
+                          <tr>
+                            <td class="station-cell">KA3</td>
+                            <td class="number-cell">{{ getAltersgruppeTotal('KA3') }}</td>
+                            <td class="number-cell">{{ getAltersgruppePercentage('KA3') }}%</td>
+                          </tr>
+                          <tr>
+                            <td class="station-cell">KA4</td>
+                            <td class="number-cell">{{ getAltersgruppeTotal('KA4') }}</td>
+                            <td class="number-cell">{{ getAltersgruppePercentage('KA4') }}%</td>
                           </tr>
                           <tr class="total-row">
                             <td><strong>Gesamt</strong></td>
@@ -225,9 +249,9 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
       (this.selectedStation() === 'Alle' || d.Station === this.selectedStation())
     );
 
-    const monthData: Record<number, { A1: number; A2: number; A3: number; A4: number; ohne: number }> = {};
+    const monthData: Record<number, { A1: number; A2: number; A3: number; A4: number; KA1: number; KA2: number; KA3: number; KA4: number; ohne: number }> = {};
     for (let i = 1; i <= 12; i++) {
-      monthData[i] = { A1: 0, A2: 0, A3: 0, A4: 0, ohne: 0 };
+      monthData[i] = { A1: 0, A2: 0, A3: 0, A4: 0, KA1: 0, KA2: 0, KA3: 0, KA4: 0, ohne: 0 };
     }
 
     allMonthsData.forEach(row => {
@@ -239,6 +263,10 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
       else if (kategorie.startsWith('A2')) monthData[monat].A2 += row['Einstufungen absolut'];
       else if (kategorie.startsWith('A3')) monthData[monat].A3 += row['Einstufungen absolut'];
       else if (kategorie.startsWith('A4')) monthData[monat].A4 += row['Einstufungen absolut'];
+      else if (kategorie.startsWith('KA1')) monthData[monat].KA1 += row['Einstufungen absolut'];
+      else if (kategorie.startsWith('KA2')) monthData[monat].KA2 += row['Einstufungen absolut'];
+      else if (kategorie.startsWith('KA3')) monthData[monat].KA3 += row['Einstufungen absolut'];
+      else if (kategorie.startsWith('KA4')) monthData[monat].KA4 += row['Einstufungen absolut'];
       else if (kategorie.toLowerCase().includes('ohne einstufung')) monthData[monat].ohne += row['Einstufungen absolut'];
     });
 
@@ -281,6 +309,34 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
           data: months.map(m => monthData[m].ohne),
           backgroundColor: 'rgba(244, 67, 54, 0.7)',
           borderColor: 'rgba(244, 67, 54, 1)',
+          borderWidth: 2
+        },
+        {
+          label: 'KA1',
+          data: months.map(m => monthData[m].KA1),
+          backgroundColor: 'rgba(0, 188, 212, 0.7)',
+          borderColor: 'rgba(0, 188, 212, 1)',
+          borderWidth: 2
+        },
+        {
+          label: 'KA2',
+          data: months.map(m => monthData[m].KA2),
+          backgroundColor: 'rgba(233, 30, 99, 0.7)',
+          borderColor: 'rgba(233, 30, 99, 1)',
+          borderWidth: 2
+        },
+        {
+          label: 'KA3',
+          data: months.map(m => monthData[m].KA3),
+          backgroundColor: 'rgba(255, 235, 59, 0.7)',
+          borderColor: 'rgba(255, 235, 59, 1)',
+          borderWidth: 2
+        },
+        {
+          label: 'KA4',
+          data: months.map(m => monthData[m].KA4),
+          backgroundColor: 'rgba(141, 110, 99, 0.7)',
+          borderColor: 'rgba(141, 110, 99, 1)',
           borderWidth: 2
         }
       ]
@@ -541,6 +597,10 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
       else if (gruppe === 'A2' && kategorie.startsWith('A2')) total += row['Einstufungen absolut'];
       else if (gruppe === 'A3' && kategorie.startsWith('A3')) total += row['Einstufungen absolut'];
       else if (gruppe === 'A4' && kategorie.startsWith('A4')) total += row['Einstufungen absolut'];
+      else if (gruppe === 'KA1' && kategorie.startsWith('KA1')) total += row['Einstufungen absolut'];
+      else if (gruppe === 'KA2' && kategorie.startsWith('KA2')) total += row['Einstufungen absolut'];
+      else if (gruppe === 'KA3' && kategorie.startsWith('KA3')) total += row['Einstufungen absolut'];
+      else if (gruppe === 'KA4' && kategorie.startsWith('KA4')) total += row['Einstufungen absolut'];
       else if (gruppe === 'ohne' && kategorie.toLowerCase().includes('ohne einstufung')) total += row['Einstufungen absolut'];
     });
     
