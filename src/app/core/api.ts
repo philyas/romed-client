@@ -375,6 +375,15 @@ export class Api {
     return this.http.post<{ success: boolean; message: string; imported: number; skipped: number; total: number }>(`${this.baseUrl}/station-mapping/import-json`, {});
   }
 
+  // Backup
+  createSqlBackup(): Observable<{ success: boolean; message: string; backup: { name: string; path: string; timestamp: string; size: number; sizeFormatted: string } }> {
+    return this.http.post<{ success: boolean; message: string; backup: { name: string; path: string; timestamp: string; size: number; sizeFormatted: string } }>(`${this.baseUrl}/backup/create`, {});
+  }
+
+  listSqlBackups(): Observable<{ success: boolean; backups: Array<{ name: string; timestamp: string; size: number; sizeFormatted: string }>; count: number; storageDir: string }> {
+    return this.http.get<{ success: boolean; backups: Array<{ name: string; timestamp: string; size: number; sizeFormatted: string }>; count: number; storageDir: string }>(`${this.baseUrl}/backup/list`);
+  }
+
   private resolveBaseUrl(): string {
     if (isDevMode()) {
       return 'http://localhost:3000';

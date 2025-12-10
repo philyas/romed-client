@@ -291,9 +291,68 @@
         </mat-tab>
 
         <mat-tab label="Allgemein">
-          <div class="tab-content">
-            <p>Allgemeine Konfigurationseinstellungen</p>
-            <!-- Hier können später Konfigurationen hinzugefügt werden -->
+          <div class="tab-content allgemein-tab">
+            <div class="backup-section">
+              <h3>
+                <mat-icon>backup</mat-icon>
+                SQL-Backup-Verwaltung
+              </h3>
+              <p>Erstellen Sie ein SQL-Backup der Datenbank. Backups werden unter <code>STORAGE_DIR/backups</code> gespeichert.</p>
+              
+              <div class="backup-actions">
+                <button 
+                  mat-raised-button 
+                  color="primary" 
+                  (click)="createBackup()" 
+                  [disabled]="creatingBackup() || loadingBackups()">
+                  <mat-icon>{{ creatingBackup() ? 'hourglass_empty' : 'backup' }}</mat-icon>
+                  {{ creatingBackup() ? 'Backup wird erstellt...' : 'SQL-Backup erstellen' }}
+                </button>
+                <button 
+                  mat-raised-button 
+                  (click)="loadBackups()" 
+                  [disabled]="creatingBackup() || loadingBackups()">
+                  <mat-icon>refresh</mat-icon>
+                  {{ loadingBackups() ? 'Lädt...' : 'Aktualisieren' }}
+                </button>
+              </div>
+
+              <div class="backups-list" *ngIf="!loadingBackups() && backups().length > 0">
+                <h4>
+                  <mat-icon>folder</mat-icon>
+                  Verfügbare SQL-Backups ({{ backups().length }})
+                </h4>
+                <div class="backup-item" *ngFor="let backup of backups()">
+                  <div class="backup-info">
+                    <div class="backup-name">
+                      <mat-icon>description</mat-icon>
+                      <strong>{{ backup.name }}</strong>
+                    </div>
+                    <div class="backup-details">
+                      <span class="backup-timestamp">
+                        <mat-icon>schedule</mat-icon>
+                        {{ backup.timestamp | date:'medium':'de-DE' }}
+                      </span>
+                      <span class="backup-size">
+                        <mat-icon>storage</mat-icon>
+                        {{ backup.sizeFormatted }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="empty-state" *ngIf="!loadingBackups() && backups().length === 0">
+                <mat-icon>info</mat-icon>
+                <p>Keine SQL-Backups vorhanden</p>
+                <p class="hint">Erstellen Sie ein Backup, um Ihre Datenbank zu sichern</p>
+              </div>
+
+              <div class="loading-spinner" *ngIf="loadingBackups()">
+                <mat-spinner diameter="40"></mat-spinner>
+                <p>Backups werden geladen...</p>
+              </div>
+            </div>
           </div>
         </mat-tab>
       </mat-tab-group>

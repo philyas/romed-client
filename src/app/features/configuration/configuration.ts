@@ -79,10 +79,16 @@ export class Configuration implements OnInit {
 
   stationOptions = signal<string[]>([]);
 
+  // Backup
+  creatingBackup = signal(false);
+  backups = signal<Array<{ name: string; timestamp: string; size: number; sizeFormatted: string }>>([]);
+  loadingBackups = signal(false);
+
   ngOnInit() {
     this.loadKostenstellen();
     this.loadStationMappings();
     void this.loadStationOptions();
+    this.loadBackups();
   }
 
   loadKostenstellen() {
@@ -385,6 +391,47 @@ export class Configuration implements OnInit {
         console.error('Error importing station mappings:', err);
         const errorMessage = err.error?.error || err.message || 'Fehler beim Importieren';
         this.snackBar.open(errorMessage, 'Schließen', { duration: 5000 });
+      }
+    });
+  }
+
+  // Backup Methods
+  createBackup() {
+    if (!confirm('Möchten Sie ein SQL-Backup der Datenbank erstellen? Dies kann einige Minuten dauern.')) {
+      return;
+    }
+
+    this.creatingBackup.set(true);
+    this.api.createSqlBackup().subscribe({
+      next: (response) => {
+        this.creatingBackup.set(false);
+        this.snackBar.open(
+          `SQL-Backup erfolgreich erstellt: ${response.backup.name} (${response.backup.sizeFormatted})`,
+          'Schließen',
+          { duration: 5000 }
+        );
+        this.loadBackups();
+      },
+      error: (err) => {
+        this.creatingBackup.set(false);
+        console.error('Error creating backup:', err);
+        const errorMessage = err.error?.error || err.error?.message || err.message || 'Fehler beim Erstellen des Backups';
+        this.snackBar.open(errorMessage, 'Schließen', { duration: 5000 });
+      }
+    });
+  }
+
+  loadBackups() {
+    this.loadingBackups.set(true);
+    this.api.listSqlBackups().subscribe({
+      next: (response) => {
+        this.backups.set(response.backups);
+        this.loadingBackups.set(false);
+      },
+      error: (err) => {
+        console.error('Error loading backups:', err);
+        this.snackBar.open('Fehler beim Laden der Backups', 'Schließen', { duration: 3000 });
+        this.loadingBackups.set(false);
       }
     });
   }
