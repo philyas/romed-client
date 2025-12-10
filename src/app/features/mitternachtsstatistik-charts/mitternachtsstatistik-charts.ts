@@ -1126,17 +1126,21 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
     let stationMaxPflegetage = 0;
     let aggregatedMaxVerweildauer = 0;
     let stationMaxVerweildauer = 0;
+    let aggregatedMaxStationsauslastung = 0;
+    let stationMaxStationsauslastung = 0;
 
     locationData.forEach(location => {
       location.monthlyData.forEach(month => {
         if (month.pflegetage > aggregatedMaxPflegetage) aggregatedMaxPflegetage = month.pflegetage;
         if (month.verweildauer > aggregatedMaxVerweildauer) aggregatedMaxVerweildauer = month.verweildauer;
+        if (month.stationsauslastung > aggregatedMaxStationsauslastung) aggregatedMaxStationsauslastung = month.stationsauslastung;
       });
 
       location.stations?.forEach(station => {
         station.monthlyData.forEach(month => {
           if (month.pflegetage > stationMaxPflegetage) stationMaxPflegetage = month.pflegetage;
           if (month.verweildauer > stationMaxVerweildauer) stationMaxVerweildauer = month.verweildauer;
+          if (month.stationsauslastung > stationMaxStationsauslastung) stationMaxStationsauslastung = month.stationsauslastung;
         });
       });
     });
@@ -1153,9 +1157,17 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
     this.sharedScales.verweildauer.aggregated.max = 30;
     this.sharedScales.verweildauer.station.max = 30;
 
-    // Stationsauslastung is always represented as a percentage
-    this.sharedScales.stationsauslastung.aggregated.max = 100;
-    this.sharedScales.stationsauslastung.station.max = 100;
+    // Stationsauslastung: Dynamisch basierend auf tatsächlichen Werten, mindestens 100%
+    // Wenn Werte über 100% vorhanden sind, Skala entsprechend anpassen
+    const minAuslastungMax = 100;
+    this.sharedScales.stationsauslastung.aggregated.max = Math.max(
+      minAuslastungMax,
+      addPadding(Math.max(aggregatedMaxStationsauslastung, minAuslastungMax))
+    );
+    this.sharedScales.stationsauslastung.station.max = Math.max(
+      minAuslastungMax,
+      addPadding(Math.max(stationMaxStationsauslastung, minAuslastungMax))
+    );
   }
 
   private createEmptyLineChart(): ChartData<'line'> {
@@ -1182,18 +1194,66 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
   }
 
   private buildStationsauslastungChartData(locationData: LocationChartData): ChartData<'line'> {
+    const auslastungData = locationData.monthlyData.map(d => d.stationsauslastung);
+    
+    // Haupt-Dataset: Teile Daten in normale (grün) und kritische (rot) Werte
+    const normalData = auslastungData.map(v => v <= 100 ? v : null);
+    const criticalData = auslastungData.map(v => v > 100 ? v : null);
+    
+    const datasets: any[] = [];
+    
+    // Grüne Linie für normale Werte (<= 100%)
+    datasets.push({
+      label: 'Auslastung (normal)',
+      data: normalData,
+      borderColor: '#388e3c',
+      backgroundColor: 'rgba(56, 142, 60, 0.1)',
+      fill: false,
+      tension: 0.4,
+      pointRadius: 5,
+      pointHoverRadius: 7,
+      pointBackgroundColor: '#388e3c',
+      pointBorderColor: '#fff',
+      pointBorderWidth: 2,
+      spanGaps: true,
+      order: 1
+    });
+    
+    // Rote Linie für kritische Werte (> 100%)
+    datasets.push({
+      label: 'Auslastung (kritisch)',
+      data: criticalData,
+      borderColor: '#d32f2f',
+      backgroundColor: 'rgba(211, 47, 47, 0.1)',
+      fill: false,
+      tension: 0.4,
+      pointRadius: 6, // Größere Punkte für kritische Werte
+      pointHoverRadius: 8,
+      pointBackgroundColor: '#d32f2f',
+      pointBorderColor: '#fff',
+      pointBorderWidth: 2,
+      spanGaps: true,
+      order: 2
+    });
+    
+    // Rote gestrichelte Referenzlinie bei 100%
+    datasets.push({
+      label: '100% Marke',
+      data: auslastungData.map(() => 100),
+      borderColor: '#f44336',
+      backgroundColor: 'transparent',
+      borderDash: [5, 5],
+      borderWidth: 2,
+      fill: false,
+      pointRadius: 0,
+      pointHoverRadius: 0,
+      tension: 0,
+      order: 0 // Zeichne zuerst, damit sie unter den Datenlinien liegt
+    });
+    
     return {
       labels: this.monthLabels,
-      datasets: [{
-        data: locationData.monthlyData.map(d => d.stationsauslastung),
-        label: 'Auslastung (%)',
-        borderColor: '#388e3c',
-        backgroundColor: 'rgba(56, 142, 60, 0.1)',
-        fill: true,
-        tension: 0.4,
-        pointRadius: 5,
-        pointHoverRadius: 7
-      }]
+      datasets: datasets
     };
   }
 
@@ -1275,30 +1335,65 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
       yAxisConfig.max = this.sharedScales[metric][scaleMode].max;
     }
 
+    // Custom Plugin für roten Hintergrundbereich über 100% bei Stationsauslastung
+    const plugins: any = {
+      title: {
+        display: true,
+        text: title,
+        font: {
+          size: 11,
+          weight: 'bold'
+        },
+        padding: 4
+      },
+      legend: {
+        display: false
+      },
+      tooltip: {
+        mode: 'index',
+        intersect: false,
+        bodyFont: {
+          size: 10
+        }
+      }
+    };
+
+    // Füge Plugin für roten Hintergrundbereich über 100% hinzu
+    if (metric === 'stationsauslastung') {
+      plugins.afterDraw = (chart: any) => {
+        const ctx = chart.ctx;
+        const chartArea = chart.chartArea;
+        const yScale = chart.scales.y;
+        
+        // Zeichne roten Hintergrundbereich nur wenn die Skala über 100% geht
+        if (yScale.max > 100) {
+          // Finde den 100%-Wert auf der Y-Achse
+          // Beachte: In Chart.js ist y=0 oben, größere Werte sind unten
+          const y100 = yScale.getPixelForValue(100);
+          
+          // Prüfe, ob 100% innerhalb des sichtbaren Bereichs liegt
+          if (y100 >= chartArea.top && y100 <= chartArea.bottom) {
+            ctx.save();
+            
+            // Roter Hintergrundbereich oberhalb von 100% (zwischen chartArea.top und y100)
+            ctx.fillStyle = 'rgba(211, 47, 47, 0.15)'; // Leicht transparenter roter Hintergrund
+            ctx.fillRect(
+              chartArea.left,
+              chartArea.top,
+              chartArea.right - chartArea.left,
+              y100 - chartArea.top // Höhe: Von oben bis zur 100%-Linie
+            );
+            
+            ctx.restore();
+          }
+        }
+      };
+    }
+
     return {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: {
-        title: {
-          display: true,
-          text: title,
-          font: {
-            size: 11,
-            weight: 'bold'
-          },
-          padding: 4
-        },
-        legend: {
-          display: false
-        },
-        tooltip: {
-          mode: 'index',
-          intersect: false,
-          bodyFont: {
-            size: 10
-          }
-        }
-      },
+      plugins: plugins,
       scales: {
         x: {
           display: true,
