@@ -241,26 +241,39 @@ interface KostenstellenMappingItem {
             </mat-card-content>
           </mat-card>
 
-          <!-- Kostenstellen Top 10 Chart (nur wenn "Alle" ausgewählt) -->
-          <mat-card class="chart-card full-width" *ngIf="selectedKostenstelle() === 'all'">
+          <!-- Trend Graph für Ausfallstatistik - Krank-Werte -->
+          <mat-card class="chart-card full-width">
             <mat-card-header class="chart-header">
               <mat-card-title>
-                <mat-icon>bar_chart</mat-icon>
-                Top 10 Kostenstellen nach Ausfall
+                <mat-icon>show_chart</mat-icon>
+                Ausfall Krank mit Trend
               </mat-card-title>
-              <mat-card-subtitle>Kostenstellen mit höchstem Ausfall (LA1 + LA2 + LA3)</mat-card-subtitle>
+              <mat-card-subtitle>
+                {{ selectedKostenstelleLabel() }} - Krankwerte (K in %) über Zeit mit Trendlinie
+              </mat-card-subtitle>
             </mat-card-header>
             <mat-card-content class="chart-content">
               <div class="chart-container">
                 <canvas baseChart
-                  [data]="topKostenstellenChartData()"
-                  [options]="topKostenstellenChartOptions"
-                  [type]="'bar'">
+                  [data]="krankTrendChartData()"
+                  [options]="krankTrendChartOptions()"
+                  [type]="'line'">
                 </canvas>
                 <div class="chart-loading-overlay" *ngIf="chartLoading()">
                   <div class="loading-bar"></div>
                   <p>Daten werden geladen…</p>
                 </div>
+              </div>
+              <div class="chart-legend">
+                <mat-chip-set>
+                  <mat-chip>
+                    <mat-icon>{{ trendDirection() === 'up' ? 'trending_up' : trendDirection() === 'down' ? 'trending_down' : 'trending_flat' }}</mat-icon>
+                    Trend: {{ trendDirectionLabel() }}
+                  </mat-chip>
+                  <mat-chip>
+                    Durchschnitt: {{ averageKrankPercent() | number:'1.2-2' }}%
+                  </mat-chip>
+                </mat-chip-set>
               </div>
             </mat-card-content>
           </mat-card>
@@ -403,31 +416,48 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
     };
   });
 
-  topKostenstellenChartOptions: ChartConfiguration['options'] = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: false
-      }
-    },
-    scales: {
-      x: {
-        ticks: {
-          maxRotation: 45,
-          minRotation: 45
+  krankTrendChartOptions = computed<ChartConfiguration['options']>(() => {
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top'
+        },
+        tooltip: {
+          callbacks: {
+            label: (context) => {
+              if (context.datasetIndex === 0) {
+                return `K in %: ${context.parsed.y.toFixed(2)}%`;
+              } else {
+                return `Trend: ${context.parsed.y.toFixed(2)}%`;
+              }
+            }
+          }
         }
       },
-      y: {
-        beginAtZero: true,
-        title: {
-          display: true,
-          text: 'Ausfall (Stunden)'
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: 'Zeit (Monat-Jahr)'
+          },
+          ticks: {
+            maxRotation: 45,
+            minRotation: 45
+          }
+        },
+        y: {
+          beginAtZero: false,
+          title: {
+            display: true,
+            text: 'Krank in %'
+          }
         }
       }
-    },
-    indexAxis: 'y'
-  };
+    };
+  });
 
   ngOnInit() {
     Chart.register(...registerables);
@@ -884,39 +914,185 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
     };
   });
 
-  topKostenstellenChartData = computed(() => {
-    const data = this.getFilteredData();
-    const kostenstelleData = new Map<string, number>();
+  krankTrendChartData = computed(() => {
+    // Get all data across all years for trend analysis (not just selected year)
+    // Filter by selected kostenstelle if not "all"
+    const selectedKST = this.selectedKostenstelle();
+    const allData = this.allData().filter(row => {
+      // Only include rows with valid Krank percentage values
+      if (row.LA1_KR_Prozent === null || row.LA1_KR_Prozent === undefined || !row.Jahr || !row.Monat) {
+        return false;
+      }
+      
+      // Filter by kostenstelle if not "all"
+      if (selectedKST !== 'all') {
+        const kst = row.Kostenstelle || row.KSt || '';
+        if (kst !== selectedKST) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
 
-    data.forEach(row => {
-      const total = (row.LA1_KR_Wert || 0) + (row.LA2_FT_Wert || 0) + (row.LA3_FB_Wert || 0);
-      if (total > 0) {
-        const key = row.Kostenstelle || row.KSt || 'Unknown';
-        kostenstelleData.set(key, (kostenstelleData.get(key) || 0) + total);
+    if (allData.length === 0) {
+      return {
+        labels: [],
+        datasets: []
+      };
+    }
+
+    // Group by year-month and calculate average Krank percentage
+    const monthlyData = new Map<string, { year: number; month: number; values: number[] }>();
+    
+    allData.forEach(row => {
+      const key = `${row.Jahr}-${String(row.Monat).padStart(2, '0')}`;
+      if (!monthlyData.has(key)) {
+        monthlyData.set(key, {
+          year: row.Jahr!,
+          month: row.Monat!,
+          values: []
+        });
+      }
+      if (row.LA1_KR_Prozent !== null && row.LA1_KR_Prozent !== undefined) {
+        monthlyData.get(key)!.values.push(row.LA1_KR_Prozent);
       }
     });
 
-    // Sort by total and get top 10
-    const sorted = Array.from(kostenstelleData.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10);
+    // Sort by year and month
+    const sortedKeys = Array.from(monthlyData.keys()).sort((a, b) => {
+      const [yearA, monthA] = a.split('-').map(Number);
+      const [yearB, monthB] = b.split('-').map(Number);
+      if (yearA !== yearB) {
+        return yearA - yearB;
+      }
+      return monthA - monthB;
+    });
+
+    // Calculate average for each month
+    const labels: string[] = [];
+    const dataPoints: number[] = [];
+    const monthNames = ['', 'Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+    
+    sortedKeys.forEach(key => {
+      const monthData = monthlyData.get(key)!;
+      const avg = monthData.values.reduce((sum, val) => sum + val, 0) / monthData.values.length;
+      
+      // Format label as "Monat-Jahr" (e.g., "Jan-21")
+      const monthName = monthNames[monthData.month] || `M${monthData.month}`;
+      const yearShort = String(monthData.year).slice(-2);
+      labels.push(`${monthName}-${yearShort}`);
+      dataPoints.push(avg);
+    });
+
+    // Calculate linear regression for trend line
+    const trendLine = this.calculateTrendLine(dataPoints);
 
     return {
-      labels: sorted.map(([kst]) => this.formatKostenstelleLabel(kst)),
+      labels: labels,
       datasets: [
         {
-          label: 'Gesamtausfall',
-          data: sorted.map(([, total]) => total),
-          backgroundColor: 'rgba(153, 102, 255, 0.6)'
+          label: 'K in %',
+          data: dataPoints,
+          borderColor: 'rgb(138, 43, 226)', // Dark purple
+          backgroundColor: 'rgba(138, 43, 226, 0.1)',
+          tension: 0.1,
+          fill: false,
+          pointRadius: 4,
+          pointHoverRadius: 6
+        },
+        {
+          label: 'Trend',
+          data: trendLine,
+          borderColor: 'rgb(46, 204, 113)', // Green
+          backgroundColor: 'rgba(46, 204, 113, 0.1)',
+          borderDash: [5, 5],
+          tension: 0,
+          fill: false,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          pointStyle: 'circle'
         }
       ]
     };
   });
 
+  // Calculate linear regression trend line
+  private calculateTrendLine(dataPoints: number[]): number[] {
+    if (dataPoints.length === 0) {
+      return [];
+    }
+
+    const n = dataPoints.length;
+    let sumX = 0;
+    let sumY = 0;
+    let sumXY = 0;
+    let sumX2 = 0;
+
+    // Calculate sums for linear regression (y = mx + b)
+    dataPoints.forEach((y, index) => {
+      const x = index;
+      sumX += x;
+      sumY += y;
+      sumXY += x * y;
+      sumX2 += x * x;
+    });
+
+    // Calculate slope (m) and intercept (b)
+    const m = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+    const b = (sumY - m * sumX) / n;
+
+    // Generate trend line points
+    return dataPoints.map((_, index) => m * index + b);
+  }
+
+  // Calculate trend direction
+  trendDirection = computed<'up' | 'down' | 'flat'>(() => {
+    const chartData = this.krankTrendChartData();
+    if (chartData.datasets.length === 0 || chartData.datasets[1].data.length < 2) {
+      return 'flat';
+    }
+
+    const trendLine = chartData.datasets[1].data as number[];
+    const first = trendLine[0];
+    const last = trendLine[trendLine.length - 1];
+    const diff = last - first;
+    
+    // Threshold for considering it a trend (0.1% difference)
+    if (Math.abs(diff) < 0.1) {
+      return 'flat';
+    }
+    
+    return diff > 0 ? 'up' : 'down';
+  });
+
+  trendDirectionLabel = computed(() => {
+    const direction = this.trendDirection();
+    switch (direction) {
+      case 'up':
+        return 'Aufwärtstrend';
+      case 'down':
+        return 'Abwärtstrend';
+      default:
+        return 'Stabil';
+    }
+  });
+
+  averageKrankPercent = computed(() => {
+    const chartData = this.krankTrendChartData();
+    if (chartData.datasets.length === 0 || chartData.datasets[0].data.length === 0) {
+      return 0;
+    }
+
+    const dataPoints = chartData.datasets[0].data as number[];
+    const sum = dataPoints.reduce((acc, val) => acc + val, 0);
+    return sum / dataPoints.length;
+  });
+
   private readonly chartReadyEffect = effect(() => {
     this.sollIstChartData();
     this.lohnartenChartData();
-    this.topKostenstellenChartData();
+    this.krankTrendChartData();
     queueMicrotask(() => this.chartLoading.set(false));
   }, { allowSignalWrites: true });
 
