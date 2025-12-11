@@ -55,6 +55,7 @@ export class Configuration implements OnInit {
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
 
+  searchTerm = signal('');
   kostenstellen = signal<Kostenstelle[]>([]);
   dataSource = new MatTableDataSource<Kostenstelle>([]);
   loading = signal(false);
@@ -71,6 +72,19 @@ export class Configuration implements OnInit {
   loadingBackups = signal(false);
 
   ngOnInit() {
+    this.dataSource.filterPredicate = (data, filter) => {
+      if (!filter) return true;
+      const term = filter.trim().toLowerCase();
+      const fields = [
+        data.kostenstelle,
+        ...(data.stations || []),
+        ...(data.standorte || []),
+        data.standortnummer ?? '',
+        data.ik ?? '',
+        data.paediatrie ?? ''
+      ];
+      return fields.some(f => (f ?? '').toString().toLowerCase().includes(term));
+    };
     this.loadKostenstellen();
     void this.loadStationOptions();
     this.loadBackups();
@@ -82,6 +96,8 @@ export class Configuration implements OnInit {
       next: (response) => {
         this.kostenstellen.set(response.data);
         this.dataSource.data = response.data;
+        // Reapply filter after data reload so search stays consistent
+        this.applyFilter(this.searchTerm());
         this.loading.set(false);
       },
       error: (err) => {
@@ -285,6 +301,12 @@ export class Configuration implements OnInit {
         this.loadingBackups.set(false);
       }
     });
+  }
+
+  applyFilter(value: string) {
+    const filterValue = (value || '').trim().toLowerCase();
+    this.searchTerm.set(filterValue);
+    this.dataSource.filter = filterValue;
   }
 
   downloadBackup(backupName: string) {
