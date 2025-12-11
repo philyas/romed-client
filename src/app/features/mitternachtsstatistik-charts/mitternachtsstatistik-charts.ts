@@ -28,6 +28,11 @@ interface AufgestellteBettenData {
   Bettenanzahl: number;
 }
 
+interface MatchedBettenResult {
+  betten: number | null;
+  bettenStation: string | null;
+}
+
 interface LocationChartData {
   location: string;
   locationName: string;
@@ -43,6 +48,8 @@ interface LocationChartData {
 
 interface StationChartData {
   stationName: string;
+  bettenStationName?: string | null;
+  originalStationNames?: string[];
   monthlyData: {
     month: number;
     pflegetage: number;
@@ -876,9 +883,9 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
    * 2. Präfix-Match (AufgestellteBetten.Station startet mit Station)
    * 3. Standort muss übereinstimmen
    */
-  private findAufgestellteBetten(stationName: string, standort: string, year: number): number | null {
+  private findAufgestellteBetten(stationName: string, standort: string, year: number): MatchedBettenResult {
     const bettenData = this.aufgestellteBettenData();
-    if (!bettenData || bettenData.length === 0) return null;
+    if (!bettenData || bettenData.length === 0) return { betten: null, bettenStation: null };
 
     // Normalisiere Stationsnamen für Vergleich
     const normalizedStation = stationName.trim().toUpperCase();
@@ -889,7 +896,7 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
     );
 
     if (relevantData.length === 0) {
-      return null;
+      return { betten: null, bettenStation: null };
     }
 
     // 1. Versuche exakte Übereinstimmung
@@ -917,11 +924,11 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
     }
 
     if (match) {
-      return match.Bettenanzahl;
+      return { betten: match.Bettenanzahl, bettenStation: match.Station };
     }
 
     // Keine aufgestellten Betten gefunden - wird als 0 behandelt (keine Planbetten als Fallback)
-    return null;
+    return { betten: null, bettenStation: null };
   }
 
   private processChartData() {
@@ -948,19 +955,8 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
     const locationData: LocationChartData[] = [];
 
     for (const location of locations) {
-      const monthlyData: LocationChartData['monthlyData'] = [];
-      const stationDataMap = new Map<string, StationChartData>();
-
-      // Initialize all 12 months with zero values
-      for (let month = 1; month <= 12; month++) {
-        monthlyData.push({
-          month,
-          pflegetage: 0,
-          stationsauslastung: 0,
-          verweildauer: 0,
-          stationCount: 0
-        });
-      }
+      // Sammle Stationsdaten und kombiniere Stationen, die auf dieselbe Betten-Station gemappt werden
+      const stationDataMap = new Map<string, (StationChartData & { originalStationNamesSet: Set<string> })>();
 
       // Process uploads for the selected year
       filteredUploads.forEach(upload => {
@@ -986,38 +982,21 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
         }
 
         const locationFiles = upload.locationsData[location];
-        let totalPflegetage = 0;
-        let totalBetten = 0; // Aufgestellte Betten (aus mitteilungen_betten), 0 wenn nicht verfügbar
-        let totalStations = 0;
-        let totalVerweildauer = 0;
-        let verweildauerCount = 0;
 
         locationFiles.forEach(file => {
           if (!file.values || !Array.isArray(file.values)) return;
 
           file.values.forEach(row => {
-            if (!row['Station']) return; // Skip rows without station
+            if (!row['Station']) return; // Skip rows ohne Station
             
-            totalStations++;
-            
-            const pflegetage = Number(row['Pflegetage']) || 0;
-            totalPflegetage += pflegetage;
-
             const stationName = row['Station'].toString();
             
             // Verwende nur aufgestellte Betten (aus Schema mitteilungen_betten), keine Planbetten als Fallback
-            const aufgestellteBetten = this.findAufgestellteBetten(stationName, location, year);
-            const betten = aufgestellteBetten !== null ? aufgestellteBetten : 0;
-            totalBetten += betten;
+            const { betten, bettenStation } = this.findAufgestellteBetten(stationName, location, year);
+            const stationKey = bettenStation || stationName;
 
-            const verweildauer = Number(row['VD.inkl.']) || 0;
-            if (verweildauer > 0) {
-              totalVerweildauer += verweildauer;
-              verweildauerCount++;
-            }
-
-            // Collect individual station data
-            if (!stationDataMap.has(stationName)) {
+            // Collect individual station data (kombiniert nach Betten-Station)
+            if (!stationDataMap.has(stationKey)) {
               // Initialize station with 12 months of zero values
               const stationMonthlyData = [];
               for (let m = 1; m <= 12; m++) {
@@ -1029,56 +1008,107 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
                   stationsauslastung: 0
                 });
               }
-              stationDataMap.set(stationName, {
-                stationName,
+              stationDataMap.set(stationKey, {
+                stationName: stationKey,
+                bettenStationName: bettenStation,
+                originalStationNames: [stationName],
+                originalStationNamesSet: new Set([stationName]),
                 monthlyData: stationMonthlyData
               });
             }
 
-            // Update station's monthly data
-            const stationData = stationDataMap.get(stationName)!;
+            const stationData = stationDataMap.get(stationKey)!;
+            stationData.bettenStationName = bettenStation;
+            stationData.originalStationNamesSet.add(stationName);
+            stationData.originalStationNames = Array.from(stationData.originalStationNamesSet);
+
+            const pflegetage = Number(row['Pflegetage']) || 0;
+            const verweildauer = Number(row['VD.inkl.']) || 0;
+            const usedBetten = betten !== null ? betten : 0;
+
             const monthIndex = monthNumber - 1;
             const kalendertage = new Date(year, monthNumber, 0).getDate();
-            
-            // Verwende nur aufgestellte Betten aus mitteilungen_betten (keine Planbetten als Fallback)
-            const maxStationPflegetage = betten * kalendertage;
-            const stationAuslastung = maxStationPflegetage > 0 ? (pflegetage / maxStationPflegetage) * 100 : 0;
-            
+
+            // Aggregiere Pflegetage; Betten bleibt pro Betten-Station einmalig
+            const prevEntry = stationData.monthlyData[monthIndex];
+            const newPflegetage = prevEntry.pflegetage + pflegetage;
+
+            const stationAuslastung = usedBetten > 0
+              ? (newPflegetage / (usedBetten * kalendertage)) * 100
+              : 0;
+
+            // Verweildauer: einfacher Mittelwert, falls beide Werte > 0
+            const newVerweildauer = (prevEntry.verweildauer > 0 && verweildauer > 0)
+              ? (prevEntry.verweildauer + verweildauer) / 2
+              : (verweildauer || prevEntry.verweildauer);
+
             stationData.monthlyData[monthIndex] = {
               month: monthNumber,
-              pflegetage,
-              betten, // Aufgestellte Betten (aus mitteilungen_betten), 0 wenn nicht verfügbar
-              verweildauer,
+              pflegetage: newPflegetage,
+              betten: usedBetten,
+              verweildauer: newVerweildauer,
               stationsauslastung: stationAuslastung
             };
           });
         });
+      });
 
-        // Calculate averages
-        const avgVerweildauer = verweildauerCount > 0 ? totalVerweildauer / verweildauerCount : 0;
-        
-        // Stationsauslastung: Pflegetage / (Aufgestellte Betten × Kalendertage) × 100
-        // Kalendertage aus Monat/Jahr berechnen
-        const kalendertage = new Date(year, monthNumber, 0).getDate(); // Tatsächliche Tage im Monat
-        const maxPflegetage = totalBetten * kalendertage;
-        const auslastung = maxPflegetage > 0 ? (totalPflegetage / maxPflegetage) * 100 : 0;
+      // Stationsliste mit kombinierten Namen bauen
+      const stations: StationChartData[] = Array.from(stationDataMap.values()).map(station => {
+        const originalNames = Array.from(station.originalStationNamesSet || new Set<string>());
+        const stationLabel = originalNames.length > 1
+          ? originalNames.sort().join(' + ')
+          : (originalNames[0] || station.stationName);
 
-        // Update monthly data
-        const monthIndex = monthNumber - 1;
-        monthlyData[monthIndex] = {
-          month: monthNumber,
-          pflegetage: totalPflegetage,
+        return {
+          stationName: stationLabel,
+          bettenStationName: station.bettenStationName,
+          originalStationNames: originalNames,
+          monthlyData: station.monthlyData
+        };
+      }).sort((a, b) => a.stationName.localeCompare(b.stationName));
+
+      // Aggregierte Monatsdaten pro Standort aus den kombinierten Stationsdaten berechnen
+      const monthlyData: LocationChartData['monthlyData'] = [];
+      for (let month = 1; month <= 12; month++) {
+        let pflegetageSum = 0;
+        let bettenSum = 0;
+        let verweildauerSum = 0;
+        let verweildauerCount = 0;
+        let stationCount = 0;
+
+        stations.forEach(station => {
+          const entry = station.monthlyData[month - 1];
+          if (entry.pflegetage > 0 || entry.betten > 0 || entry.verweildauer > 0) {
+            stationCount++;
+          }
+          pflegetageSum += entry.pflegetage;
+          bettenSum += entry.betten;
+          if (entry.verweildauer > 0) {
+            verweildauerSum += entry.verweildauer;
+            verweildauerCount++;
+          }
+        });
+
+        const kalendertage = new Date(targetYear, month, 0).getDate(); // Tatsächliche Tage im Monat
+        const maxPflegetage = bettenSum * kalendertage;
+        const auslastung = maxPflegetage > 0 ? (pflegetageSum / maxPflegetage) * 100 : 0;
+        const avgVerweildauer = verweildauerCount > 0 ? (verweildauerSum / verweildauerCount) : 0;
+
+        monthlyData.push({
+          month,
+          pflegetage: pflegetageSum,
           stationsauslastung: auslastung,
           verweildauer: avgVerweildauer,
-          stationCount: totalStations
-        };
-      });
+          stationCount
+        });
+      }
 
       locationData.push({
         location,
         locationName: this.locationNames[location] || location,
         monthlyData,
-        stations: Array.from(stationDataMap.values()).sort((a, b) => a.stationName.localeCompare(b.stationName))
+        stations
       });
     }
 
