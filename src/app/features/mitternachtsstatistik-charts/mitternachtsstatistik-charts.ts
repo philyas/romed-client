@@ -8,6 +8,8 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType, registerables } from 'chart.js';
 import { MitternachtsstatistikResponse, Api, ResultsResponse } from '../../core/api';
@@ -61,6 +63,8 @@ interface StationChartData {
     MatTabsModule,
     MatTableModule,
     MatTooltipModule,
+    MatSelectModule,
+    MatFormFieldModule,
     BaseChartDirective,
     DataInfoPanel,
     SearchableSelectComponent
@@ -74,6 +78,18 @@ interface StationChartData {
             Mitternachtsstatistik - Jahresübersicht {{ currentYear() }}
           </h3>
           <div class="selectors-container">
+            <mat-form-field appearance="outline" class="year-selector">
+              <mat-label>Jahr</mat-label>
+              <mat-select
+                [value]="selectedYear()"
+                (selectionChange)="onYearChange($event.value)"
+                [disabled]="availableYears().length === 0">
+                <mat-option *ngFor="let year of availableYears()" [value]="year">
+                  {{ year }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
             <app-searchable-select
               class="location-selector"
               label="Standort"
@@ -663,6 +679,8 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
   chartDataByLocation = signal<LocationChartData[]>([]);
   selectedLocation = signal<string>('BAB');
   availableLocations = signal<string[]>([]);
+  selectedYear = signal<number | null>(null);
+  availableYears = signal<number[]>([]);
   selectedStation = signal<string>('all'); // 'all' = alle Stationen (aggregiert)
   availableStations = signal<string[]>([]);
   readonly aggregatedStationLabel = 'Alle Stationen (Aggregiert)';
@@ -913,11 +931,18 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
       return;
     }
 
-    // Extract current year from upload data
-    this.extractCurrentYear();
+    // Determine available years and selected year
+    this.updateAvailableYears();
 
     // Prepare data info items
     this.prepareDataInfoItems();
+
+    const targetYear = this.selectedYear() ?? this.currentYear();
+    const uploads = this.mitternachtsstatistikData.uploads || [];
+    const filteredUploads = uploads.filter(upload => {
+      const uploadYear = this.extractYear(upload);
+      return targetYear ? uploadYear === targetYear : true;
+    });
 
     const locations = ['BAB', 'PRI', 'ROS', 'WAS'];
     const locationData: LocationChartData[] = [];
@@ -937,8 +962,8 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
         });
       }
 
-      // Process all uploads
-      this.mitternachtsstatistikData.uploads.forEach(upload => {
+      // Process uploads for the selected year
+      filteredUploads.forEach(upload => {
         if (!upload.month || !upload.locationsData || !upload.locationsData[location]) {
           return;
         }
@@ -1082,6 +1107,13 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
   onStationChange(station: string) {
     this.chartLoading.set(true);
     this.selectedStation.set(station);
+  }
+
+  onYearChange(year: number) {
+    this.selectedYear.set(year);
+    this.currentYear.set(year);
+    this.chartLoading.set(true);
+    this.processChartData();
   }
 
   openComparisonDialog(event?: MouseEvent) {
@@ -1499,30 +1531,14 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
   }
 
   private extractCurrentYear() {
-    if (!this.mitternachtsstatistikData?.uploads) {
-      this.currentYear.set(new Date().getFullYear());
-      return;
-    }
-
-    // Extract years from upload data
-    const years = new Set<number>();
-    
-    this.mitternachtsstatistikData.uploads.forEach(upload => {
-      if (upload.month && upload.month.includes('-')) {
-        const [, yearStr] = upload.month.split('-');
-        const year = parseInt(yearStr);
-        if (!isNaN(year)) {
-          years.add(year);
-        }
-      }
-    });
-
-    // Use the most recent year, or current year as fallback
-    if (years.size > 0) {
-      const sortedYears = Array.from(years).sort((a, b) => b - a);
-      this.currentYear.set(sortedYears[0]);
+    const years = this.availableYears();
+    if (years.length > 0) {
+      this.currentYear.set(years[0]);
+      this.selectedYear.set(this.selectedYear() ?? years[0]);
     } else {
-      this.currentYear.set(new Date().getFullYear());
+      const fallbackYear = new Date().getFullYear();
+      this.currentYear.set(fallbackYear);
+      this.selectedYear.set(fallbackYear);
     }
   }
 
@@ -1661,6 +1677,54 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
     });
 
     this.dataInfoItems.set(items);
+  }
+
+  private updateAvailableYears() {
+    if (!this.mitternachtsstatistikData?.uploads) {
+      this.availableYears.set([]);
+      this.extractCurrentYear();
+      return;
+    }
+
+    const years = new Set<number>();
+    this.mitternachtsstatistikData.uploads.forEach(upload => {
+      const year = this.extractYear(upload);
+      if (year) {
+        years.add(year);
+      }
+    });
+
+    const sortedYears = Array.from(years).sort((a, b) => b - a);
+    this.availableYears.set(sortedYears);
+
+    // Set defaults if needed
+    if (sortedYears.length > 0) {
+      const newestYear = sortedYears[0];
+      if (!this.selectedYear() || !sortedYears.includes(this.selectedYear()!)) {
+        this.selectedYear.set(newestYear);
+      }
+      this.currentYear.set(this.selectedYear() ?? newestYear);
+    } else {
+      const fallbackYear = new Date().getFullYear();
+      this.selectedYear.set(fallbackYear);
+      this.currentYear.set(fallbackYear);
+    }
+  }
+
+  private extractYear(upload: { month?: string; jahr?: number }): number | null {
+    if (upload.month) {
+      if (upload.month.includes('-')) {
+        const [, yearStr] = upload.month.split('-');
+        const parsed = parseInt(yearStr);
+        if (!isNaN(parsed)) return parsed;
+      }
+      const monthOnlyYear = new Date().getFullYear();
+      return monthOnlyYear;
+    }
+    if (typeof upload.jahr === 'number') {
+      return upload.jahr;
+    }
+    return null;
   }
 }
 
