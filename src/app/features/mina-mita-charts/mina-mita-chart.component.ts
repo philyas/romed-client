@@ -410,6 +410,7 @@ interface ChartDataPoint {
 export class MinaMitaChart implements OnInit, OnChanges {
   @Input() uploads: any[] = [];
   @Input() selectedStation: string = 'all';
+  @Input() selectedYear: number | null = null;
   
   private readonly monthLabels = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
   private readonly monthLabelsFull = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
@@ -554,13 +555,13 @@ export class MinaMitaChart implements OnInit, OnChanges {
     }
 
     // Initialize all 12 months with zero values
+    const targetYear = this.selectedYear || new Date().getFullYear();
     const monthlyData: ChartDataPoint[] = [];
-    const currentYear = new Date().getFullYear();
     
     for (let month = 1; month <= 12; month++) {
       monthlyData.push({
         month,
-        year: currentYear,
+        year: targetYear,
         minaAverage: 0,
         mitaAverage: 0,
         totalStations: 0,
@@ -585,6 +586,11 @@ export class MinaMitaChart implements OnInit, OnChanges {
             averages = averages.filter((row: any) => row.Station === this.selectedStation);
           }
 
+          // Filter by selected year if provided
+          if (this.selectedYear) {
+            averages = averages.filter((row: any) => Number(row.Jahr) === this.selectedYear);
+          }
+
           const grouped = new Map<string, {
             month: number;
             year: number;
@@ -600,6 +606,10 @@ export class MinaMitaChart implements OnInit, OnChanges {
             const yearNumber = Number(row.Jahr);
 
             if (!monthNumber || monthNumber < 1 || monthNumber > 12 || !yearNumber) {
+              return;
+            }
+
+            if (this.selectedYear && yearNumber !== this.selectedYear) {
               return;
             }
 
@@ -669,6 +679,11 @@ export class MinaMitaChart implements OnInit, OnChanges {
           }
           
           console.log(`Processing data for ${targetYearNumber}-${targetMonthNumber.toString().padStart(2, '0')}`);
+
+          // Skip this upload if year filter is set and does not match
+          if (this.selectedYear && targetYearNumber !== this.selectedYear) {
+            return;
+          }
           
           // Helper function to convert Excel date to JS date
           const excelDateToJSDate = (excelDate: number): Date => {

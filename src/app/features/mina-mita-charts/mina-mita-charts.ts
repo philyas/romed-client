@@ -5,6 +5,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { UploadRecord } from '../../core/api';
 import { MinaMitaChart } from './mina-mita-chart.component';
 import { DataInfoPanel, DataInfoItem } from '../data-info-panel/data-info-panel';
@@ -21,6 +23,8 @@ import { SearchableSelectComponent } from '../shared/searchable-select/searchabl
     MatIconModule,
     MatDialogModule,
     MatTooltipModule,
+    MatSelectModule,
+    MatFormFieldModule,
     MinaMitaChart,
     DataInfoPanel,
     SearchableSelectComponent
@@ -34,7 +38,43 @@ import { SearchableSelectComponent } from '../shared/searchable-select/searchabl
               <mat-icon>nights_stay</mat-icon>
               MiNa/MiTa-Bestände (PPUGV)
             </mat-card-title>
-            <div class="actions" *ngIf="availableStations().length > 0">
+            <div class="actions">
+              <mat-form-field appearance="outline" class="year-selector" *ngIf="availableYears().length > 0">
+                <mat-label>Jahr</mat-label>
+                <mat-select
+                  [value]="selectedYear()"
+                  (selectionChange)="onYearChange($event.value)">
+                  <mat-option *ngFor="let year of availableYears()" [value]="year">
+                    {{ year }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <app-searchable-select
+                class="station-selector"
+                label="Station"
+                icon="meeting_room"
+                [options]="availableStations()"
+                [value]="selectedStation()"
+                [includeAllOption]="true"
+                [allValue]="'all'"
+                [allLabel]="'Alle Stationen'"
+                (valueChange)="onStationChange($event)"
+              ></app-searchable-select>
+
+              <button
+                mat-stroked-button
+                color="primary"
+                class="comparison-button"
+                (click)="openComparisonDialog()"
+                [disabled]="availableStations().length === 0"
+                matTooltip="Vergleichen Sie bis zu vier Stationen (MiNa)">
+                <mat-icon>compare</mat-icon>
+                Vergleich (MiNa)
+              </button>
+            </div>
+
+            <div class="actions" *ngIf="availableStations().length === 0">
               <app-searchable-select
                 class="station-selector"
                 label="Station"
@@ -69,7 +109,11 @@ import { SearchableSelectComponent } from '../shared/searchable-select/searchabl
           </app-data-info-panel>
 
           <div class="chart-section" *ngIf="upload()">
-            <app-mina-mita-chart [uploads]="uploads" [selectedStation]="selectedStation()"></app-mina-mita-chart>
+            <app-mina-mita-chart 
+              [uploads]="filteredUploads()" 
+              [selectedStation]="selectedStation()"
+              [selectedYear]="selectedYear()">
+            </app-mina-mita-chart>
           </div>
 
           <div class="no-data" *ngIf="!upload()">
@@ -201,6 +245,9 @@ export class MinaMitaCharts implements OnChanges {
   upload = signal<UploadRecord | null>(null);
   selectedStation = signal<string>('all');
   availableStations = signal<string[]>([]);
+  availableYears = signal<number[]>([]);
+  selectedYear = signal<number | null>(null);
+  filteredUploads = signal<UploadRecord[]>([]);
   dataInfoItems = signal<DataInfoItem[]>([]);
 
   constructor(private dialog: MatDialog) {
@@ -223,6 +270,14 @@ export class MinaMitaCharts implements OnChanges {
       const latestUpload = minaMinaUploads[0];
       this.upload.set(latestUpload);
       console.log('[MinaMitaCharts] Using upload:', latestUpload.uploadId, 'with', latestUpload.files?.length || 0, 'files');
+
+      // Collect available years from all MiNa/MiTa uploads
+      this.updateYears(minaMinaUploads);
+
+      // Filter uploads by selected year (or use all if none selected)
+      const year = this.selectedYear();
+      const filtered = year ? this.filterUploadsByYear(minaMinaUploads, year) : minaMinaUploads;
+      this.filteredUploads.set(filtered);
 
       if (latestUpload.files && latestUpload.files.length > 0) {
         const file = latestUpload.files[0];
@@ -288,11 +343,20 @@ export class MinaMitaCharts implements OnChanges {
       this.upload.set(null);
       this.availableStations.set([]);
       this.dataInfoItems.set([]);
+      this.availableYears.set([]);
+      this.selectedYear.set(null);
+      this.filteredUploads.set([]);
     }
   }
 
   onStationChange(station: string) {
     this.selectedStation.set(station);
+  }
+
+  onYearChange(year: number) {
+    this.selectedYear.set(year);
+    const minaMinaUploads = this.uploads.filter(u => u.schemaId === 'ppugv_bestaende');
+    this.filteredUploads.set(this.filterUploadsByYear(minaMinaUploads, year));
   }
 
   openComparisonDialog() {
@@ -372,6 +436,53 @@ export class MinaMitaCharts implements OnChanges {
     });
 
     this.dataInfoItems.set(items);
+  }
+
+  private updateYears(uploads: UploadRecord[]) {
+    const years = new Set<number>();
+
+    uploads.forEach(upload => {
+      if (upload.files && upload.files.length > 0) {
+        const file = upload.files[0] as any;
+        const monthlyAverages = file.monthlyAverages || file.metadata?.monthlyAverages;
+        if (Array.isArray(monthlyAverages)) {
+          monthlyAverages.forEach((row: any) => {
+            const yr = Number(row.Jahr);
+            if (!Number.isNaN(yr)) years.add(yr);
+          });
+        } else if (file.values && Array.isArray(file.values)) {
+          // Fallback: use year from upload createdAt
+          const yr = new Date(upload.createdAt).getFullYear();
+          if (!Number.isNaN(yr)) years.add(yr);
+        }
+      }
+    });
+
+    const sorted = Array.from(years).sort((a, b) => b - a);
+    this.availableYears.set(sorted);
+    if (sorted.length > 0) {
+      if (!this.selectedYear() || !sorted.includes(this.selectedYear()!)) {
+        this.selectedYear.set(sorted[0]);
+      }
+    } else {
+      this.selectedYear.set(null);
+    }
+  }
+
+  private filterUploadsByYear(uploads: UploadRecord[], year: number): UploadRecord[] {
+    return uploads.map(upload => {
+      if (!upload.files || upload.files.length === 0) return upload;
+      const files = upload.files.map(file => {
+        const monthlyAverages = (file as any).monthlyAverages || (file as any).metadata?.monthlyAverages;
+        if (Array.isArray(monthlyAverages)) {
+          const filtered = monthlyAverages.filter((row: any) => Number(row.Jahr) === year);
+          return { ...file, monthlyAverages: filtered };
+        }
+        // For raw values we keep as-is; downstream will check selectedYear
+        return file;
+      });
+      return { ...upload, files };
+    });
   }
 }
 
