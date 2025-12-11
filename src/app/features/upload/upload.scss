@@ -3,9 +3,23 @@
   position: relative;
 }
 
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  gap: 16px;
+
+  .archive-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+}
+
 .upload-subtitle {
   color: #666;
-  text-align: center;
   margin-bottom: 32px;
   font-size: 16px;
   line-height: 1.5;

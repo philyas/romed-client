@@ -1,7 +1,15 @@
 <div class="main-content">
   <div class="upload">
-    <h2>Datei Upload</h2>
-    <p class="upload-subtitle">Laden Sie Dateien hoch und extrahieren Sie Daten basierend auf vordefinierten Schemata</p>
+    <div class="header-row">
+      <div>
+        <h2>Datei Upload</h2>
+        <p class="upload-subtitle">Laden Sie Dateien hoch und extrahieren Sie Daten basierend auf vordefinierten Schemata</p>
+      </div>
+      <button mat-raised-button color="accent" (click)="openArchiveDialog()" class="archive-button">
+        <mat-icon>archive</mat-icon>
+        Archiv anzeigen
+      </button>
+    </div>
 
     <div class="schema-selector-row">
       <mat-form-field appearance="outline">

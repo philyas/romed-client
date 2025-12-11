@@ -390,6 +390,60 @@ export class Api {
     });
   }
 
+  // Archive - Uploaded files
+  getArchive(): Observable<{
+    storageConfig: {
+      uploadsDir: string;
+      storageDir: string;
+      storageDirEnv: string;
+    };
+    totalFiles: number;
+    totalSize: number;
+    files: Array<{
+      storedName: string;
+      originalName: string;
+      size: number;
+      mimeType: string;
+      uploadedAt: string | null;
+      modifiedAt: string | null;
+      exists: boolean;
+      downloadUrl: string;
+      uploadId?: string;
+      schemaId?: string;
+      schemaName?: string;
+      month?: number | string;
+      year?: number;
+      jahr?: number;
+      locations?: string[];
+      rowCount?: number;
+    }>;
+    bySchema: Array<{
+      schemaId: string;
+      schemaName: string;
+      fileCount: number;
+      totalSize: number;
+      files: any[];
+    }>;
+  }> {
+    return this.http.get<{
+      storageConfig: {
+        uploadsDir: string;
+        storageDir: string;
+        storageDirEnv: string;
+      };
+      totalFiles: number;
+      totalSize: number;
+      files: Array<any>;
+      bySchema: Array<any>;
+    }>(`${this.baseUrl}/upload/archive`);
+  }
+
+  downloadUploadedFile(storedName: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/upload/file/${encodeURIComponent(storedName)}`, {
+      responseType: 'blob'
+    });
+  }
+
   private resolveBaseUrl(): string {
     if (isDevMode()) {
       return 'http://localhost:3000';

@@ -1,4 +1,4 @@
-import { Component, inject, signal, ViewChild, ElementRef, Inject } from '@angular/core';
+import { Component, inject, signal, computed, ViewChild, ElementRef, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -12,11 +12,14 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatDialogModule, MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatTableModule } from '@angular/material/table';
 import { Api, SchemaDef, UploadFileResult } from '../../core/api';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-upload',
-  imports: [CommonModule, FormsModule, MatFormFieldModule, MatSelectModule, MatButtonModule, MatIconModule, MatListModule, MatCardModule, MatProgressSpinnerModule, MatProgressBarModule, MatDialogModule, MatTooltipModule],
+  imports: [CommonModule, FormsModule, MatFormFieldModule, MatSelectModule, MatButtonModule, MatIconModule, MatListModule, MatCardModule, MatProgressSpinnerModule, MatProgressBarModule, MatDialogModule, MatTooltipModule, MatTabsModule, MatTableModule],
   templateUrl: './upload.html',
   styleUrl: './upload.scss'
 })
@@ -155,6 +158,14 @@ export class Upload {
         maxFiles: this.getMaxFiles(),
         fileFormats: this.getFileFormats()
       }
+    });
+  }
+
+  openArchiveDialog() {
+    this.dialog.open(ArchiveDialog, {
+      width: '90vw',
+      maxWidth: '1200px',
+      maxHeight: '90vh'
     });
   }
 
@@ -927,6 +938,367 @@ export class SchemaInfoDialog {
         fileFormats: string[];
       }
   ) {}
+
+  onClose(): void {
+    this.dialogRef.close();
+  }
+}
+
+// Archive Dialog Component
+@Component({
+  selector: 'archive-dialog',
+  template: `
+    <h2 mat-dialog-title>
+      <mat-icon class="archive-icon">archive</mat-icon>
+      Archiv - Hochgeladene Dateien
+    </h2>
+    
+    <mat-dialog-content>
+      <div class="archive-content">
+        <!-- Loading -->
+        <div *ngIf="loading()" class="loading-container">
+          <mat-spinner diameter="50"></mat-spinner>
+          <p>Lade Archiv...</p>
+        </div>
+
+        <!-- Error -->
+        <div *ngIf="error() && !loading()" class="error-container">
+          <mat-icon class="error-icon">error</mat-icon>
+          <p>{{ error() }}</p>
+        </div>
+
+        <!-- Archive Data -->
+        <div *ngIf="!loading() && !error() && archiveData()">
+          <div class="archive-summary">
+            <div class="summary-card">
+              <mat-icon>folder</mat-icon>
+              <div>
+                <div class="summary-label">Gesamt</div>
+                <div class="summary-value">{{ archiveData()?.totalFiles || 0 }} Dateien</div>
+              </div>
+            </div>
+            <div class="summary-card">
+              <mat-icon>storage</mat-icon>
+              <div>
+                <div class="summary-label">Gesamtgröße</div>
+                <div class="summary-value">{{ formatSize(archiveData()?.totalSize || 0) }}</div>
+              </div>
+            </div>
+            <div class="summary-card">
+              <mat-icon>category</mat-icon>
+              <div>
+                <div class="summary-label">Schemata</div>
+                <div class="summary-value">{{ archiveData()?.bySchema?.length || 0 }}</div>
+              </div>
+            </div>
+          </div>
+
+          <mat-tab-group>
+            <mat-tab label="Alle Dateien">
+              <div class="files-table-container">
+                <table mat-table [dataSource]="allFilesDataSource()" class="files-table">
+                  <ng-container matColumnDef="originalName">
+                    <th mat-header-cell *matHeaderCellDef>Dateiname</th>
+                    <td mat-cell *matCellDef="let file">
+                      <div class="file-name-cell">
+                        <mat-icon>description</mat-icon>
+                        <span>{{ file.originalName }}</span>
+                      </div>
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="schemaName">
+                    <th mat-header-cell *matHeaderCellDef>Schema</th>
+                    <td mat-cell *matCellDef="let file">{{ file.schemaName || 'Unbekannt' }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="size">
+                    <th mat-header-cell *matHeaderCellDef>Größe</th>
+                    <td mat-cell *matCellDef="let file">{{ formatSize(file.size) }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="uploadedAt">
+                    <th mat-header-cell *matHeaderCellDef>Hochgeladen am</th>
+                    <td mat-cell *matCellDef="let file">{{ formatDate(file.uploadedAt) }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="actions">
+                    <th mat-header-cell *matHeaderCellDef>Aktionen</th>
+                    <td mat-cell *matCellDef="let file">
+                      <button mat-icon-button 
+                              (click)="downloadFile(file)"
+                              [disabled]="downloadingFile() === file.storedName"
+                              matTooltip="Datei herunterladen"
+                              color="primary">
+                        <mat-icon *ngIf="downloadingFile() !== file.storedName">download</mat-icon>
+                        <mat-spinner *ngIf="downloadingFile() === file.storedName" diameter="20"></mat-spinner>
+                      </button>
+                    </td>
+                  </ng-container>
+
+                  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                  <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+                </table>
+              </div>
+            </mat-tab>
+
+            <mat-tab *ngFor="let schemaGroup of archiveData()?.bySchema" [label]="schemaGroup.schemaName">
+              <div class="schema-group-header">
+                <p><strong>{{ schemaGroup.fileCount }}</strong> Dateien ({{ formatSize(schemaGroup.totalSize) }})</p>
+              </div>
+              <div class="files-table-container">
+                <table mat-table [dataSource]="schemaGroup.files" class="files-table">
+                  <ng-container matColumnDef="originalName">
+                    <th mat-header-cell *matHeaderCellDef>Dateiname</th>
+                    <td mat-cell *matCellDef="let file">
+                      <div class="file-name-cell">
+                        <mat-icon>description</mat-icon>
+                        <span>{{ file.originalName }}</span>
+                      </div>
+                    </td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="size">
+                    <th mat-header-cell *matHeaderCellDef>Größe</th>
+                    <td mat-cell *matCellDef="let file">{{ formatSize(file.size) }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="uploadedAt">
+                    <th mat-header-cell *matHeaderCellDef>Hochgeladen am</th>
+                    <td mat-cell *matCellDef="let file">{{ formatDate(file.uploadedAt) }}</td>
+                  </ng-container>
+
+                  <ng-container matColumnDef="actions">
+                    <th mat-header-cell *matHeaderCellDef>Aktionen</th>
+                    <td mat-cell *matCellDef="let file">
+                      <button mat-icon-button 
+                              (click)="downloadFile(file)"
+                              [disabled]="downloadingFile() === file.storedName"
+                              matTooltip="Datei herunterladen"
+                              color="primary">
+                        <mat-icon *ngIf="downloadingFile() !== file.storedName">download</mat-icon>
+                        <mat-spinner *ngIf="downloadingFile() === file.storedName" diameter="20"></mat-spinner>
+                      </button>
+                    </td>
+                  </ng-container>
+
+                  <tr mat-header-row *matHeaderRowDef="schemaDisplayedColumns"></tr>
+                  <tr mat-row *matRowDef="let row; columns: schemaDisplayedColumns"></tr>
+                </table>
+              </div>
+            </mat-tab>
+          </mat-tab-group>
+        </div>
+      </div>
+    </mat-dialog-content>
+    
+    <mat-dialog-actions align="end">
+      <button mat-raised-button color="primary" (click)="onClose()">Schließen</button>
+    </mat-dialog-actions>
+  `,
+  imports: [
+    MatDialogModule, 
+    MatButtonModule, 
+    MatIconModule, 
+    CommonModule, 
+    MatProgressSpinnerModule,
+    MatTabsModule,
+    MatTableModule,
+    MatTooltipModule
+  ],
+  standalone: true,
+  styles: [`
+    h2 {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0;
+      font-weight: 600;
+    }
+    
+    .archive-icon {
+      color: #0066cc;
+      font-size: 28px;
+      width: 28px;
+      height: 28px;
+    }
+    
+    .archive-content {
+      min-width: 800px;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+    
+    .loading-container,
+    .error-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      gap: 16px;
+    }
+    
+    .error-icon {
+      color: #f44336;
+      font-size: 48px;
+      width: 48px;
+      height: 48px;
+    }
+    
+    .archive-summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    
+    .summary-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 3px solid #0066cc;
+    }
+    
+    .summary-card mat-icon {
+      color: #0066cc;
+      font-size: 32px;
+      width: 32px;
+      height: 32px;
+    }
+    
+    .summary-label {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+    
+    .summary-value {
+      font-size: 20px;
+      font-weight: 600;
+      color: #333;
+    }
+    
+    .schema-group-header {
+      padding: 16px;
+      background: #e3f2fd;
+      border-radius: 8px;
+      margin-bottom: 16px;
+    }
+    
+    .files-table-container {
+      max-height: 500px;
+      overflow-y: auto;
+      margin-top: 16px;
+    }
+    
+    .files-table {
+      width: 100%;
+    }
+    
+    .file-name-cell {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .file-name-cell mat-icon {
+      color: #0066cc;
+    }
+  `]
+})
+export class ArchiveDialog {
+  private api = inject(Api);
+  
+  loading = signal<boolean>(true);
+  error = signal<string | null>(null);
+  archiveData = signal<any>(null);
+  downloadingFile = signal<string | null>(null);
+  
+  displayedColumns = ['originalName', 'schemaName', 'size', 'uploadedAt', 'actions'];
+  schemaDisplayedColumns = ['originalName', 'size', 'uploadedAt', 'actions'];
+  
+  allFilesDataSource = computed(() => {
+    const data = this.archiveData();
+    if (!data?.files) return [];
+    return data.files;
+  });
+
+  constructor(
+    public dialogRef: MatDialogRef<ArchiveDialog>
+  ) {
+    this.loadArchive();
+  }
+
+  async loadArchive() {
+    this.loading.set(true);
+    this.error.set(null);
+    
+    try {
+      const data = await firstValueFrom(this.api.getArchive());
+      this.archiveData.set(data);
+    } catch (err: any) {
+      console.error('Error loading archive:', err);
+      this.error.set(err.error?.error || err.message || 'Fehler beim Laden des Archivs');
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  async downloadFile(file: any) {
+    if (!file.storedName || !file.exists) {
+      alert('Datei nicht gefunden');
+      return;
+    }
+    
+    this.downloadingFile.set(file.storedName);
+    
+    try {
+      const blob = await firstValueFrom(this.api.downloadUploadedFile(file.storedName));
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = file.originalName || file.storedName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      console.error('Error downloading file:', err);
+      alert('Fehler beim Herunterladen der Datei: ' + (err.error?.error || err.message || 'Unbekannter Fehler'));
+    } finally {
+      this.downloadingFile.set(null);
+    }
+  }
+
+  formatSize(bytes: number): string {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+  }
+
+  formatDate(dateString: string | null): string {
+    if (!dateString) return 'Unbekannt';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleString('de-DE', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return dateString;
+    }
+  }
 
   onClose(): void {
     this.dialogRef.close();
