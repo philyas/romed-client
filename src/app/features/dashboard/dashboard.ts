@@ -12,6 +12,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { Api, ResultsResponse, UploadRecord, MitternachtsstatistikResponse, SchemaStatistics } from '../../core/api';
 import { MitternachtsstatistikCharts } from '../mitternachtsstatistik-charts/mitternachtsstatistik-charts';
@@ -27,7 +28,8 @@ import { catchError } from 'rxjs/operators';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule, NgIf, MatCardModule, MatChipsModule, MatIconModule, MatButtonModule, MatExpansionModule, MatDialogModule, MatProgressSpinnerModule, MatProgressBarModule, RouterModule, MitternachtsstatistikCharts, COCharts, MinaMitaCharts, PflegestufenstatistikCharts, SaldenZeitkontenCharts, MitteilungenBettenCharts, PatientenPflegekraftCharts, AusfallstatistikCharts],
+  standalone: true,
+  imports: [CommonModule, NgIf, MatCardModule, MatChipsModule, MatIconModule, MatButtonModule, MatExpansionModule, MatDialogModule, MatProgressSpinnerModule, MatProgressBarModule, MatSelectModule, MatFormFieldModule, RouterModule, MitternachtsstatistikCharts, COCharts, MinaMitaCharts, PflegestufenstatistikCharts, SaldenZeitkontenCharts, MitteilungenBettenCharts, PatientenPflegekraftCharts, AusfallstatistikCharts],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss'
 })
@@ -42,6 +44,9 @@ export class Dashboard implements AfterViewInit {
   globalSelectedYear = signal<number>(new Date().getFullYear());
   globalSelectedStation = signal<string>('all');
   mitternachtsstatistikData = signal<MitternachtsstatistikResponse | null>(null);
+  coSelectedYear = signal<number | null>(null);
+  coUploads = signal<UploadRecord[]>([]);
+  coAvailableYears = signal<number[]>([]);
   highlightedSchemaId = signal<string | null>(null);
   isLoading = signal<boolean>(true);
   // Show PPK charts only when manual-entry data exists (day or night)
@@ -49,7 +54,7 @@ export class Dashboard implements AfterViewInit {
 
   // Computed signals for schema-specific data
   hasCOData = computed(() => {
-    const uploads = this.data()?.uploads || [];
+    const uploads = this.coUploads();
     return uploads.some(u => u.schemaId === 'co_entlass_aufnahmezeiten');
   });
 
@@ -108,6 +113,7 @@ export class Dashboard implements AfterViewInit {
       data: this.api.getData(),
       statistics: this.api.getStatistics(),
       mitternachtsstatistik: this.api.getMitternachtsstatistik(),
+      coData: this.api.getDataWithFilters('co_entlass_aufnahmezeiten', undefined, undefined, this.coSelectedYear() ?? undefined),
       manualEntryDay: this.api.getManualEntryStations().pipe(
         catchError(() => of({ stations: [] }))
       ),
@@ -115,10 +121,28 @@ export class Dashboard implements AfterViewInit {
         catchError(() => of({ stations: [] }))
       )
     }).subscribe({
-      next: ({ data, statistics, mitternachtsstatistik, manualEntryDay, manualEntryNight }) => {
+      next: ({ data, statistics, mitternachtsstatistik, coData, manualEntryDay, manualEntryNight }) => {
         this.data.set(data);
         this.statistics.set(statistics.statistics);
         this.mitternachtsstatistikData.set(mitternachtsstatistik);
+        this.coUploads.set(coData?.uploads || []);
+        const coUpload = (coData?.uploads || []).find(u => u.schemaId === 'co_entlass_aufnahmezeiten');
+        const availableYears = (coUpload as any)?.availableYears || [];
+        if (Array.isArray(availableYears) && availableYears.length > 0) {
+          this.coAvailableYears.set(availableYears);
+          if (!this.coSelectedYear() || !availableYears.includes(this.coSelectedYear()!)) {
+            this.coSelectedYear.set(availableYears[0]);
+          }
+        } else {
+          // Fallback: derive years from uploads' year field if present
+          const years = Array.from(new Set((coData?.uploads || []).map((u: any) => u.year).filter((y: any) => typeof y === 'number'))).sort((a, b) => b - a);
+          if (years.length > 0) {
+            this.coAvailableYears.set(years);
+            if (!this.coSelectedYear() || !years.includes(this.coSelectedYear()!)) {
+              this.coSelectedYear.set(years[0]);
+            }
+          }
+        }
 
         const dayStations = manualEntryDay?.stations ?? [];
         const nightStations = manualEntryNight?.stations ?? [];
@@ -138,6 +162,11 @@ export class Dashboard implements AfterViewInit {
 
   onGlobalYearChange(year: number) {
     this.globalSelectedYear.set(year);
+  }
+
+  onCoYearChange(year: number) {
+    this.coSelectedYear.set(year);
+    this.refresh();
   }
 
   onGlobalStationChange(station: string) {

@@ -198,11 +198,12 @@ export class Api {
     return this.http.get<MitternachtsstatistikResponse>(`${this.baseUrl}/data/mitternachtsstatistik`, { params });
   }
 
-  getDataWithFilters(schemaId?: string, month?: string, location?: string): Observable<ResultsResponse> {
+  getDataWithFilters(schemaId?: string, month?: string, location?: string, jahr?: number): Observable<ResultsResponse> {
     let params = new HttpParams();
     if (schemaId) params = params.set('schemaId', schemaId);
     if (month) params = params.set('month', month);
     if (location) params = params.set('location', location);
+    if (typeof jahr === 'number' && !Number.isNaN(jahr)) params = params.set('jahr', jahr.toString());
     return this.http.get<ResultsResponse>(`${this.baseUrl}/data`, { params });
   }
 

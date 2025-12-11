@@ -26,6 +26,7 @@ interface PflegestufenData {
 
 @Component({
   selector: 'app-pflegestufenstatistik-charts',
+  standalone: true,
   imports: [
     CommonModule,
     MatCardModule,
@@ -46,6 +47,15 @@ interface PflegestufenData {
             Pflegestufen PPR - {{ selectedStandort() }} ({{ selectedYear() }})
           </h3>
           <div class="selectors">
+            <app-searchable-select
+              class="selector"
+              label="Jahr"
+              icon="calendar_month"
+              [options]="yearOptions()"
+              [value]="selectedYear().toString()"
+              (valueChange)="onYearChange($event)">
+            </app-searchable-select>
+
             <app-searchable-select
               class="selector"
               label="Standort"
@@ -232,6 +242,8 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
   selectedStandort = signal<string>('BAB');
   selectedStation = signal<string>('Alle');
   selectedYear = signal<number>(new Date().getFullYear());
+  availableYears = signal<number[]>([]);
+  yearOptions = computed<string[]>(() => this.availableYears().map((y: number) => y.toString()));
   
   pflegestufenData = signal<PflegestufenData[]>([]);
   flippedCards = signal<{ [key: string]: boolean }>({});
@@ -241,14 +253,14 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
   
   availableStandorte = computed(() => {
     const standorte = new Set<string>();
-    this.pflegestufenData().forEach(d => standorte.add(d.Standort));
+    this.filterByYear(this.pflegestufenData()).forEach(d => standorte.add(d.Standort));
     return Array.from(standorte).sort();
   });
   
   availableStations = computed(() => {
     const stations = new Set<string>();
     stations.add('Alle'); // Add "All stations" option
-    this.pflegestufenData()
+    this.filterByYear(this.pflegestufenData())
       .filter(d => d.Standort === this.selectedStandort() && d.Kategorie === 'Gesamt')
       .forEach(d => stations.add(d.Station));
     return Array.from(stations).sort();
@@ -504,6 +516,7 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
     if (pflegeUploads.length === 0) {
       this.pflegestufenData.set([]);
       this.dataInfoItems.set([]);
+      this.availableYears.set([]);
       this.chartLoading.set(false);
       return;
     }
@@ -512,13 +525,32 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
     this.prepareDataInfoItems(pflegeUploads);
 
     const allData: PflegestufenData[] = [];
+    const years = new Set<number>();
     pflegeUploads.forEach(upload => {
+      if ((upload as any).availableYears && Array.isArray((upload as any).availableYears)) {
+        (upload as any).availableYears.forEach((y: any) => {
+          const num = Number(y);
+          if (!Number.isNaN(num)) years.add(num);
+        });
+      }
       upload.files.forEach(file => {
         if (file.values && Array.isArray(file.values)) {
-          allData.push(...file.values as unknown as PflegestufenData[]);
+          const vals = file.values as unknown as PflegestufenData[];
+          vals.forEach(v => {
+            if (typeof v.Jahr === 'number' && !Number.isNaN(v.Jahr)) years.add(v.Jahr);
+          });
+          allData.push(...vals);
         }
       });
     });
+
+    const sortedYears = Array.from(years).sort((a, b) => b - a);
+    this.availableYears.set(sortedYears);
+    if (sortedYears.length > 0) {
+      if (!this.selectedYear() || !sortedYears.includes(this.selectedYear())) {
+        this.selectedYear.set(sortedYears[0]);
+      }
+    }
 
     this.pflegestufenData.set(allData);
     
@@ -529,8 +561,15 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
     this.chartLoading.set(false);
   }
 
+  private filterByYear(data: PflegestufenData[]): PflegestufenData[] {
+    const year = this.selectedYear();
+    if (!year) return data;
+    return data.filter(d => d.Jahr === year);
+  }
+
   getFilteredData(): PflegestufenData[] {
-    const filtered = this.pflegestufenData().filter(d => 
+    const byYear = this.filterByYear(this.pflegestufenData());
+    const filtered = byYear.filter(d => 
       d.Standort === this.selectedStandort() && 
       d.Kategorie === 'Gesamt' // Only show "Gesamt" rows for overview charts
     );
@@ -543,7 +582,8 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
   }
 
   getDetailedData(): PflegestufenData[] {
-    const filtered = this.pflegestufenData().filter(d => 
+    const byYear = this.filterByYear(this.pflegestufenData());
+    const filtered = byYear.filter(d => 
       d.Standort === this.selectedStandort() && 
       d.Kategorie !== 'Gesamt' // Exclude "Gesamt" rows for detailed view
     );
@@ -565,6 +605,14 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
   onStationChange(station: string) {
     this.chartLoading.set(true);
     this.selectedStation.set(station);
+  }
+
+  onYearChange(yearString: string) {
+    const year = parseInt(yearString, 10);
+    if (!Number.isNaN(year)) {
+      this.chartLoading.set(true);
+      this.selectedYear.set(year);
+    }
   }
 
   openComparisonDialog(event?: MouseEvent) {

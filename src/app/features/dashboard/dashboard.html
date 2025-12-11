@@ -87,21 +87,31 @@
         *ngIf="hasCOData()">
         <div class="schema-header">
           <h2 class="schema-title">CO Entlass-/Aufnahmezeiten</h2>
-          <button 
-            mat-stroked-button 
-            color="warn" 
-            (click)="openDeleteSchemaDialog('co_entlass_aufnahmezeiten', 'CO Entlass-/Aufnahmezeiten')"
-            class="delete-schema-button"
-            matTooltip="Alle Daten für dieses Schema zurücksetzen">
-            <mat-icon>delete</mat-icon>
-            <span>Daten zurücksetzen</span>
-          </button>
+          <div class="schema-actions">
+            <mat-form-field appearance="outline" class="year-select-field" *ngIf="coAvailableYears().length > 0">
+              <mat-label>Jahr</mat-label>
+              <mat-select [value]="coSelectedYear() || coAvailableYears()[0]" (selectionChange)="onCoYearChange($event.value)">
+                <mat-option *ngFor="let year of coAvailableYears()" [value]="year">
+                  {{ year }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+            <button 
+              mat-stroked-button 
+              color="warn" 
+              (click)="openDeleteSchemaDialog('co_entlass_aufnahmezeiten', 'CO Entlass-/Aufnahmezeiten')"
+              class="delete-schema-button"
+              matTooltip="Alle Daten für dieses Schema zurücksetzen">
+              <mat-icon>delete</mat-icon>
+              <span>Daten zurücksetzen</span>
+            </button>
+          </div>
         </div>
         <app-co-charts 
-          [uploads]="data()?.uploads || []"
+          [uploads]="coUploads()"
           [statistics]="statistics()"
           [schemaId]="'co_entlass_aufnahmezeiten'"
-          [selectedYear]="globalSelectedYear()">
+          [selectedYear]="coSelectedYear() ?? globalSelectedYear()">
         </app-co-charts>
       </section>
 
