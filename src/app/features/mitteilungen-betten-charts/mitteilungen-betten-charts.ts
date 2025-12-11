@@ -197,10 +197,11 @@ export class MitteilungenBettenCharts {
 
   onYearChange(yearString: string) {
     const parsed = parseInt(yearString, 10);
-    if (!Number.isNaN(parsed)) {
-      this.chartLoading.set(true);
-      this.selectedYear.set(parsed);
+    if (Number.isNaN(parsed) || parsed === this.selectedYear()) {
+      return;
     }
+    this.chartLoading.set(true);
+    this.selectedYear.set(parsed);
   }
 
   comparisonSeries = computed<ComparisonSeries[]>(() => {

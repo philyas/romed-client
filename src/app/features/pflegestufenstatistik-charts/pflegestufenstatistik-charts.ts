@@ -596,6 +596,9 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
   }
 
   onStandortChange(standort: string) {
+    if (standort === this.selectedStandort()) {
+      return;
+    }
     this.chartLoading.set(true);
     this.selectedStandort.set(standort);
     // Reset station to "Alle"
@@ -603,16 +606,20 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
   }
 
   onStationChange(station: string) {
+    if (station === this.selectedStation()) {
+      return;
+    }
     this.chartLoading.set(true);
     this.selectedStation.set(station);
   }
 
   onYearChange(yearString: string) {
     const year = parseInt(yearString, 10);
-    if (!Number.isNaN(year)) {
-      this.chartLoading.set(true);
-      this.selectedYear.set(year);
+    if (Number.isNaN(year) || year === this.selectedYear()) {
+      return;
     }
+    this.chartLoading.set(true);
+    this.selectedYear.set(year);
   }
 
   openComparisonDialog(event?: MouseEvent) {

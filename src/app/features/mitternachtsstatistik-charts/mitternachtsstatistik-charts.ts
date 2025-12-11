@@ -1098,6 +1098,9 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
   }
 
   onLocationChange(location: string) {
+    if (location === this.selectedLocation()) {
+      return;
+    }
     this.chartLoading.set(true);
     this.selectedLocation.set(location);
     this.selectedStation.set('all'); // Reset station to "all" when location changes
@@ -1105,11 +1108,17 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
   }
 
   onStationChange(station: string) {
+    if (station === this.selectedStation()) {
+      return;
+    }
     this.chartLoading.set(true);
     this.selectedStation.set(station);
   }
 
   onYearChange(year: number) {
+    if (year === this.selectedYear()) {
+      return;
+    }
     this.selectedYear.set(year);
     this.currentYear.set(year);
     this.chartLoading.set(true);

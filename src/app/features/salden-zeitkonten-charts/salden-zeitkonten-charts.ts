@@ -989,11 +989,17 @@ export class SaldenZeitkontenCharts implements OnInit, OnChanges {
   }
 
   onKSTChange(kst: string) {
+    if (kst === this.selectedKST()) {
+      return;
+    }
     this.chartLoading.set(true);
     this.selectedKST.set(kst);
   }
 
   onYearChange(year: number) {
+    if (year === this.selectedYear()) {
+      return;
+    }
     this.chartLoading.set(true);
     this.selectedYear.set(year);
   }

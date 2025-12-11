@@ -350,10 +350,16 @@ export class MinaMitaCharts implements OnChanges {
   }
 
   onStationChange(station: string) {
+    if (station === this.selectedStation()) {
+      return;
+    }
     this.selectedStation.set(station);
   }
 
   onYearChange(year: number) {
+    if (year === this.selectedYear()) {
+      return;
+    }
     this.selectedYear.set(year);
     const minaMinaUploads = this.uploads.filter(u => u.schemaId === 'ppugv_bestaende');
     this.filteredUploads.set(this.filterUploadsByYear(minaMinaUploads, year));
