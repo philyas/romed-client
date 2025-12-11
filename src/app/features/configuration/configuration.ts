@@ -436,4 +436,26 @@ export class Configuration implements OnInit {
     });
   }
 
+  downloadBackup(backupName: string) {
+    this.api.downloadSqlBackup(backupName).subscribe({
+      next: (blob) => {
+        // Create a download link
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = backupName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        this.snackBar.open(`Backup "${backupName}" wird heruntergeladen`, 'Schließen', { duration: 2000 });
+      },
+      error: (err) => {
+        console.error('Error downloading backup:', err);
+        const errorMessage = err.error?.error || err.error?.message || err.message || 'Fehler beim Herunterladen des Backups';
+        this.snackBar.open(errorMessage, 'Schließen', { duration: 5000 });
+      }
+    });
+  }
+
 }

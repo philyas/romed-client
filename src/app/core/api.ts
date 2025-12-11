@@ -384,6 +384,12 @@ export class Api {
     return this.http.get<{ success: boolean; backups: Array<{ name: string; timestamp: string; size: number; sizeFormatted: string }>; count: number; storageDir: string }>(`${this.baseUrl}/backup/list`);
   }
 
+  downloadSqlBackup(filename: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/backup/download/${encodeURIComponent(filename)}`, {
+      responseType: 'blob'
+    });
+  }
+
   private resolveBaseUrl(): string {
     if (isDevMode()) {
       return 'http://localhost:3000';

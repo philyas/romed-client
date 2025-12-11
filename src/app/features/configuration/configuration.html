@@ -339,6 +339,13 @@
                       </span>
                     </div>
                   </div>
+                  <button
+                    mat-icon-button
+                    matTooltip="Backup herunterladen"
+                    (click)="downloadBackup(backup.name)"
+                    color="primary">
+                    <mat-icon>download</mat-icon>
+                  </button>
                 </div>
               </div>
 
