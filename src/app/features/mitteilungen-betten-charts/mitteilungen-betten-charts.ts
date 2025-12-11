@@ -49,6 +49,7 @@ export class MitteilungenBettenCharts {
   selectedStation = signal<string>('all');
   readonly allStandorteLabel = 'Alle Standorte';
   readonly allStationenLabel = 'Alle Stationen';
+  availableYearOptions = computed<string[]>(() => this.availableYears().map((y) => y.toString()));
   
   flippedCards: { [key: string]: boolean } = {};
   private dialog = inject(MatDialog);
@@ -69,6 +70,14 @@ export class MitteilungenBettenCharts {
     effect(() => {
       if (this.selectedYearInput) {
         this.selectedYear.set(this.selectedYearInput);
+      }
+    });
+
+    // Ensure selected year is valid when available years change
+    effect(() => {
+      const years = this.availableYears();
+      if (years.length > 0 && !years.includes(this.selectedYear())) {
+        this.selectedYear.set(years[0]);
       }
     });
 
@@ -185,6 +194,14 @@ export class MitteilungenBettenCharts {
     const stations = new Set(data.map(d => d.Station));
     return Array.from(stations).sort();
   });
+
+  onYearChange(yearString: string) {
+    const parsed = parseInt(yearString, 10);
+    if (!Number.isNaN(parsed)) {
+      this.chartLoading.set(true);
+      this.selectedYear.set(parsed);
+    }
+  }
 
   comparisonSeries = computed<ComparisonSeries[]>(() => {
     const months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
@@ -454,11 +471,6 @@ export class MitteilungenBettenCharts {
         standort: d.Standort,
         betten: d.Bettenanzahl
       }));
-  }
-
-  onYearChange(year: number) {
-    this.chartLoading.set(true);
-    this.selectedYear.set(year);
   }
 
   onStandortChange(standort: string) {

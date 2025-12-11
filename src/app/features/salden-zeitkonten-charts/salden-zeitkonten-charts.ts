@@ -69,7 +69,6 @@ interface KostenstellenMappingItem {
             ></app-searchable-select>
             
             <app-searchable-select
-              *ngIf="availableYearOptions().length > 1"
               class="selector"
               label="Jahr"
               icon="calendar_today"

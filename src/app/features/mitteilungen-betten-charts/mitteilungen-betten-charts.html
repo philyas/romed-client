@@ -7,6 +7,15 @@
       </h3>
       <div class="selectors-container">
         <app-searchable-select
+          class="year-selector"
+          label="Jahr"
+          icon="calendar_month"
+          [options]="availableYearOptions()"
+          [value]="selectedYear().toString()"
+          (valueChange)="onYearChange($event)">
+        </app-searchable-select>
+
+        <app-searchable-select
           class="standort-selector"
           label="Standort"
           icon="location_on"
