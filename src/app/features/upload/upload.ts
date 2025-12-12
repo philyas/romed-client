@@ -1073,12 +1073,13 @@ export class SchemaInfoDialog {
                     <td mat-cell *matCellDef="let file">
                       <button mat-icon-button 
                               (click)="downloadFile(file)"
-                              [disabled]="downloadingFile() === file.storedName"
-                              matTooltip="Datei herunterladen"
+                              [disabled]="downloadingFile() === file.storedName || !file.exists"
+                              [matTooltip]="file.exists ? 'Datei herunterladen' : 'Datei nicht gefunden'"
                               color="primary">
                         <mat-icon *ngIf="downloadingFile() !== file.storedName">download</mat-icon>
                         <mat-spinner *ngIf="downloadingFile() === file.storedName" diameter="20"></mat-spinner>
                       </button>
+                      <mat-icon *ngIf="!file.exists" color="warn" matTooltip="Datei nicht auf Server gefunden" style="margin-left: 8px;">warning</mat-icon>
                     </td>
                   </ng-container>
 
