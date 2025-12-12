@@ -15,7 +15,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { Api } from '../../core/api';
+import { Api, CalculationConstant } from '../../core/api';
 import { KostenstelleDialogComponent, KostenstelleDialogResult } from './kostenstelle-dialog.component';
 
 interface Kostenstelle {
@@ -71,6 +71,12 @@ export class Configuration implements OnInit {
   backups = signal<Array<{ name: string; timestamp: string; size: number; sizeFormatted: string }>>([]);
   loadingBackups = signal(false);
 
+  // Calculation Constants
+  constants = signal<CalculationConstant[]>([]);
+  loadingConstants = signal(false);
+  savingConstants = signal(false);
+  editingValues: Record<string, number | undefined> = {};
+
   ngOnInit() {
     this.dataSource.filterPredicate = (data, filter) => {
       if (!filter) return true;
@@ -88,6 +94,7 @@ export class Configuration implements OnInit {
     this.loadKostenstellen();
     void this.loadStationOptions();
     this.loadBackups();
+    this.loadConstants();
   }
 
   loadKostenstellen() {
@@ -328,6 +335,85 @@ export class Configuration implements OnInit {
         const errorMessage = err.error?.error || err.error?.message || err.message || 'Fehler beim Herunterladen des Backups';
         this.snackBar.open(errorMessage, 'Schließen', { duration: 5000 });
       }
+    });
+  }
+
+  // Calculation Constants Methods
+  loadConstants() {
+    this.loadingConstants.set(true);
+    this.api.getCalculationConstants().subscribe({
+      next: (response) => {
+        this.constants.set(response.data);
+        // Initialize editing values with current values
+        this.editingValues = {};
+        response.data.forEach(c => {
+          this.editingValues[c.key] = c.value;
+        });
+        this.loadingConstants.set(false);
+      },
+      error: (err) => {
+        console.error('Error loading calculation constants:', err);
+        this.snackBar.open('Fehler beim Laden der Berechnungskonstanten', 'Schließen', { duration: 3000 });
+        this.loadingConstants.set(false);
+      }
+    });
+  }
+
+  onConstantValueChange(key: string, event: Event) {
+    const input = event.target as HTMLInputElement;
+    const value = parseFloat(input.value);
+    if (!isNaN(value)) {
+      this.editingValues[key] = value;
+    }
+  }
+
+  hasChanges(): boolean {
+    return this.constants().some(c => {
+      if (!c.is_editable) return false;
+      const currentValue = this.editingValues[c.key];
+      return currentValue !== undefined && currentValue !== c.value;
+    });
+  }
+
+  resetConstants() {
+    this.constants().forEach(c => {
+      this.editingValues[c.key] = c.value;
+    });
+  }
+
+  saveConstants() {
+    if (!this.hasChanges()) {
+      return;
+    }
+
+    this.savingConstants.set(true);
+    const constantsToUpdate = this.constants().filter(c => {
+      if (!c.is_editable) return false;
+      const newValue = this.editingValues[c.key];
+      return newValue !== undefined && newValue !== c.value;
+    });
+
+    const updatePromises = constantsToUpdate.map(c => {
+      const newValue = this.editingValues[c.key];
+      if (newValue === undefined) {
+        throw new Error(`Value for constant ${c.key} is undefined`);
+      }
+      return firstValueFrom(this.api.updateCalculationConstant(c.key, newValue));
+    });
+
+    Promise.all(updatePromises).then(() => {
+      this.savingConstants.set(false);
+      this.snackBar.open(
+        `${constantsToUpdate.length} Konstante(n) erfolgreich aktualisiert`,
+        'Schließen',
+        { duration: 3000 }
+      );
+      this.loadConstants(); // Reload to get updated values
+    }).catch((err) => {
+      console.error('Error saving calculation constants:', err);
+      this.savingConstants.set(false);
+      const errorMessage = err.error?.error || err.message || 'Fehler beim Speichern der Konstanten';
+      this.snackBar.open(errorMessage, 'Schließen', { duration: 5000 });
     });
   }
 

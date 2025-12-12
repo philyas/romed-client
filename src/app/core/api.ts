@@ -100,6 +100,19 @@ export interface PfkThresholdConfig {
   updatedAt: string | null;
 }
 
+export interface CalculationConstant {
+  id: number;
+  key: string;
+  name: string;
+  description: string | null;
+  value: number;
+  unit: string | null;
+  category: string;
+  is_editable: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface PfkAlert {
   id: string;
   thresholdId: string;
@@ -418,6 +431,32 @@ export class Api {
     return this.http.get(`${this.baseUrl}/upload/file/${encodeURIComponent(storedName)}`, {
       responseType: 'blob'
     });
+  }
+
+  // Calculation Constants API
+  getCalculationConstants(): Observable<{ success: boolean; data: CalculationConstant[] }> {
+    return this.http.get<{ success: boolean; data: CalculationConstant[] }>(
+      `${this.baseUrl}/api/calculation-constants`
+    );
+  }
+
+  getCalculationConstant(key: string): Observable<{ success: boolean; data: CalculationConstant }> {
+    return this.http.get<{ success: boolean; data: CalculationConstant }>(
+      `${this.baseUrl}/api/calculation-constants/${key}`
+    );
+  }
+
+  updateCalculationConstant(key: string, value: number, name?: string, description?: string): Observable<{ success: boolean; data: CalculationConstant; message: string }> {
+    return this.http.put<{ success: boolean; data: CalculationConstant; message: string }>(
+      `${this.baseUrl}/api/calculation-constants/${key}`,
+      { value, name, description }
+    );
+  }
+
+  getCalculationConstantsByCategory(category: string): Observable<{ success: boolean; data: CalculationConstant[] }> {
+    return this.http.get<{ success: boolean; data: CalculationConstant[] }>(
+      `${this.baseUrl}/api/calculation-constants/category/${category}`
+    );
   }
 
   private resolveBaseUrl(): string {
