@@ -174,7 +174,7 @@ export class ManualEntry {
   loadDataForPeriod(station: string, jahr: number, monat: number, kategorie: 'PFK' | 'PHK') {
     this.loading.set(true);
     
-    this.api.getManualEntryData(station, jahr, monat, kategorie).subscribe({
+    this.api.getManualEntryData(station, jahr, monat, kategorie, 'tag').subscribe({
       next: (response) => {
         if (response.data.length > 0) {
           // Lade Durchschnittswerte (Tag=0)

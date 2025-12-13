@@ -246,12 +246,13 @@ export class Api {
     return this.http.get<PatientenPflegekraftOverviewResponse>(`${this.baseUrl}/manual-entry/patienten-pflegekraft/overview`, { params });
   }
 
-  getManualEntryData(station: string, jahr: number, monat: number, kategorie: string): Observable<ManualEntryDataResponse> {
+  getManualEntryData(station: string, jahr: number, monat: number, kategorie: string, schicht: 'tag' | 'nacht' = 'tag'): Observable<ManualEntryDataResponse> {
     const params = new HttpParams()
       .set('station', station)
       .set('jahr', jahr.toString())
       .set('monat', monat.toString())
-      .set('kategorie', kategorie);
+      .set('kategorie', kategorie)
+      .set('schicht', schicht);
     return this.http.get<ManualEntryDataResponse>(`${this.baseUrl}/manual-entry/data`, { params });
   }
 
@@ -295,7 +296,7 @@ export class Api {
   uploadDienstplan(file: File, variant: '2026' | 'legacy' = 'legacy'): Observable<{ success: boolean; message: string; uploaded: any[]; totalEntries: number }> {
     const form = new FormData();
     form.append('file', file);
-    form.append('schicht', 'tag'); // Default to tag, can be changed if needed
+    // Kein schicht-Parameter: Beide Schichten (Tag und Nacht) werden verarbeitet
     form.append('variant', variant);
     return this.http.post<{ success: boolean; message: string; uploaded: any[]; totalEntries: number }>(`${this.baseUrl}/manual-entry/upload-dienstplan`, form);
   }
