@@ -60,7 +60,6 @@ export class Configuration implements OnInit {
   dataSource = new MatTableDataSource<Kostenstelle>([]);
   loading = signal(false);
   saving = signal(false);
-  selectedFile = signal<File | null>(null);
   
   displayedColumns: string[] = ['kostenstelle', 'stations', 'standorte', 'standortnummer', 'ik', 'paediatrie', 'actions'];
 
@@ -164,63 +163,6 @@ export class Configuration implements OnInit {
     });
   }
 
-  onFileSelected(event: Event) {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files.length > 0) {
-      const file = input.files[0];
-      if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
-        this.snackBar.open('Bitte wählen Sie eine Excel-Datei (.xlsx oder .xls)', 'Schließen', { duration: 3000 });
-        return;
-      }
-      this.selectedFile.set(file);
-    }
-  }
-
-  importFromFile() {
-    const file = this.selectedFile();
-    if (!file) {
-      this.snackBar.open('Bitte wählen Sie eine Datei aus', 'Schließen', { duration: 3000 });
-      return;
-    }
-
-    this.loading.set(true);
-    this.api.importKostenstellenFromFile(file).subscribe({
-      next: (response) => {
-        this.loading.set(false);
-        this.snackBar.open(response.message, 'Schließen', { duration: 3000 });
-        this.selectedFile.set(null);
-        this.loadKostenstellen();
-      },
-      error: (err) => {
-        this.loading.set(false);
-        console.error('Error importing kostenstellen:', err);
-        const errorMessage = err.error?.error || err.message || 'Fehler beim Importieren';
-        this.snackBar.open(errorMessage, 'Schließen', { duration: 5000 });
-      }
-    });
-  }
-
-  importFromSample() {
-    if (!confirm('Möchten Sie die Beispieldatei importieren? Alle vorhandenen Daten werden überschrieben.')) {
-      return;
-    }
-
-    this.loading.set(true);
-    this.api.importKostenstellenFromSample().subscribe({
-      next: (response) => {
-        this.loading.set(false);
-        this.snackBar.open(response.message, 'Schließen', { duration: 3000 });
-        this.loadKostenstellen();
-      },
-      error: (err) => {
-        this.loading.set(false);
-        console.error('Error importing sample:', err);
-        const errorMessage = err.error?.error || err.message || 'Fehler beim Importieren';
-        this.snackBar.open(errorMessage, 'Schließen', { duration: 5000 });
-      }
-    });
-  }
-
   deleteKostenstelle(kostenstelle: string) {
     if (!confirm(`Möchten Sie die Kostenstelle ${kostenstelle} wirklich löschen?`)) {
       return;
@@ -257,15 +199,6 @@ export class Configuration implements OnInit {
       this.stationOptions.set(sorted);
     } catch (error) {
       console.error('Fehler beim Laden der Stationsliste:', error);
-    }
-  }
-
-
-  clearSelectedFile() {
-    this.selectedFile.set(null);
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-    if (input) {
-      input.value = '';
     }
   }
 

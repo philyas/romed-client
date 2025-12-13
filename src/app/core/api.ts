@@ -355,16 +355,6 @@ export class Api {
     return this.http.delete<{ success: boolean; message: string; deleted: string }>(`${this.baseUrl}/kostenstellen/${encodeURIComponent(kostenstelle)}`);
   }
 
-  importKostenstellenFromFile(file: File): Observable<{ success: boolean; message: string; imported: number; total: number }> {
-    const formData = new FormData();
-    formData.append('file', file);
-    return this.http.post<{ success: boolean; message: string; imported: number; total: number }>(`${this.baseUrl}/kostenstellen/import`, formData);
-  }
-
-  importKostenstellenFromSample(): Observable<{ success: boolean; message: string; imported: number }> {
-    return this.http.post<{ success: boolean; message: string; imported: number }>(`${this.baseUrl}/kostenstellen/import-sample`, {});
-  }
-
   // Backup
   createSqlBackup(): Observable<{ success: boolean; message: string; backup: { name: string; path: string; timestamp: string; size: number; sizeFormatted: string } }> {
     return this.http.post<{ success: boolean; message: string; backup: { name: string; path: string; timestamp: string; size: number; sizeFormatted: string } }>(`${this.baseUrl}/backup/create`, {});

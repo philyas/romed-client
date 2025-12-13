@@ -25,57 +25,6 @@
                   <mat-icon>add</mat-icon>
                   Neue Kostenstelle
                 </button>
-                <button mat-raised-button color="primary" (click)="importFromSample()" [disabled]="loading() || saving()">
-                  <mat-icon>download</mat-icon>
-                  {{ loading() ? 'Lädt...' : 'Aus Beispieldatei importieren' }}
-                </button>
-              </div>
-            </div>
-
-            <!-- File Upload Section -->
-            <div class="upload-section">
-              <h4>
-                <mat-icon>upload_file</mat-icon>
-                Excel-Datei importieren
-              </h4>
-              <p>Importieren Sie eine Excel-Datei (.xlsx) mit Kostenstellenmapping-Daten</p>
-              
-              <div class="upload-controls">
-                <input 
-                  type="file" 
-                  accept=".xlsx,.xls" 
-                  (change)="onFileSelected($event)"
-                  style="display: none"
-                  #fileInput>
-                
-                <button mat-raised-button (click)="fileInput.click()">
-                  <mat-icon>attach_file</mat-icon>
-                  Datei auswählen
-                </button>
-                
-                <button 
-                  mat-raised-button 
-                  color="primary" 
-                  (click)="importFromFile()" 
-                  [disabled]="!selectedFile() || loading() || saving()">
-                  <mat-icon>upload</mat-icon>
-                  {{ loading() ? 'Importiert...' : 'Importieren' }}
-                </button>
-                
-                <button 
-                  mat-button 
-                  (click)="clearSelectedFile()" 
-                  *ngIf="selectedFile()"
-                  [disabled]="loading() || saving()">
-                  <mat-icon>close</mat-icon>
-                  Abbrechen
-                </button>
-              </div>
-
-              <div class="selected-file" *ngIf="selectedFile()">
-                <mat-icon>description</mat-icon>
-                <span>{{ selectedFile()?.name }}</span>
-                <span class="file-size">({{ (selectedFile()?.size || 0) / 1024 | number:'1.0-0' }} KB)</span>
               </div>
             </div>
 
@@ -198,7 +147,7 @@
               <div class="empty-state" *ngIf="!loading() && kostenstellen().length === 0">
                 <mat-icon>info</mat-icon>
                 <p>Keine Kostenstellen vorhanden</p>
-                <p class="hint">Importieren Sie eine Excel-Datei oder laden Sie die Beispieldatei</p>
+                <p class="hint">Erstellen Sie eine neue Kostenstelle über den Button oben</p>
               </div>
             </div>
           </div>
