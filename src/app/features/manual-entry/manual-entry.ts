@@ -752,6 +752,123 @@ export class ManualEntry {
       }
     });
   }
+
+  openCalculationModal(columnType: string) {
+    // Da wir in der Tag-Komponente sind, ist die Schicht immer 'tag'
+    const schicht = 'tag';
+    const schichtStunden = 16;
+    const phkAnteilBase = 10; // Standard-Wert, könnte aus API geladen werden
+    const phkAnteil = 1 - (1 / phkAnteilBase);
+
+    let modalData: any = {};
+
+    switch (columnType) {
+      case 'pfkNormal':
+        modalData = {
+          title: 'PFK Normal',
+          steps: [
+            {
+              name: 'PFK Normal',
+              formula: `PFK Normal = PFK-Stunden / Schichtdauer`,
+              description: `Anzahl der vollen PFK-Schichten`,
+              example: `Bei ${schichtStunden} Stunden Schichtdauer: 80 Stunden / ${schichtStunden} = 5.0 Schichten`
+            }
+          ],
+          constants: [
+            { name: 'Schichtdauer', value: `${schichtStunden}`, unit: 'Stunden' }
+          ]
+        };
+        break;
+
+      case 'gesamtPfkPhk':
+        modalData = {
+          title: 'Gesamt PFK+PHK',
+          steps: [
+            {
+              name: 'PHK-Anteil berechnen',
+              formula: `PHK-Anteil = 1 - (1 / Basiswert)`,
+              description: `Berechnung des PHK-Anteils aus dem konfigurierbaren Basiswert`,
+              example: `1 - (1 / ${phkAnteilBase}) = ${phkAnteil.toFixed(4)} (${(phkAnteil * 100).toFixed(0)}%)`
+            },
+            {
+              name: 'Gesamt PFK+PHK',
+              formula: `Gesamt PFK+PHK = PFK Normal / PHK-Anteil`,
+              description: `Gesamtanzahl Personal (PFK + PHK zusammen)`,
+              example: `5.0 / ${phkAnteil.toFixed(4)} = 5.56 Gesamt-Schichten`
+            }
+          ],
+          constants: [
+            { name: 'PHK-Anteil Basiswert', value: `${phkAnteilBase}`, unit: 'Zahl' },
+            { name: 'PHK-Anteil', value: `${phkAnteil.toFixed(4)}`, unit: `(${(phkAnteil * 100).toFixed(0)}%)` }
+          ]
+        };
+        break;
+
+      case 'phkEnd':
+        modalData = {
+          title: 'PHK End',
+          steps: [
+            {
+              name: 'PHK End',
+              formula: `PHK End = Gesamt PFK+PHK - PFK Normal`,
+              description: `Anzahl PHK-Schichten (Differenz zwischen Gesamt-Personal und PFK-Personal)`,
+              example: `5.56 - 5.0 = 0.56 PHK-Schichten`
+            }
+          ]
+        };
+        break;
+
+      case 'phkAnrechenbar':
+        modalData = {
+          title: 'PHK Anrechenbar',
+          steps: [
+            {
+              name: 'PHK Anrechenbar',
+              formula: `PHK Anrechenbar = PHK End × Schichtdauer`,
+              description: `Anrechenbare PHK-Arbeitsstunden (für Berechnungen)`,
+              example: `0.56 × ${schichtStunden} = ${(0.56 * schichtStunden).toFixed(2)} Stunden`
+            }
+          ],
+          constants: [
+            { name: 'Schichtdauer', value: `${schichtStunden}`, unit: 'Stunden' }
+          ]
+        };
+        break;
+
+      case 'geleistetePhk':
+        modalData = {
+          title: 'Geleistete AZ PHK',
+          steps: [
+            {
+              name: 'Geleistete PHK-Stunden',
+              formula: `Geleistete AZ PHK = Tatsächlich geleistete PHK-Stunden`,
+              description: `Die tatsächlich von PHK geleisteten Arbeitsstunden (aus PHK-Reiter)`,
+              example: `Wird aus den manuell eingegebenen PHK-Stunden pro Tag ermittelt`
+            }
+          ]
+        };
+        break;
+
+      case 'tatsaechlichAnrechenbar':
+        modalData = {
+          title: 'Tatsächlich Anrechenbar',
+          steps: [
+            {
+              name: 'Tatsächlich Anrechenbar',
+              formula: `Tatsächlich Anrechenbar = min(Geleistete AZ PHK, PHK Anrechenbar)`,
+              description: `Der kleinere Wert von geleisteten PHK-Stunden und berechneten PHK Anrechenbar`,
+              example: `Wenn geleistet: 8.5h, berechnet: 8.96h → tatsächlich: 8.5h`
+            }
+          ]
+        };
+        break;
+    }
+
+    this.dialog.open(CalculationInfoDialog, {
+      width: '600px',
+      data: modalData
+    });
+  }
 }
 
 @Component({
@@ -845,6 +962,132 @@ export class DienstplanUploadSuccessDialog {
       message: string;
       totalEntries?: number;
       uploads?: Array<{ station: string; jahr: number; monat: number }>;
+    }
+  ) {}
+
+  close(): void {
+    this.dialogRef.close();
+  }
+}
+
+@Component({
+  selector: 'app-calculation-info-dialog',
+  template: `
+    <div mat-dialog-title style="display: flex; align-items: center; gap: 8px;">
+      <mat-icon>calculate</mat-icon>
+      <span>Berechnungsformel: {{ data.title }}</span>
+    </div>
+    <mat-dialog-content>
+      <div class="calculation-info">
+        <div class="formula-section" *ngFor="let step of data.steps; let i = index">
+          <div class="step-number">Schritt {{ i + 1 }}</div>
+          <div class="formula">
+            <strong>{{ step.name }}:</strong>
+            <code>{{ step.formula }}</code>
+          </div>
+          <div class="description" *ngIf="step.description">
+            {{ step.description }}
+          </div>
+          <div class="example" *ngIf="step.example">
+            <em>Beispiel:</em> {{ step.example }}
+          </div>
+        </div>
+        <div class="constants-section" *ngIf="data.constants && data.constants.length > 0">
+          <mat-divider></mat-divider>
+          <h3>Verwendete Konstanten:</h3>
+          <ul>
+            <li *ngFor="let constant of data.constants">
+              <strong>{{ constant.name }}:</strong> {{ constant.value }}<span *ngIf="constant.unit"> {{ constant.unit }}</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button mat-button (click)="close()">Schließen</button>
+    </mat-dialog-actions>
+  `,
+  styles: [`
+    .calculation-info {
+      padding: 16px;
+    }
+    .formula-section {
+      margin-bottom: 24px;
+    }
+    .step-number {
+      font-weight: bold;
+      color: #1976d2;
+      margin-bottom: 8px;
+    }
+    .formula {
+      margin: 8px 0;
+      padding: 12px;
+      background: #f5f5f5;
+      border-radius: 4px;
+    }
+    code {
+      display: block;
+      margin-top: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      color: #d32f2f;
+    }
+    .description {
+      margin-top: 8px;
+      color: #666;
+    }
+    .example {
+      margin-top: 8px;
+      padding: 8px;
+      background: #e3f2fd;
+      border-left: 3px solid #1976d2;
+      font-size: 0.9em;
+    }
+    .constants-section {
+      margin-top: 24px;
+    }
+    .constants-section h3 {
+      margin-top: 16px;
+      margin-bottom: 8px;
+    }
+    .constants-section ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+    .constants-section li {
+      margin: 4px 0;
+    }
+    h2 mat-dialog-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  `],
+  imports: [
+    CommonModule,
+    MatDialogModule,
+    MatButtonModule,
+    MatIconModule,
+    MatDividerModule
+  ],
+  standalone: true
+})
+export class CalculationInfoDialog {
+  constructor(
+    private dialogRef: MatDialogRef<CalculationInfoDialog>,
+    @Inject(MAT_DIALOG_DATA) public data: {
+      title: string;
+      steps: Array<{
+        name: string;
+        formula: string;
+        description?: string;
+        example?: string;
+      }>;
+      constants?: Array<{
+        name: string;
+        value: string | number;
+        unit?: string;
+      }>;
     }
   ) {}
 

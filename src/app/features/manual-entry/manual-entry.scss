@@ -580,6 +580,29 @@
           letter-spacing: 0.5px;
           white-space: nowrap;
 
+          .header-with-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            
+            .info-button {
+              width: 24px;
+              height: 24px;
+              line-height: 24px;
+              
+              mat-icon {
+                font-size: 18px;
+                width: 18px;
+                height: 18px;
+                color: rgba(255, 255, 255, 0.9);
+              }
+              
+              &:hover {
+                background-color: rgba(255, 255, 255, 0.2);
+              }
+            }
+          }
+
           &.phk-column {
             background: rgba(255, 255, 255, 0.1);
             border-left: 2px solid rgba(255, 255, 255, 0.3);

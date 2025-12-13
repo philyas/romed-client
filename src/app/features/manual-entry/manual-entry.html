@@ -324,12 +324,54 @@
               <th>Minuten</th>
               <th>Gesamt</th>
               <th class="action-column">Reset</th>
-              <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">PFK Normal</th>
-              <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">Gesamt PFK+PHK</th>
-              <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">PHK End</th>
-              <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">PHK Anrechenbar</th>
-              <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column geleistete-phk-column">Geleistete AZ PHK in Std</th>
-              <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column tatsaechlich-column">tatsächl. Anrechenbar</th>
+              <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">
+                <div class="header-with-info">
+                  <span>PFK Normal</span>
+                  <button mat-icon-button class="info-button" (click)="openCalculationModal('pfkNormal')" matTooltip="Berechnung anzeigen">
+                    <mat-icon>info</mat-icon>
+                  </button>
+                </div>
+              </th>
+              <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">
+                <div class="header-with-info">
+                  <span>Gesamt PFK+PHK</span>
+                  <button mat-icon-button class="info-button" (click)="openCalculationModal('gesamtPfkPhk')" matTooltip="Berechnung anzeigen">
+                    <mat-icon>info</mat-icon>
+                  </button>
+                </div>
+              </th>
+              <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">
+                <div class="header-with-info">
+                  <span>PHK End</span>
+                  <button mat-icon-button class="info-button" (click)="openCalculationModal('phkEnd')" matTooltip="Berechnung anzeigen">
+                    <mat-icon>info</mat-icon>
+                  </button>
+                </div>
+              </th>
+              <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">
+                <div class="header-with-info">
+                  <span>PHK Anrechenbar</span>
+                  <button mat-icon-button class="info-button" (click)="openCalculationModal('phkAnrechenbar')" matTooltip="Berechnung anzeigen">
+                    <mat-icon>info</mat-icon>
+                  </button>
+                </div>
+              </th>
+              <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column geleistete-phk-column">
+                <div class="header-with-info">
+                  <span>Geleistete AZ PHK in Std</span>
+                  <button mat-icon-button class="info-button" (click)="openCalculationModal('geleistetePhk')" matTooltip="Berechnung anzeigen">
+                    <mat-icon>info</mat-icon>
+                  </button>
+                </div>
+              </th>
+              <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column tatsaechlich-column">
+                <div class="header-with-info">
+                  <span>tatsächl. Anrechenbar</span>
+                  <button mat-icon-button class="info-button" (click)="openCalculationModal('tatsaechlichAnrechenbar')" matTooltip="Berechnung anzeigen">
+                    <mat-icon>info</mat-icon>
+                  </button>
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody>
