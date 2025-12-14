@@ -263,6 +263,22 @@
             <span class="stat-value ppugv-prozent-highlight">{{ getPpugvErfuelltNeinProzent()!.toFixed(2) }}%</span>
           </div>
         </div>
+
+        <div class="stat-item delta-soll-ist-stat" *ngIf="selectedKategorie() === 'PFK' && getDeltaSollIstPflegfachkraft() !== null">
+          <mat-icon>trending_up</mat-icon>
+          <div class="stat-content">
+            <span class="stat-label">Delta Soll-Ist Pflegfachkraft</span>
+            <span class="stat-value delta-highlight">{{ getDeltaSollIstPflegfachkraft()!.toFixed(4) }}</span>
+          </div>
+        </div>
+
+        <div class="stat-item pp-ratio-stat" *ngIf="selectedKategorie() === 'PFK' && getPPRatio() !== null">
+          <mat-icon>calculate</mat-icon>
+          <div class="stat-content">
+            <span class="stat-label">P:P</span>
+            <span class="stat-value pp-ratio-highlight">{{ getPPRatio()!.toFixed(2) }}</span>
+          </div>
+        </div>
       </div>
     </mat-card-content>
   </mat-card>

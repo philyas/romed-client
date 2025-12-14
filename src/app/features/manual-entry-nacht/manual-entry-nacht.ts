@@ -743,6 +743,68 @@ export class ManualEntryNacht {
     return durchschnitt.toFixed(4);
   }
 
+  getDeltaSollIstPflegfachkraft(): number | null {
+    if (this.selectedKategorie() !== 'PFK') {
+      return null;
+    }
+    
+    const durchschnittPfkNormalStr = this.getDurchschnittPfkNormal();
+    const durchschnittPpugNachPfkStr = this.getDurchschnittPpugNachPfk();
+    
+    if (durchschnittPfkNormalStr === null || durchschnittPpugNachPfkStr === null) {
+      return null;
+    }
+    
+    const durchschnittPfkNormal = parseFloat(durchschnittPfkNormalStr);
+    const durchschnittPpugNachPfk = parseFloat(durchschnittPpugNachPfkStr);
+    
+    if (isNaN(durchschnittPfkNormal) || isNaN(durchschnittPpugNachPfk)) {
+      return null;
+    }
+    
+    // Delta Soll-Ist Pflegfachkraft = durchschnitt PFK Normal - durchschnitt PpUG nach PFK
+    const delta = durchschnittPfkNormal - durchschnittPpugNachPfk;
+    return delta;
+  }
+
+  getPPRatio(): number | null {
+    if (this.selectedKategorie() !== 'PFK') {
+      return null;
+    }
+    
+    // Für Nachtschicht: durchschnitt MiNa - durchschnitt PFK Normal
+    const dailyMap = this.dailyMinaMita();
+    let sum = 0;
+    let count = 0;
+    
+    // Berechne Durchschnitt von MiNa für alle Tage mit Daten
+    dailyMap.forEach((dayData, tag) => {
+      if (dayData && dayData.mina !== null) {
+        sum += dayData.mina;
+        count++;
+      }
+    });
+    
+    if (count === 0) return null;
+    
+    const durchschnittMina = sum / count;
+    
+    const durchschnittPfkNormalStr = this.getDurchschnittPfkNormal();
+    if (durchschnittPfkNormalStr === null) {
+      return null;
+    }
+    
+    const durchschnittPfkNormal = parseFloat(durchschnittPfkNormalStr);
+    if (isNaN(durchschnittPfkNormal)) {
+      return null;
+    }
+    
+    // P:P = durchschnitt MiNa : durchschnitt PFK Normal
+    if (durchschnittPfkNormal === 0) return null;
+    const ppRatio = durchschnittMina / durchschnittPfkNormal;
+    return ppRatio;
+  }
+
   getDurchschnittPhkAusstattung(): string | null {
     const entries = this.dayEntries();
     const phkTageswerte = this.phkTageswerte();
