@@ -799,6 +799,25 @@ export class ManualEntry {
     return phkAusstattung.toFixed(4);
   }
 
+  getAnzahlPpugvErfuelltNein(): number | null {
+    if (this.selectedKategorie() !== 'PFK') {
+      return null;
+    }
+    
+    const entries = this.dayEntries();
+    let neinCount = 0;
+    
+    // Zähle "Nein"-Werte aus der zweiten Spalte "PpUGV erfüllt" (V2)
+    entries.forEach(entry => {
+      const result = this.getPpugErfuelltV2ForTag(entry);
+      if (result === 'Nein') {
+        neinCount++;
+      }
+    });
+    
+    return neinCount > 0 ? neinCount : null;
+  }
+
   getGeleistetePhkStundenFormatted(): string | null {
     const geleistetePhk = this.geleistetePhkStunden();
     if (!geleistetePhk) return null;

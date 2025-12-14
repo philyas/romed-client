@@ -210,6 +210,11 @@
             <span class="calc-label">PHK-Ausstattung Ø:</span>
             <span class="calc-value">{{ getDurchschnittPhkAusstattung() }}</span>
           </div>
+          <div class="calc-separator" *ngIf="getAnzahlPpugvErfuelltNein() !== null">|</div>
+          <div class="calc-item" *ngIf="getAnzahlPpugvErfuelltNein() !== null">
+            <span class="calc-label">PpUG erfüllt Nein:</span>
+            <span class="calc-value">{{ getAnzahlPpugvErfuelltNein() }}</span>
+          </div>
         </div>
       </div>
       

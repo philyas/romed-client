@@ -733,6 +733,25 @@ export class ManualEntryNacht {
     return phkAusstattung.toFixed(4);
   }
 
+  getAnzahlPpugvErfuelltNein(): number | null {
+    if (this.selectedKategorie() !== 'PFK') {
+      return null;
+    }
+    
+    const entries = this.dayEntries();
+    let neinCount = 0;
+    
+    // Zähle "Nein"-Werte aus der Spalte "PpUG erfüllt"
+    entries.forEach(entry => {
+      const result = this.getPpugErfuelltForTag(entry);
+      if (result === 'Nein') {
+        neinCount++;
+      }
+    });
+    
+    return neinCount > 0 ? neinCount : null;
+  }
+
   getGeleistetePhkStundenFormatted(): string | null {
     const geleistetePhk = this.geleistetePhkStunden();
     if (!geleistetePhk) return null;
