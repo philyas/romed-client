@@ -1,6 +1,7 @@
 import { Injectable, inject, isDevMode } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 export interface SchemaDef {
   id: string;
@@ -309,15 +310,52 @@ export class Api {
     return this.http.post<{ success: boolean; message: string; uploaded: any[]; totalEntries: number }>(`${this.baseUrl}/manual-entry/upload-dienstplan`, form);
   }
 
-  exportPpugMeldung(station: string, jahr?: number): Observable<Blob> {
+  exportPpugMeldung(station: string, jahr?: number): Observable<{ blob: Blob; filename: string }> {
     let params = new HttpParams().set('station', station);
     if (typeof jahr === 'number' && !Number.isNaN(jahr)) {
       params = params.set('jahr', jahr.toString());
     }
     return this.http.get(`${this.baseUrl}/manual-entry/export-ppug-meldung`, {
       params,
-      responseType: 'blob'
-    });
+      responseType: 'blob',
+      observe: 'response'
+    }).pipe(
+      map(response => {
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = `PPUG_Meldung_${station}_${jahr || new Date().getFullYear()}.xlsx`;
+        
+        if (contentDisposition) {
+          // Try to extract filename from Content-Disposition header
+          // First try filename* (RFC 5987)
+          const filenameStarMatch = contentDisposition.match(/filename\*=UTF-8''([^;]+)/);
+          if (filenameStarMatch && filenameStarMatch[1]) {
+            filename = decodeURIComponent(filenameStarMatch[1]);
+          } else {
+            // Fallback to regular filename
+            const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+            if (filenameMatch && filenameMatch[1]) {
+              filename = filenameMatch[1].replace(/['"]/g, '').trim();
+            }
+          }
+        }
+        
+        // Fallback: if filename doesn't contain timestamp, add it
+        // Format: YYYY-MM-DD_HH-MM-SS (Datum mit Bindestrichen, Uhrzeit mit Bindestrichen, getrennt durch Unterstrich)
+        if (!filename.match(/\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}/)) {
+          const now = new Date();
+          const datePart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+          const timePart = `${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}-${String(now.getSeconds()).padStart(2, '0')}`;
+          const timestamp = `${datePart}_${timePart}`;
+          const baseFilename = filename.replace('.xlsx', '');
+          filename = `${baseFilename}_${timestamp}.xlsx`;
+        }
+        
+        return {
+          blob: response.body!,
+          filename: filename
+        };
+      })
+    );
   }
 
   // Manuelle Stundeneingabe NACHT API

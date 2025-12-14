@@ -430,13 +430,13 @@ export class ManualEntry {
     this.saving.set(true);
 
     this.api.exportPpugMeldung(station, jahr).subscribe({
-      next: (blob) => {
+      next: (response) => {
         this.saving.set(false);
         // Create download link
-        const url = window.URL.createObjectURL(blob);
+        const url = window.URL.createObjectURL(response.blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `PPUG_Meldung_${station}_${jahr || new Date().getFullYear()}.xlsx`;
+        link.download = response.filename;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
