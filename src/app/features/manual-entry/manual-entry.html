@@ -442,7 +442,8 @@
               <td class="phk-value-cell">
                 <span class="ppug-stunden-value">{{ getPpugNachPfkInStundenForTag(entry.tag) }}</span>
               </td>
-              <td *ngIf="selectedKategorie() === 'PFK'" class="phk-value-cell">
+              <td *ngIf="selectedKategorie() === 'PFK'" class="phk-value-cell ppugv-cell" 
+                  [class.ppugv-nein]="getPpugErfuelltForTag(entry) === 'Nein'">
                 <span [class.ppug-ja]="getPpugErfuelltForTag(entry) === 'Ja'" 
                       [class.ppug-nein]="getPpugErfuelltForTag(entry) === 'Nein'">
                   {{ getPpugErfuelltForTag(entry) }}
@@ -480,7 +481,8 @@
                   {{ getExamPflegeForTag(entry) }}
                 </span>
               </td>
-              <td *ngIf="selectedKategorie() === 'PFK'" class="phk-value-cell ppug-erfuellt-v2-cell">
+              <td *ngIf="selectedKategorie() === 'PFK'" class="phk-value-cell ppugv-cell ppug-erfuellt-v2-cell"
+                  [class.ppugv-nein]="getPpugErfuelltV2ForTag(entry) === 'Nein'">
                 <span [class.ppug-ja]="getPpugErfuelltV2ForTag(entry) === 'Ja'" 
                       [class.ppug-nein]="getPpugErfuelltV2ForTag(entry) === 'Nein'">
                   {{ getPpugErfuelltV2ForTag(entry) }}

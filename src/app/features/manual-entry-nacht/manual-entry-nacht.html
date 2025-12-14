@@ -288,7 +288,8 @@
               <td class="phk-value-cell">
                 <span class="ppug-stunden-value">{{ getPpugNachPfkInStundenForTag(entry.tag) }}</span>
               </td>
-              <td *ngIf="selectedKategorie() === 'PFK'" class="phk-value-cell">
+              <td *ngIf="selectedKategorie() === 'PFK'" class="phk-value-cell ppugv-cell"
+                  [class.ppugv-nein]="getPpugErfuelltForTag(entry) === 'Nein'">
                 <span [class.ppug-ja]="getPpugErfuelltForTag(entry) === 'Ja'" 
                       [class.ppug-nein]="getPpugErfuelltForTag(entry) === 'Nein'">
                   {{ getPpugErfuelltForTag(entry) }}

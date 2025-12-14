@@ -477,6 +477,11 @@
             border-left: 2px solid rgba(255, 255, 255, 0.3);
           }
 
+          &.ppugv-column {
+            background: rgba(255, 235, 59, 0.3) !important;
+            border-left: 2px solid rgba(255, 235, 59, 0.6) !important;
+          }
+
           &.geleistete-phk-column {
             background: rgba(255, 193, 7, 0.2);
             border-left: 2px solid rgba(255, 193, 7, 0.5);
@@ -592,6 +597,18 @@
         font-size: 13px;
         background: rgba(0, 102, 204, 0.02);
         border-left: 1px solid #e0e0e0;
+
+        &.ppugv-cell {
+          background: rgba(255, 235, 59, 0.2) !important;
+          border-left: 2px solid rgba(255, 235, 59, 0.5) !important;
+        }
+
+        &.ppugv-cell.ppugv-nein {
+          background: rgba(244, 67, 54, 0.3) !important;
+          border-left: 2px solid rgba(244, 67, 54, 0.6) !important;
+          color: #c62828 !important;
+          font-weight: 700 !important;
+        }
 
         &.highlight {
           background: rgba(76, 175, 80, 0.1);
