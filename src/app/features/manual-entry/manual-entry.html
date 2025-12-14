@@ -279,6 +279,47 @@
             <span class="stat-value pp-ratio-highlight">{{ getPPRatio()!.toFixed(2) }}</span>
           </div>
         </div>
+
+        <!-- Stats aus header-calculations -->
+        <div class="stat-item" *ngIf="selectedKategorie() === 'PFK' && belegteBettenKonstante() !== null">
+          <mat-icon>bed</mat-icon>
+          <div class="stat-content">
+            <span class="stat-label">MiTa-Ø Station</span>
+            <span class="stat-value">{{ belegteBettenKonstante()!.toFixed(2) }}</span>
+          </div>
+        </div>
+
+        <div class="stat-item" *ngIf="selectedKategorie() === 'PFK' && getDurchschnittPpugNachPfk() !== null">
+          <mat-icon>trending_up</mat-icon>
+          <div class="stat-content">
+            <span class="stat-label">PpUG nach PFK Ø</span>
+            <span class="stat-value">{{ getDurchschnittPpugNachPfk() }}</span>
+          </div>
+        </div>
+
+        <div class="stat-item" *ngIf="selectedKategorie() === 'PFK' && getDurchschnittPfkNormal() !== null">
+          <mat-icon>person</mat-icon>
+          <div class="stat-content">
+            <span class="stat-label">PFK Normal Ø</span>
+            <span class="stat-value">{{ getDurchschnittPfkNormal() }}</span>
+          </div>
+        </div>
+
+        <div class="stat-item" *ngIf="selectedKategorie() === 'PFK' && getDurchschnittPhkAusstattung() !== null">
+          <mat-icon>group</mat-icon>
+          <div class="stat-content">
+            <span class="stat-label">PHK-Ausstattung Ø</span>
+            <span class="stat-value">{{ getDurchschnittPhkAusstattung() }}</span>
+          </div>
+        </div>
+
+        <div class="stat-item" *ngIf="selectedKategorie() === 'PFK' && getAnzahlPpugvErfuelltNein() !== null">
+          <mat-icon>cancel</mat-icon>
+          <div class="stat-content">
+            <span class="stat-label">PpUGV erfüllt Nein</span>
+            <span class="stat-value">{{ getAnzahlPpugvErfuelltNein() }}</span>
+          </div>
+        </div>
       </div>
     </mat-card-content>
   </mat-card>
@@ -291,54 +332,6 @@
           <mat-icon>grid_on</mat-icon>
           {{ getMonthName(selectedMonth()) }} {{ selectedYear() }} - {{ selectedStation() }} ({{ selectedKategorie() }})
         </mat-card-title>
-        
-        <!-- Berechnete Werte (nur bei PFK) -->
-        <div class="header-calculations" *ngIf="selectedKategorie() === 'PFK' && selectedStation()">
-          <div class="calc-item" *ngIf="belegteBettenKonstante() !== null">
-            <span class="calc-label">MiTa-Ø Station:</span>
-            <span class="calc-value konstante">{{ belegteBettenKonstante()!.toFixed(2) }}</span>
-          </div>
-          <div class="calc-separator">|</div>
-          <div class="calc-item">
-            <span class="calc-label">Exam. Pflege:</span>
-            <span class="calc-value">{{ getExamPflegeFormatted() }}</span>
-          </div>
-          <div class="calc-separator">|</div>
-          <div class="calc-item">
-            <span class="calc-label">Patienten/Pflegekraft:</span>
-            <span class="calc-value highlight">{{ getPatientenProPflegekraft() }}</span>
-          </div>
-          <div class="calc-separator" *ngIf="getDurchschnittPpugNachPfk() !== null">|</div>
-          <div class="calc-item" *ngIf="getDurchschnittPpugNachPfk() !== null">
-            <span class="calc-label">PpUG nach PFK Ø:</span>
-            <span class="calc-value">{{ getDurchschnittPpugNachPfk() }}</span>
-          </div>
-          <div class="calc-separator" *ngIf="getDurchschnittPfkNormal() !== null">|</div>
-          <div class="calc-item" *ngIf="getDurchschnittPfkNormal() !== null">
-            <span class="calc-label">PFK Normal Ø:</span>
-            <span class="calc-value">{{ getDurchschnittPfkNormal() }}</span>
-          </div>
-          <div class="calc-separator" *ngIf="getDurchschnittPhkAusstattung() !== null">|</div>
-          <div class="calc-item" *ngIf="getDurchschnittPhkAusstattung() !== null">
-            <span class="calc-label">PHK-Ausstattung Ø:</span>
-            <span class="calc-value">{{ getDurchschnittPhkAusstattung() }}</span>
-          </div>
-          <div class="calc-separator" *ngIf="getAnzahlPpugvErfuelltNein() !== null">|</div>
-          <div class="calc-item" *ngIf="getAnzahlPpugvErfuelltNein() !== null">
-            <span class="calc-label">PpUGV erfüllt Nein:</span>
-            <span class="calc-value">{{ getAnzahlPpugvErfuelltNein() }}</span>
-          </div>
-          <div class="calc-separator" *ngIf="getPpugvErfuelltNeinProzent() !== null">|</div>
-          <div class="calc-item" *ngIf="getPpugvErfuelltNeinProzent() !== null">
-            <span class="calc-label">PpUGV erfüllt %:</span>
-            <span class="calc-value">{{ getPpugvErfuelltNeinProzent()!.toFixed(2) }}%</span>
-          </div>
-          <div class="calc-separator" *ngIf="geleistetePhkStunden() !== null">|</div>
-          <div class="calc-item" *ngIf="geleistetePhkStunden() !== null">
-            <span class="calc-label">Geleistete AZ PHK:</span>
-            <span class="calc-value geleistete-phk">{{ getGeleistetePhkStundenFormatted() }}</span>
-          </div>
-        </div>
       </div>
       
       <div class="header-actions">

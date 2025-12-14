@@ -288,54 +288,58 @@
     border: 2px solid #0066cc;
 
     mat-card-content {
-      padding: 24px;
+      padding: 12px;
     }
 
     .stats-row {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 8px;
     }
 
     .stat-item {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 10px;
       flex: 1;
-      padding: 16px;
+      padding: 10px;
       background: white;
-      border-radius: 8px;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 
       mat-icon {
-        font-size: 48px;
-        width: 48px;
-        height: 48px;
+        font-size: 32px;
+        width: 32px;
+        height: 32px;
         color: #0066cc;
+        flex-shrink: 0;
       }
 
       .stat-content {
         display: flex;
         flex-direction: column;
+        min-width: 0;
       }
 
       .stat-label {
-        font-size: 12px;
+        font-size: 10px;
         color: #666;
         font-weight: 500;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.3px;
+        line-height: 1.2;
       }
 
       .stat-value {
-        font-size: 20px;
+        font-size: 16px;
         font-weight: 700;
         color: #333;
-        margin-top: 4px;
+        margin-top: 2px;
+        line-height: 1.2;
 
         &.highlight {
           color: #2e7d32;
-          font-size: 22px;
+          font-size: 18px;
         }
       }
 
@@ -366,7 +370,7 @@
 
         .stat-value.gesamt-highlight {
           color: #e65100;
-          font-size: 24px;
+          font-size: 18px;
         }
       }
 
@@ -384,7 +388,7 @@
 
         .stat-value.exam-highlight {
           color: #0d47a1;
-          font-size: 24px;
+          font-size: 18px;
           font-weight: 800;
         }
       }
@@ -403,7 +407,7 @@
 
         .stat-value.patienten-highlight {
           color: #4a148c;
-          font-size: 26px;
+          font-size: 18px;
           font-weight: 800;
         }
       }
@@ -422,7 +426,7 @@
 
         .stat-value.geleistete-phk-highlight {
           color: #e65100;
-          font-size: 24px;
+          font-size: 18px;
           font-weight: 800;
         }
       }
