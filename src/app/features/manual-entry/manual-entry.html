@@ -376,6 +376,16 @@
                   </button>
                 </div>
               </th>
+              <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column gesamte-anrech-column">
+                <div class="header-with-info">
+                  <span>Gesamte anrechb. AZ:</span>
+                </div>
+              </th>
+              <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column exam-pflege-column">
+                <div class="header-with-info">
+                  <span>Exam. Pflege</span>
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -453,6 +463,16 @@
               <td *ngIf="selectedKategorie() === 'PFK'" class="phk-value-cell tatsaechlich-cell">
                 <span class="tatsaechlich-value">
                   {{ getTatsaechlichAnrechenbarForTag(entry) }}
+                </span>
+              </td>
+              <td *ngIf="selectedKategorie() === 'PFK'" class="phk-value-cell gesamte-anrech-cell">
+                <span class="gesamte-anrech-value">
+                  {{ getGesamteAnrechbareAZForTag(entry) }}
+                </span>
+              </td>
+              <td *ngIf="selectedKategorie() === 'PFK'" class="phk-value-cell exam-pflege-cell">
+                <span class="exam-pflege-value">
+                  {{ getExamPflegeForTag(entry) }}
                 </span>
               </td>
             </tr>

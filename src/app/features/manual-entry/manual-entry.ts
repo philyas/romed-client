@@ -827,6 +827,78 @@ export class ManualEntry {
     return tatsaechlichAnrechenbar.toFixed(2) + 'h';
   }
 
+  getGesamteAnrechbareAZForTag(entry: DayEntry): string {
+    // Arbeitszeitstunden (in Dezimal umrechnen)
+    const arbeitszeitstundenDezimal = entry.stunden + (entry.minuten / 60);
+    
+    // Tatsächlich anrechnbar für diesen Tag
+    const phkTageswerte = this.phkTageswerte();
+    if (!phkTageswerte) {
+      // Wenn keine PHK-Daten vorhanden, nur Arbeitszeitstunden zurückgeben
+      return arbeitszeitstundenDezimal.toFixed(2) + 'h';
+    }
+    
+    const tagData = phkTageswerte.find(t => t.tag === entry.tag);
+    if (!tagData) {
+      // Wenn keine PHK-Daten für diesen Tag, nur Arbeitszeitstunden zurückgeben
+      return arbeitszeitstundenDezimal.toFixed(2) + 'h';
+    }
+    
+    // PHK Anrechenbar für diesen Tag
+    const phkAnrechenbar = entry.phkAnrechenbar || 0;
+    
+    // Tatsächliche PHK-Stunden für diesen Tag (in Dezimal)
+    const phkStundenDezimal = tagData.gesamtDezimal;
+    
+    // Regel: Wenn PHK-Stunden >= PHK Anrechenbar, dann nimm PHK Anrechenbar, sonst PHK-Stunden
+    const tatsaechlichAnrechenbar = phkStundenDezimal >= phkAnrechenbar ? phkAnrechenbar : phkStundenDezimal;
+    
+    // Gesamte anrechbare AZ = Arbeitszeitstunden + Tatsächlich anrechnbar
+    const gesamtAnrechbareAZ = arbeitszeitstundenDezimal + tatsaechlichAnrechenbar;
+    
+    return gesamtAnrechbareAZ.toFixed(2) + 'h';
+  }
+
+  getExamPflegeForTag(entry: DayEntry): string {
+    // Arbeitszeitstunden (in Dezimal umrechnen)
+    const arbeitszeitstundenDezimal = entry.stunden + (entry.minuten / 60);
+    
+    // Tatsächlich anrechnbar für diesen Tag
+    const phkTageswerte = this.phkTageswerte();
+    if (!phkTageswerte) {
+      // Wenn keine PHK-Daten vorhanden, nur Arbeitszeitstunden verwenden
+      const schichtStunden = this.schichtStundenTag();
+      const examPflege = arbeitszeitstundenDezimal / schichtStunden;
+      return examPflege.toFixed(4);
+    }
+    
+    const tagData = phkTageswerte.find(t => t.tag === entry.tag);
+    if (!tagData) {
+      // Wenn keine PHK-Daten für diesen Tag, nur Arbeitszeitstunden verwenden
+      const schichtStunden = this.schichtStundenTag();
+      const examPflege = arbeitszeitstundenDezimal / schichtStunden;
+      return examPflege.toFixed(4);
+    }
+    
+    // PHK Anrechenbar für diesen Tag
+    const phkAnrechenbar = entry.phkAnrechenbar || 0;
+    
+    // Tatsächliche PHK-Stunden für diesen Tag (in Dezimal)
+    const phkStundenDezimal = tagData.gesamtDezimal;
+    
+    // Regel: Wenn PHK-Stunden >= PHK Anrechenbar, dann nimm PHK Anrechenbar, sonst PHK-Stunden
+    const tatsaechlichAnrechenbar = phkStundenDezimal >= phkAnrechenbar ? phkAnrechenbar : phkStundenDezimal;
+    
+    // Gesamte anrechbare AZ = Arbeitszeitstunden + Tatsächlich anrechnbar
+    const gesamtAnrechbareAZ = arbeitszeitstundenDezimal + tatsaechlichAnrechenbar;
+    
+    // Exam. Pflege = Gesamte anrechb. AZ / Schichtstunden (Tag: 16 Stunden)
+    const schichtStunden = this.schichtStundenTag();
+    const examPflege = gesamtAnrechbareAZ / schichtStunden;
+    
+    return examPflege.toFixed(4);
+  }
+
   // File upload methods
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
