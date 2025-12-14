@@ -13,7 +13,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Api } from '../../core/api';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 
 interface DayEntry {
@@ -59,6 +59,7 @@ export class ManualEntryNacht {
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   // State
   stations = signal<string[]>([]);
@@ -134,6 +135,28 @@ export class ManualEntryNacht {
     this.loadStations();
     this.loadCalculationConstants();
     
+    // Read query parameters to restore selection when switching tabs
+    this.route.queryParams.subscribe(params => {
+      if (params['station']) {
+        this.selectedStation.set(params['station']);
+      }
+      if (params['year']) {
+        const year = parseInt(params['year'], 10);
+        if (!isNaN(year)) {
+          this.selectedYear.set(year);
+        }
+      }
+      if (params['month']) {
+        const month = parseInt(params['month'], 10);
+        if (!isNaN(month) && month >= 1 && month <= 12) {
+          this.selectedMonth.set(month);
+        }
+      }
+      if (params['kategorie'] && (params['kategorie'] === 'PFK' || params['kategorie'] === 'PHK')) {
+        this.selectedKategorie.set(params['kategorie']);
+      }
+    });
+    
     // Auto-load data when station, year, month, or kategorie changes
     effect(() => {
       const station = this.selectedStation();
@@ -179,9 +202,20 @@ export class ManualEntryNacht {
   }
 
   onShiftToggle(value: 'tag' | 'nacht') {
-    //test commit
     if (value === 'tag') {
-      this.router.navigate(['/manual-entry']);
+      // Preserve current selection when switching to tag tab
+      const queryParams: any = {};
+      const station = this.selectedStation();
+      const year = this.selectedYear();
+      const month = this.selectedMonth();
+      const kategorie = this.selectedKategorie();
+      
+      if (station) queryParams.station = station;
+      if (year) queryParams.year = year.toString();
+      if (month) queryParams.month = month.toString();
+      if (kategorie) queryParams.kategorie = kategorie;
+      
+      this.router.navigate(['/manual-entry'], { queryParams });
     }
   }
 
