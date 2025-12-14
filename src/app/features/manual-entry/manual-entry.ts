@@ -419,6 +419,39 @@ export class ManualEntry {
     });
   }
 
+  exportPpugMeldung() {
+    const station = this.selectedStation();
+    if (!station) {
+      this.snackBar.open('Bitte wählen Sie eine Station aus', 'Schließen', { duration: 3000 });
+      return;
+    }
+
+    const jahr = this.selectedYear();
+    this.saving.set(true);
+
+    this.api.exportPpugMeldung(station, jahr).subscribe({
+      next: (blob) => {
+        this.saving.set(false);
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `PPUG_Meldung_${station}_${jahr || new Date().getFullYear()}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        this.snackBar.open('PPUG Meldung erfolgreich exportiert', 'Schließen', { duration: 2000 });
+      },
+      error: (err) => {
+        this.saving.set(false);
+        console.error('Error exporting PPUG Meldung:', err);
+        const errorMessage = err.error?.error || err.message || 'Fehler beim Exportieren';
+        this.snackBar.open(errorMessage, 'Schließen', { duration: 3000 });
+      }
+    });
+  }
+
   getMonthName(month: number): string {
     const monthObj = this.availableMonths.find(m => m.value === month);
     return monthObj ? monthObj.label : `Monat ${month}`;

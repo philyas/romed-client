@@ -351,6 +351,10 @@
           <mat-icon>delete_forever</mat-icon>
           {{ saving() ? 'Löscht...' : 'Alle Stunden (PFK + PHK) löschen' }}
         </button>
+        <button mat-raised-button color="accent" (click)="exportPpugMeldung()" [disabled]="saving()">
+          <mat-icon>download</mat-icon>
+          {{ saving() ? 'Exportiert...' : 'PPUG Meldung' }}
+        </button>
         <button mat-raised-button color="primary" (click)="saveData()" [disabled]="saving()">
           <mat-icon>save</mat-icon>
           {{ saving() ? 'Speichert...' : 'Manuell Speichern' }}

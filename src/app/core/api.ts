@@ -309,6 +309,17 @@ export class Api {
     return this.http.post<{ success: boolean; message: string; uploaded: any[]; totalEntries: number }>(`${this.baseUrl}/manual-entry/upload-dienstplan`, form);
   }
 
+  exportPpugMeldung(station: string, jahr?: number): Observable<Blob> {
+    let params = new HttpParams().set('station', station);
+    if (typeof jahr === 'number' && !Number.isNaN(jahr)) {
+      params = params.set('jahr', jahr.toString());
+    }
+    return this.http.get(`${this.baseUrl}/manual-entry/export-ppug-meldung`, {
+      params,
+      responseType: 'blob'
+    });
+  }
+
   // Manuelle Stundeneingabe NACHT API
   getManualEntryNachtStations(): Observable<{ stations: string[] }> {
     return this.http.get<{ stations: string[] }>(`${this.baseUrl}/manual-entry-nacht/stations`);
