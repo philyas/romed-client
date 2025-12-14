@@ -129,6 +129,43 @@ interface ChartDataPoint {
                     </div>
                   </div>
                 </mat-tab>
+                <mat-tab label="📅 Tägliche Daten">
+                  <div class="tab-content">
+                    <div class="table-container">
+                      <table mat-table [dataSource]="dailyTableData()">
+                        <ng-container matColumnDef="datum">
+                          <th mat-header-cell *matHeaderCellDef>Datum</th>
+                          <td mat-cell *matCellDef="let row">{{ row.datum }}</td>
+                        </ng-container>
+                        <ng-container matColumnDef="station">
+                          <th mat-header-cell *matHeaderCellDef>Station</th>
+                          <td mat-cell *matCellDef="let row">{{ row.station }}</td>
+                        </ng-container>
+                        <ng-container matColumnDef="mina">
+                          <th mat-header-cell *matHeaderCellDef>MiNa Bestand</th>
+                          <td mat-cell *matCellDef="let row">{{ row.mina | number:'1.2-2' }}</td>
+                        </ng-container>
+                        <ng-container matColumnDef="mita">
+                          <th mat-header-cell *matHeaderCellDef>MiTa Bestand</th>
+                          <td mat-cell *matCellDef="let row">{{ row.mita | number:'1.2-2' }}</td>
+                        </ng-container>
+                        <ng-container matColumnDef="differenz">
+                          <th mat-header-cell *matHeaderCellDef>Differenz</th>
+                          <td mat-cell *matCellDef="let row" [class.positive]="row.differenz > 0" [class.negative]="row.differenz < 0">
+                            {{ row.differenz | number:'1.2-2' }}
+                          </td>
+                        </ng-container>
+                        <tr mat-header-row *matHeaderRowDef="['datum', 'station', 'mina', 'mita', 'differenz']"></tr>
+                        <tr mat-row *matRowDef="let row; columns: ['datum', 'station', 'mina', 'mita', 'differenz']"></tr>
+                      </table>
+                    </div>
+                    <div class="no-daily-data" *ngIf="dailyTableData().length === 0">
+                      <mat-icon>info</mat-icon>
+                      <p>Keine täglichen Daten verfügbar</p>
+                      <p class="hint">Tägliche Daten werden beim Upload der MiNa/MiTa-Bestände gespeichert.</p>
+                    </div>
+                  </div>
+                </mat-tab>
               </mat-tab-group>
             </mat-card-content>
           </mat-card>
@@ -395,6 +432,39 @@ interface ChartDataPoint {
       transition: background-color 0.2s ease;
     }
 
+    .table-container td.positive {
+      color: #4caf50;
+      font-weight: 600;
+    }
+
+    .table-container td.negative {
+      color: #f44336;
+      font-weight: 600;
+    }
+
+    .no-daily-data {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+    }
+
+    .no-daily-data mat-icon {
+      font-size: 48px;
+      width: 48px;
+      height: 48px;
+      color: #ccc;
+      margin-bottom: 16px;
+    }
+
+    .no-daily-data p {
+      margin: 8px 0;
+    }
+
+    .no-daily-data .hint {
+      font-size: 13px;
+      color: #999;
+    }
+
     @media (max-width: 768px) {
       .flip-card {
         height: auto;
@@ -419,10 +489,12 @@ export class MinaMitaChart implements OnInit, OnChanges {
   chartOptions: ChartConfiguration['options'] = {};
   isFlipped = signal<boolean>(false);
   chartLoading = signal<boolean>(false);
+  dailyTableData = signal<any[]>([]);
 
   constructor(private dialog: MatDialog) {
     effect(() => {
       this.processChartData();
+      this.updateDailyTableData();
     });
   }
 
@@ -441,6 +513,7 @@ export class MinaMitaChart implements OnInit, OnChanges {
 
   ngOnChanges() {
     this.processChartData();
+    this.updateDailyTableData();
   }
 
   private createEmptyChartData(): ChartData<'line'> {
@@ -678,7 +751,6 @@ export class MinaMitaChart implements OnInit, OnChanges {
             }
           }
           
-          console.log(`Processing data for ${targetYearNumber}-${targetMonthNumber.toString().padStart(2, '0')}`);
 
           // Skip this upload if year filter is set and does not match
           if (this.selectedYear && targetYearNumber !== this.selectedYear) {
@@ -750,7 +822,6 @@ export class MinaMitaChart implements OnInit, OnChanges {
             });
           });
           
-          console.log(`Found ${stationCount} stations with data in month ${targetMonthNumber}`);
           
           if (targetMonthNumber >= 1 && targetMonthNumber <= 12 && stationCount > 0) {
             const monthIndex = targetMonthNumber - 1;
@@ -840,6 +911,85 @@ export class MinaMitaChart implements OnInit, OnChanges {
       value: point.mitaAverage,
       stations: point.totalStations
     }));
+  }
+
+  private updateDailyTableData() {
+    const dailyData: any[] = [];
+    
+    // Extract daily data from uploads
+    const minaMinaUploads = this.uploads.filter(u => u.schemaId === 'ppugv_bestaende');
+    
+    minaMinaUploads.forEach((upload) => {
+      if (upload.files && upload.files.length > 0) {
+        const file = upload.files[0];
+        const daily = (file as any).dailyData;
+        
+        if (!daily || !Array.isArray(daily) || daily.length === 0) {
+          return;
+        }
+        
+        daily.forEach((row: any) => {
+          // Filter by selected station if not 'all'
+          if (this.selectedStation !== 'all' && row.Station !== this.selectedStation) {
+            return;
+          }
+          
+          // Filter by selected year if provided
+          if (this.selectedYear && row.Jahr && Number(row.Jahr) !== this.selectedYear) {
+            return;
+          }
+          
+          // Format date
+          let datumStr = '';
+          if (row.DatumISO) {
+            // Format: YYYY-MM-DD -> DD.MM.YYYY
+            const [year, month, day] = row.DatumISO.split('-');
+            datumStr = `${day}.${month}.${year}`;
+          } else if (row.Datum) {
+            // Try to parse Excel date or other formats
+            if (typeof row.Datum === 'number') {
+              const excelEpoch = new Date(1900, 0, 1);
+              const jsDate = new Date(excelEpoch.getTime() + (row.Datum - 2) * 86400000);
+              if (!isNaN(jsDate.getTime())) {
+                const day = String(jsDate.getDate()).padStart(2, '0');
+                const month = String(jsDate.getMonth() + 1).padStart(2, '0');
+                const year = jsDate.getFullYear();
+                datumStr = `${day}.${month}.${year}`;
+              }
+            } else {
+              datumStr = String(row.Datum);
+            }
+          }
+          
+          const mina = row.MiNa_Bestand !== null && row.MiNa_Bestand !== undefined ? Number(row.MiNa_Bestand) : 0;
+          const mita = row.MiTa_Bestand !== null && row.MiTa_Bestand !== undefined ? Number(row.MiTa_Bestand) : 0;
+          const differenz = mita - mina;
+          
+          dailyData.push({
+            datum: datumStr,
+            station: row.Station || '',
+            mina: mina,
+            mita: mita,
+            differenz: differenz,
+            sortKey: row.DatumISO || row.Datum || ''
+          });
+        });
+      }
+    });
+    
+    // Sort by date (newest first) and then by station
+    dailyData.sort((a, b) => {
+      if (a.sortKey && b.sortKey) {
+        return b.sortKey.localeCompare(a.sortKey);
+      }
+      return b.datum.localeCompare(a.datum);
+    });
+    
+    this.dailyTableData.set(dailyData);
+  }
+
+  getDailyTableData() {
+    return this.dailyTableData();
   }
 }
 

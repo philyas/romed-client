@@ -264,12 +264,10 @@ export class MinaMitaCharts implements OnChanges {
 
   private processUploads() {
     const minaMinaUploads = this.uploads.filter(u => u.schemaId === 'ppugv_bestaende');
-    console.log('[MinaMitaCharts] processUploads: Found', minaMinaUploads.length, 'ppugv_bestaende uploads');
     
     if (minaMinaUploads.length > 0) {
       const latestUpload = minaMinaUploads[0];
       this.upload.set(latestUpload);
-      console.log('[MinaMitaCharts] Using upload:', latestUpload.uploadId, 'with', latestUpload.files?.length || 0, 'files');
 
       // Collect available years from all MiNa/MiTa uploads
       this.updateYears(minaMinaUploads);
@@ -288,7 +286,6 @@ export class MinaMitaCharts implements OnChanges {
         if ((file as any).monthlyAverages && Array.isArray((file as any).monthlyAverages)) {
           // Use pre-calculated monthly averages
           const averages = (file as any).monthlyAverages;
-          console.log('[MinaMitaCharts] Found monthlyAverages:', averages.length, 'entries');
           averages.forEach((row: any) => {
             if (row.Station) {
               const station = String(row.Station).trim();
@@ -300,7 +297,6 @@ export class MinaMitaCharts implements OnChanges {
         } else if ((file as any).values && Array.isArray((file as any).values)) {
           // Fallback: Extract from raw values
           const values = (file as any).values;
-          console.log('[MinaMitaCharts] Using values array:', values.length, 'entries');
           values.forEach((row: any) => {
             if (row.Station) {
               const station = String(row.Station).trim();
@@ -309,8 +305,6 @@ export class MinaMitaCharts implements OnChanges {
               }
             }
           });
-        } else {
-          console.warn('[MinaMitaCharts] File has neither monthlyAverages nor values:', file);
         }
         
         const stations = Array.from(stationSet).sort((a, b) => {
@@ -323,23 +317,14 @@ export class MinaMitaCharts implements OnChanges {
           return a.localeCompare(b);
         });
         
-        console.log('[MinaMitaCharts] Extracted stations:', stations.length, stations.slice(0, 5));
         this.availableStations.set(stations);
-        
-        // If no stations found but data exists, there might be an issue with station mapping
-        if (stations.length === 0 && ((file as any).monthlyAverages?.length > 0 || (file as any).values?.length > 0)) {
-          console.warn('[MinaMitaCharts] WARNING: Data exists but no stations could be extracted. This might indicate a station mapping issue.');
-        }
       } else {
-        console.warn('[MinaMitaCharts] No files found in upload');
         this.availableStations.set([]);
       }
 
       // Prepare data info items
       this.prepareDataInfoItems(latestUpload);
     } else {
-      console.log('[MinaMitaCharts] No ppugv_bestaende uploads found in', this.uploads.length, 'total uploads');
-      console.log('[MinaMitaCharts] Available schemaIds:', this.uploads.map(u => u.schemaId));
       this.upload.set(null);
       this.availableStations.set([]);
       this.dataInfoItems.set([]);
