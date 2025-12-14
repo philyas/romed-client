@@ -255,6 +255,14 @@
             <span class="stat-value geleistete-phk-highlight">{{ getGeleistetePhkStundenFormatted() }}</span>
           </div>
         </div>
+
+        <div class="stat-item ppugv-prozent-stat" *ngIf="selectedKategorie() === 'PFK' && getPpugvErfuelltNeinProzent() !== null">
+          <mat-icon>check_circle</mat-icon>
+          <div class="stat-content">
+            <span class="stat-label">PpUG erfüllt %</span>
+            <span class="stat-value ppugv-prozent-highlight">{{ getPpugvErfuelltNeinProzent()!.toFixed(2) }}%</span>
+          </div>
+        </div>
       </div>
     </mat-card-content>
   </mat-card>
@@ -303,6 +311,11 @@
           <div class="calc-item" *ngIf="getAnzahlPpugvErfuelltNein() !== null">
             <span class="calc-label">PpUGV erfüllt Nein:</span>
             <span class="calc-value">{{ getAnzahlPpugvErfuelltNein() }}</span>
+          </div>
+          <div class="calc-separator" *ngIf="getPpugvErfuelltNeinProzent() !== null">|</div>
+          <div class="calc-item" *ngIf="getPpugvErfuelltNeinProzent() !== null">
+            <span class="calc-label">PpUGV erfüllt %:</span>
+            <span class="calc-value">{{ getPpugvErfuelltNeinProzent()!.toFixed(2) }}%</span>
           </div>
           <div class="calc-separator" *ngIf="geleistetePhkStunden() !== null">|</div>
           <div class="calc-item" *ngIf="geleistetePhkStunden() !== null">

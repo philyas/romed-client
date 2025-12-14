@@ -796,6 +796,27 @@ export class ManualEntryNacht {
     return neinCount > 0 ? neinCount : null;
   }
 
+  getPpugvErfuelltNeinProzent(): number | null {
+    if (this.selectedKategorie() !== 'PFK') {
+      return null;
+    }
+    
+    const entries = this.dayEntries();
+    let neinCount = 0;
+    
+    // Zähle "Nein"-Werte aus der zweiten Spalte "PpUGV erfüllt" (V2)
+    entries.forEach(entry => {
+      const result = this.getPpugErfuelltV2ForTag(entry);
+      if (result === 'Nein') {
+        neinCount++;
+      }
+    });
+    
+    // Berechnung: (31 - Anzahl der NEIN Werte) / 0.31
+    const prozent = (31 - neinCount) / 0.31;
+    return prozent;
+  }
+
   getGeleistetePhkStundenFormatted(): string | null {
     const geleistetePhk = this.geleistetePhkStunden();
     if (!geleistetePhk) return null;
