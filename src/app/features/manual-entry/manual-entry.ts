@@ -79,6 +79,10 @@ export class ManualEntry {
   // Konstante für Patienten-Berechnung (Mitternachtsstatistik Tag / Belegte Betten)
   belegteBettenKonstante = signal<number>(25); // Default-Wert
   
+  // P:P Werte aus calculation rules
+  ppRatioTagBase = signal<number>(10); // Default: 10
+  ppRatioNachtBase = signal<number>(20); // Default: 20
+  
   // Day entries for the selected month
   dayEntries = signal<DayEntry[]>([]);
   
@@ -95,6 +99,9 @@ export class ManualEntry {
     minuten: number;
     gesamtDezimal: number;
   }> | null>(null);
+  
+  // Tägliche MiNa/MiTa-Werte (für jeden Tag des Monats)
+  dailyMinaMita = signal<Map<number, { mina: number | null; mita: number | null }>>(new Map());
   
   // Available categories
   kategorien = [
@@ -128,6 +135,7 @@ export class ManualEntry {
 
   constructor() {
     this.loadStations();
+    this.loadCalculationConstants();
     
     // Auto-load data when station, year, month, or kategorie changes
     effect(() => {
@@ -140,6 +148,27 @@ export class ManualEntry {
         this.loadDataForPeriod(station, year, month, kategorie);
       } else {
         this.initializeEmptyEntries();
+      }
+    });
+  }
+
+  loadCalculationConstants() {
+    this.api.getCalculationConstants().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          const tagBase = response.data.find(c => c.key === 'pp_ratio_tag_base');
+          const nachtBase = response.data.find(c => c.key === 'pp_ratio_nacht_base');
+          
+          if (tagBase && tagBase.value) {
+            this.ppRatioTagBase.set(tagBase.value);
+          }
+          if (nachtBase && nachtBase.value) {
+            this.ppRatioNachtBase.set(nachtBase.value);
+          }
+        }
+      },
+      error: (err) => {
+        console.error('Error loading calculation constants:', err);
       }
     });
   }
@@ -173,6 +202,21 @@ export class ManualEntry {
 
   loadDataForPeriod(station: string, jahr: number, monat: number, kategorie: 'PFK' | 'PHK') {
     this.loading.set(true);
+    
+    // Lade tägliche MiNa/MiTa-Werte parallel
+    this.api.getDailyMinaMita(station, jahr, monat).subscribe({
+      next: (response) => {
+        const dailyMap = new Map<number, { mina: number | null; mita: number | null }>();
+        response.dailyValues.forEach(item => {
+          dailyMap.set(item.tag, { mina: item.mina, mita: item.mita });
+        });
+        this.dailyMinaMita.set(dailyMap);
+      },
+      error: (err) => {
+        console.error('Error loading daily MiNa/MiTa values:', err);
+        this.dailyMinaMita.set(new Map());
+      }
+    });
     
     this.api.getManualEntryData(station, jahr, monat, kategorie, 'tag').subscribe({
       next: (response) => {
@@ -642,6 +686,27 @@ export class ManualEntry {
     if (!geleistetePhk) return null;
     
     return geleistetePhk.durchschnitt;
+  }
+
+  getMitaForTag(tag: number): string {
+    const dailyMap = this.dailyMinaMita();
+    const dayData = dailyMap.get(tag);
+    if (dayData && dayData.mita !== null) {
+      return dayData.mita.toFixed(1);
+    }
+    return '-';
+  }
+
+  getPpugNachPfkForTag(tag: number): string {
+    const dailyMap = this.dailyMinaMita();
+    const dayData = dailyMap.get(tag);
+    if (dayData && dayData.mita !== null) {
+      // PpUG nach PFK = MiTa / pp_ratio_tag_base
+      const ppRatioBase = this.ppRatioTagBase();
+      const result = dayData.mita / ppRatioBase;
+      return result.toFixed(2);
+    }
+    return '-';
   }
 
   getPhkStundenForTag(tag: number): string {

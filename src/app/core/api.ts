@@ -311,6 +311,14 @@ export class Api {
     return this.http.get<{ station: string; mitaDurchschnitt: number | null; message?: string }>(`${this.baseUrl}/manual-entry/station-mita-average/${encodeURIComponent(station)}`);
   }
 
+  getDailyMinaMita(station: string, jahr: number, monat: number): Observable<{ station: string; dailyValues: Array<{ tag: number; mina: number | null; mita: number | null }> }> {
+    const params = new HttpParams()
+      .set('station', station)
+      .set('jahr', jahr.toString())
+      .set('monat', monat.toString());
+    return this.http.get<{ station: string; dailyValues: Array<{ tag: number; mina: number | null; mita: number | null }> }>(`${this.baseUrl}/manual-entry/daily-mina-mita`, { params });
+  }
+
   uploadDienstplan(file: File, variant: '2026' | 'legacy' = 'legacy'): Observable<{ success: boolean; message: string; uploaded: any[]; totalEntries: number }> {
     const form = new FormData();
     form.append('file', file);
