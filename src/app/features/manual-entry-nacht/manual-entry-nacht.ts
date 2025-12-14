@@ -508,6 +508,33 @@ export class ManualEntryNacht {
     return '-';
   }
 
+  getPpugErfuelltForTag(entry: DayEntry): string {
+    if (this.selectedKategorie() !== 'PFK') {
+      return '-';
+    }
+    
+    const dailyMap = this.dailyMinaMita();
+    const dayData = dailyMap.get(entry.tag);
+    
+    if (!dayData || dayData.mina === null) {
+      return '-';
+    }
+    
+    // Berechne PpUG nach PFK
+    const ppRatioBase = this.ppRatioNachtBase();
+    const ppugNachPfk = dayData.mina / ppRatioBase;
+    
+    // PFK Normal aus entry
+    const pfkNormal = entry.pfkNormal;
+    
+    if (pfkNormal === undefined || pfkNormal === null) {
+      return '-';
+    }
+    
+    // Prüfe: PFK Normal >= PpUG nach PFK
+    return pfkNormal >= ppugNachPfk ? 'Ja' : 'Nein';
+  }
+
   getPhkValue(entry: DayEntry, field: 'pfkNormal' | 'gesamtPfkPhk' | 'phkEnd' | 'phkAnrechenbar'): string {
     const value = entry[field];
     if (value === undefined || value === null) {

@@ -228,6 +228,7 @@
               <th class="phk-column">MiNa</th>
               <th class="phk-column">PpUG nach PFK</th>
               <th class="phk-column">in Std.</th>
+              <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">PpUG erfüllt</th>
               <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">PFK Normal</th>
               <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">Gesamt PFK+PHK</th>
               <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">PHK End</th>
@@ -284,6 +285,12 @@
               </td>
               <td class="phk-value-cell">
                 <span class="ppug-stunden-value">{{ getPpugNachPfkInStundenForTag(entry.tag) }}</span>
+              </td>
+              <td *ngIf="selectedKategorie() === 'PFK'" class="phk-value-cell">
+                <span [class.ppug-ja]="getPpugErfuelltForTag(entry) === 'Ja'" 
+                      [class.ppug-nein]="getPpugErfuelltForTag(entry) === 'Nein'">
+                  {{ getPpugErfuelltForTag(entry) }}
+                </span>
               </td>
               <td *ngIf="selectedKategorie() === 'PFK'" class="phk-value-cell">
                 {{ getPhkValue(entry, 'pfkNormal') }}
