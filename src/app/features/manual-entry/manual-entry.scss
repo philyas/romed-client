@@ -571,6 +571,55 @@
         background: linear-gradient(135deg, #0066cc 0%, #004c99 100%);
         color: white;
 
+        .group-header-row {
+          th {
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+
+            &.base-columns-header {
+              background: transparent;
+              border: none;
+            }
+
+            &.soll-arbeitszeit-header {
+              background: rgba(33, 150, 243, 0.25);
+
+              .group-header-label {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+
+                mat-icon {
+                  font-size: 20px;
+                  width: 20px;
+                  height: 20px;
+                }
+              }
+            }
+
+            &.ist-arbeitszeit-header {
+              background: rgba(76, 175, 80, 0.25);
+
+              .group-header-label {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+
+                mat-icon {
+                  font-size: 20px;
+                  width: 20px;
+                  height: 20px;
+                }
+              }
+            }
+          }
+        }
+
         th {
           padding: 16px 12px;
           text-align: left;
@@ -608,6 +657,14 @@
             border-left: 2px solid rgba(255, 255, 255, 0.3);
           }
 
+          &.soll-column {
+            background: rgba(33, 150, 243, 0.12) !important;
+          }
+
+          &.ist-column {
+            background: rgba(76, 175, 80, 0.12) !important;
+          }
+
           &.ppugv-column {
             background: rgba(255, 235, 59, 0.3) !important;
             border-left: 2px solid rgba(255, 235, 59, 0.6) !important;
@@ -634,10 +691,33 @@
           }
 
           &.even-row {
-            background-color: #f8f9fa;
+            background-color: transparent;
 
             &:hover {
-              background-color: #e8f2ff;
+              background-color: transparent;
+            }
+
+            td {
+              background-color: #f8f9fa;
+            }
+
+            td.soll-cell {
+              background-color: rgba(33, 150, 243, 0.12) !important;
+            }
+
+            td.ist-cell {
+              background-color: rgba(76, 175, 80, 0.12) !important;
+            }
+
+            td.ppugv-cell {
+              background-color: rgba(255, 235, 59, 0.2) !important;
+            }
+
+            td.ppugv-cell.ppugv-nein {
+              background-color: rgba(244, 67, 54, 0.3) !important;
+              border-left: 2px solid rgba(244, 67, 54, 0.6) !important;
+              color: #c62828 !important;
+              font-weight: 700 !important;
             }
           }
 
@@ -729,7 +809,20 @@
         background: rgba(0, 102, 204, 0.02);
         border-left: 1px solid #e0e0e0;
 
+        &.soll-cell {
+          background: rgba(33, 150, 243, 0.08) !important;
+        }
+
+        &.ist-cell {
+          background: rgba(76, 175, 80, 0.08) !important;
+        }
+
         &.ppugv-cell {
+          background: rgba(255, 235, 59, 0.2) !important;
+          border-left: 2px solid rgba(255, 235, 59, 0.5) !important;
+        }
+
+        &.ppugv-cell.ist-cell {
           background: rgba(255, 235, 59, 0.2) !important;
           border-left: 2px solid rgba(255, 235, 59, 0.5) !important;
         }
