@@ -78,7 +78,7 @@ export class ManualEntryNacht {
   selectedVariant = signal<'2026' | 'legacy'>('legacy');
   
   // Konstante für Patienten-Berechnung (MiNa-Durchschnitt für Nacht)
-  belegteBettenKonstante = signal<number>(25); // Default-Wert
+  belegteBettenKonstante = signal<number | null>(null); // Kein Fallback mehr, wird aus täglichen Werten berechnet
   
   // P:P Werte aus calculation rules
   ppRatioTagBase = signal<number>(10); // Default: 10
@@ -258,10 +258,30 @@ export class ManualEntryNacht {
           dailyMap.set(item.tag, { mina: item.mina, mita: item.mita });
         });
         this.dailyMinaMita.set(dailyMap);
+        
+        // Berechne MiNa-Durchschnitt aus täglichen Werten (Nacht verwendet MiNa)
+        let minaSum = 0;
+        let minaCount = 0;
+        dailyMap.forEach((dayData) => {
+          if (dayData && dayData.mina !== null && !isNaN(dayData.mina)) {
+            minaSum += dayData.mina;
+            minaCount++;
+          }
+        });
+        
+        if (minaCount > 0) {
+          const minaDurchschnitt = Math.round((minaSum / minaCount) * 100) / 100;
+          this.belegteBettenKonstante.set(minaDurchschnitt);
+          console.log(`✅ MiNa-Durchschnitt aus täglichen Werten (Nacht) für ${station}: ${minaDurchschnitt} (${minaCount} Tage)`);
+        } else {
+          console.log(`⚠️ Keine MiNa-Werte für ${station} gefunden. Kein Fallback.`);
+          this.belegteBettenKonstante.set(null);
+        }
       },
       error: (err) => {
         console.error('Error loading daily MiNa/MiTa values:', err);
         this.dailyMinaMita.set(new Map());
+        this.belegteBettenKonstante.set(null);
       }
     });
     
@@ -338,25 +358,8 @@ export class ManualEntryNacht {
 
   onStationChange(station: string) {
     this.selectedStation.set(station);
-    
-    // Lade MiNa-Durchschnitt für diese Station (Nacht verwendet MiNa)
-    if (station) {
-      this.api.getStationMinaAverage(station).subscribe({
-        next: (response) => {
-          if (response.minaDurchschnitt !== null) {
-            this.belegteBettenKonstante.set(response.minaDurchschnitt);
-            console.log(`✅ MiNa-Durchschnitt (Nacht) für ${station}: ${response.minaDurchschnitt}`);
-          } else {
-            console.log(`⚠️ Kein MiNa-Durchschnitt für ${station} gefunden. Verwende Standard: 25`);
-            this.belegteBettenKonstante.set(25);
-          }
-        },
-        error: (err) => {
-          console.error('Error loading MiNa average:', err);
-          this.belegteBettenKonstante.set(25); // Fallback
-        }
-      });
-    }
+    // MiNa-Durchschnitt wird jetzt aus täglichen Werten berechnet (in loadDataForPeriod)
+    // Kein separater API-Call mehr nötig
   }
 
   onYearChange(year: number) {
@@ -689,7 +692,7 @@ export class ManualEntryNacht {
     if (examPflege === null) return null;
     
     const konstante = this.belegteBettenKonstante();
-    if (konstante === 0) return 'Division durch 0';
+    if (konstante === null || konstante === 0) return null; // Kein Fallback, null zurückgeben
     
     const patientenProPflegekraft = examPflege / konstante;
     

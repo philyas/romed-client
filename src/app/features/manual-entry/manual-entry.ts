@@ -78,7 +78,7 @@ export class ManualEntry {
   selectedVariant = signal<'2026' | 'legacy'>('legacy');
   
   // Konstante für Patienten-Berechnung (Mitternachtsstatistik Tag / Belegte Betten)
-  belegteBettenKonstante = signal<number>(25); // Default-Wert
+  belegteBettenKonstante = signal<number | null>(null); // Kein Fallback mehr
   
   // P:P Werte aus calculation rules
   ppRatioTagBase = signal<number>(10); // Default: 10
@@ -258,10 +258,30 @@ export class ManualEntry {
           dailyMap.set(item.tag, { mina: item.mina, mita: item.mita });
         });
         this.dailyMinaMita.set(dailyMap);
+        
+        // Berechne MiTa-Durchschnitt aus täglichen Werten
+        let mitaSum = 0;
+        let mitaCount = 0;
+        dailyMap.forEach((dayData) => {
+          if (dayData && dayData.mita !== null && !isNaN(dayData.mita)) {
+            mitaSum += dayData.mita;
+            mitaCount++;
+          }
+        });
+        
+        if (mitaCount > 0) {
+          const mitaDurchschnitt = Math.round((mitaSum / mitaCount) * 100) / 100;
+          this.belegteBettenKonstante.set(mitaDurchschnitt);
+          console.log(`✅ MiTa-Durchschnitt aus täglichen Werten für ${station}: ${mitaDurchschnitt} (${mitaCount} Tage)`);
+        } else {
+          console.log(`⚠️ Keine MiTa-Werte für ${station} gefunden. Kein Fallback.`);
+          this.belegteBettenKonstante.set(null);
+        }
       },
       error: (err) => {
         console.error('Error loading daily MiNa/MiTa values:', err);
         this.dailyMinaMita.set(new Map());
+        this.belegteBettenKonstante.set(null);
       }
     });
     
@@ -335,25 +355,8 @@ export class ManualEntry {
 
   onStationChange(station: string) {
     this.selectedStation.set(station);
-    
-    // Lade MiTa-Durchschnitt für diese Station
-    if (station) {
-      this.api.getStationMitaAverage(station).subscribe({
-        next: (response) => {
-          if (response.mitaDurchschnitt !== null) {
-            this.belegteBettenKonstante.set(response.mitaDurchschnitt);
-            console.log(`✅ MiTa-Durchschnitt für ${station}: ${response.mitaDurchschnitt}`);
-          } else {
-            console.log(`⚠️ Kein MiTa-Durchschnitt für ${station} gefunden. Verwende Standard: 25`);
-            this.belegteBettenKonstante.set(25);
-          }
-        },
-        error: (err) => {
-          console.error('Error loading MiTa average:', err);
-          this.belegteBettenKonstante.set(25); // Fallback
-        }
-      });
-    }
+    // MiTa-Durchschnitt wird jetzt aus täglichen Werten berechnet (in loadDataForPeriod)
+    // Kein separater API-Call mehr nötig
   }
 
   onYearChange(year: number) {
@@ -713,7 +716,7 @@ export class ManualEntry {
     if (examPflege === null) return null;
     
     const konstante = this.belegteBettenKonstante();
-    if (konstante === 0) return 'Division durch 0';
+    if (konstante === null || konstante === 0) return null; // Kein Fallback, null zurückgeben
     
     // Patienten pro Pflegekraft = Exam. Pflege / Konstante (MiTa-Durchschnitt)
     const patientenProPflegekraft = examPflege / konstante;

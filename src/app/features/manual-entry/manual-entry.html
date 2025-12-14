@@ -270,9 +270,9 @@
         
         <!-- Berechnete Werte (nur bei PFK) -->
         <div class="header-calculations" *ngIf="selectedKategorie() === 'PFK' && selectedStation()">
-          <div class="calc-item">
+          <div class="calc-item" *ngIf="belegteBettenKonstante() !== null">
             <span class="calc-label">MiTa-Ø Station:</span>
-            <span class="calc-value konstante">{{ belegteBettenKonstante().toFixed(2) }}</span>
+            <span class="calc-value konstante">{{ belegteBettenKonstante()!.toFixed(2) }}</span>
           </div>
           <div class="calc-separator">|</div>
           <div class="calc-item">
