@@ -386,6 +386,11 @@
                   <span>Exam. Pflege</span>
                 </div>
               </th>
+              <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column ppug-erfuellt-v2-column">
+                <div class="header-with-info">
+                  <span>PpUG erfüllt</span>
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -473,6 +478,12 @@
               <td *ngIf="selectedKategorie() === 'PFK'" class="phk-value-cell exam-pflege-cell">
                 <span class="exam-pflege-value">
                   {{ getExamPflegeForTag(entry) }}
+                </span>
+              </td>
+              <td *ngIf="selectedKategorie() === 'PFK'" class="phk-value-cell ppug-erfuellt-v2-cell">
+                <span [class.ppug-ja]="getPpugErfuelltV2ForTag(entry) === 'Ja'" 
+                      [class.ppug-nein]="getPpugErfuelltV2ForTag(entry) === 'Nein'">
+                  {{ getPpugErfuelltV2ForTag(entry) }}
                 </span>
               </td>
             </tr>

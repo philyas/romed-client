@@ -899,6 +899,37 @@ export class ManualEntry {
     return examPflege.toFixed(4);
   }
 
+  getPpugErfuelltV2ForTag(entry: DayEntry): string {
+    if (this.selectedKategorie() !== 'PFK') {
+      return '-';
+    }
+    
+    // Hole Exam. Pflege für diesen Tag
+    const examPflegeStr = this.getExamPflegeForTag(entry);
+    if (examPflegeStr === '-' || examPflegeStr === null) {
+      return '-';
+    }
+    
+    const examPflege = parseFloat(examPflegeStr);
+    if (isNaN(examPflege)) {
+      return '-';
+    }
+    
+    // Berechne PpUG nach PFK
+    const dailyMap = this.dailyMinaMita();
+    const dayData = dailyMap.get(entry.tag);
+    
+    if (!dayData || dayData.mita === null) {
+      return '-';
+    }
+    
+    const ppRatioBase = this.ppRatioTagBase();
+    const ppugNachPfk = dayData.mita / ppRatioBase;
+    
+    // Prüfe: Exam. Pflege >= PpUG nach PFK
+    return examPflege >= ppugNachPfk ? 'Ja' : 'Nein';
+  }
+
   // File upload methods
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
