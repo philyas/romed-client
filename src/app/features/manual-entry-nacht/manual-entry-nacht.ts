@@ -270,9 +270,12 @@ export class ManualEntryNacht {
         if (response.data.length > 0) {
           // Lade Durchschnittswerte (Tag=0)
           const durchschnitt = response.data.find(d => d.Tag === 0);
-          if (durchschnitt && durchschnitt.PHK_Anrechenbar_Stunden !== undefined) {
+          console.log(`[Nacht Frontend] Durchschnitt gefunden:`, durchschnitt);
+          if (durchschnitt && durchschnitt.PHK_Anrechenbar_Stunden !== undefined && durchschnitt.PHK_Anrechenbar_Stunden !== null) {
+            console.log(`[Nacht Frontend] Setze durchschnittPhkAnrechenbar auf: ${durchschnitt.PHK_Anrechenbar_Stunden}`);
             this.durchschnittPhkAnrechenbar.set(durchschnitt.PHK_Anrechenbar_Stunden);
           } else {
+            console.warn(`[Nacht Frontend] PHK_Anrechenbar_Stunden fehlt oder ist null. Durchschnitt:`, durchschnitt);
             this.durchschnittPhkAnrechenbar.set(null);
           }
           
