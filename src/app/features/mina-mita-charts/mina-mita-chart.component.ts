@@ -1,4 +1,4 @@
-import { Component, Input, signal, effect, Inject, OnInit, OnChanges } from '@angular/core';
+import { Component, Input, signal, effect, Inject, OnInit, OnChanges, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -22,6 +22,7 @@ interface ChartDataPoint {
 @Component({
   selector: 'app-mina-mita-chart',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
     MatCardModule,
@@ -88,7 +89,7 @@ interface ChartDataPoint {
                 <mat-tab label="🌙 MiNa (Mitternacht)">
                   <div class="tab-content">
                     <div class="table-container">
-                      <table mat-table [dataSource]="getMinaTableData()">
+                      <table mat-table [dataSource]="minaTableData()">
                         <ng-container matColumnDef="month">
                           <th mat-header-cell *matHeaderCellDef>Monat</th>
                           <td mat-cell *matCellDef="let row">{{ row.month }}</td>
@@ -110,7 +111,7 @@ interface ChartDataPoint {
                 <mat-tab label="☀️ MiTa (Mittag)">
                   <div class="tab-content">
                     <div class="table-container">
-                      <table mat-table [dataSource]="getMitaTableData()">
+                      <table mat-table [dataSource]="mitaTableData()">
                         <ng-container matColumnDef="month">
                           <th mat-header-cell *matHeaderCellDef>Monat</th>
                           <td mat-cell *matCellDef="let row">{{ row.month }}</td>
@@ -367,12 +368,13 @@ interface ChartDataPoint {
     }
 
     .table-container {
-      max-height: 350px;
+      max-height: 400px;
       overflow-y: auto;
       overflow-x: auto;
       border: 1px solid #e0e0e0;
       border-radius: 4px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      contain: layout style paint;
     }
 
     .table-container::-webkit-scrollbar {
@@ -490,11 +492,14 @@ export class MinaMitaChart implements OnInit, OnChanges {
   isFlipped = signal<boolean>(false);
   chartLoading = signal<boolean>(false);
   dailyTableData = signal<any[]>([]);
+  minaTableData = signal<any[]>([]);
+  mitaTableData = signal<any[]>([]);
 
   constructor(private dialog: MatDialog) {
     effect(() => {
       this.processChartData();
       this.updateDailyTableData();
+      this.updateMinaMitaTableData();
     });
   }
 
@@ -514,6 +519,7 @@ export class MinaMitaChart implements OnInit, OnChanges {
   ngOnChanges() {
     this.processChartData();
     this.updateDailyTableData();
+    this.updateMinaMitaTableData();
   }
 
   private createEmptyChartData(): ChartData<'line'> {
@@ -895,22 +901,28 @@ export class MinaMitaChart implements OnInit, OnChanges {
     return month.toString().padStart(2, '0');
   }
 
-  getMinaTableData() {
+  private updateMinaMitaTableData() {
     const data = this.chartData();
-    return data.map((point, index) => ({
+    const minaData = data.map((point, index) => ({
       month: this.monthLabelsFull[index],
       value: point.minaAverage,
       stations: point.totalStations
     }));
-  }
-
-  getMitaTableData() {
-    const data = this.chartData();
-    return data.map((point, index) => ({
+    const mitaData = data.map((point, index) => ({
       month: this.monthLabelsFull[index],
       value: point.mitaAverage,
       stations: point.totalStations
     }));
+    this.minaTableData.set(minaData);
+    this.mitaTableData.set(mitaData);
+  }
+
+  getMinaTableData() {
+    return this.minaTableData();
+  }
+
+  getMitaTableData() {
+    return this.mitaTableData();
   }
 
   private updateDailyTableData() {
