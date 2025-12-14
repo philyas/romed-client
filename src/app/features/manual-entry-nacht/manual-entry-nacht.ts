@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, effect } from '@angular/core';
+import { Component, inject, signal, computed, effect, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -15,6 +15,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { Api } from '../../core/api';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatDividerModule } from '@angular/material/divider';
 
 interface DayEntry {
   tag: number;
@@ -49,7 +50,8 @@ interface GeleistetePhkStunden {
     MatSnackBarModule,
     MatDialogModule,
     MatButtonToggleModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatDividerModule
   ],
   templateUrl: './manual-entry-nacht.html',
   styleUrl: './manual-entry-nacht.scss'
@@ -61,6 +63,8 @@ export class ManualEntryNacht {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
+  @ViewChild('fileInput', { static: false }) fileInput!: ElementRef<HTMLInputElement>;
+
   // State
   stations = signal<string[]>([]);
   selectedStation = signal<string>('');
@@ -69,6 +73,9 @@ export class ManualEntryNacht {
   selectedKategorie = signal<'PFK' | 'PHK'>('PFK');
   loading = signal<boolean>(false);
   saving = signal<boolean>(false);
+  uploading = signal<boolean>(false);
+  selectedFile = signal<File | null>(null);
+  selectedVariant = signal<'2026' | 'legacy'>('legacy');
   
   // Konstante für Patienten-Berechnung (MiNa-Durchschnitt für Nacht)
   belegteBettenKonstante = signal<number>(25); // Default-Wert
@@ -569,6 +576,37 @@ export class ManualEntryNacht {
     return pfkNormal >= ppugNachPfk ? 'Ja' : 'Nein';
   }
 
+  getPpugErfuelltV2ForTag(entry: DayEntry): string {
+    if (this.selectedKategorie() !== 'PFK') {
+      return '-';
+    }
+    
+    // Hole Exam. Pflege für diesen Tag
+    const examPflegeStr = this.getExamPflegeForTag(entry);
+    if (examPflegeStr === '-' || examPflegeStr === null) {
+      return '-';
+    }
+    
+    const examPflege = parseFloat(examPflegeStr);
+    if (isNaN(examPflege)) {
+      return '-';
+    }
+    
+    // Berechne PpUG nach PFK
+    const dailyMap = this.dailyMinaMita();
+    const dayData = dailyMap.get(entry.tag);
+    
+    if (!dayData || dayData.mina === null) {
+      return '-';
+    }
+    
+    const ppRatioBase = this.ppRatioNachtBase();
+    const ppugNachPfk = dayData.mina / ppRatioBase;
+    
+    // Prüfe: Exam. Pflege >= PpUG nach PFK
+    return examPflege >= ppugNachPfk ? 'Ja' : 'Nein';
+  }
+
   getPhkValue(entry: DayEntry, field: 'pfkNormal' | 'gesamtPfkPhk' | 'phkEnd' | 'phkAnrechenbar'): string {
     const value = entry[field];
     if (value === undefined || value === null) {
@@ -764,6 +802,145 @@ export class ManualEntryNacht {
     if (!geleistetePhk) return null;
     
     return geleistetePhk.durchschnitt;
+  }
+
+  clearAllStationData() {
+    const station = this.selectedStation();
+    const year = this.selectedYear();
+    const month = this.selectedMonth();
+    
+    if (!station) {
+      this.snackBar.open('Bitte wählen Sie eine Station aus', 'Schließen', { duration: 3000 });
+      return;
+    }
+    
+    const confirmMessage = `Möchten Sie wirklich ALLE Stunden-Daten (PFK und PHK) für ${this.getMonthName(month)} ${year} (${station}) - Nachtschicht löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden!`;
+    
+    if (confirm(confirmMessage)) {
+      this.saving.set(true);
+      
+      // Delete ALL data from server (PFK and PHK) - Nacht
+      this.api.deleteManualEntryNacht(station, year, month, 'PFK').subscribe({
+        next: (response) => {
+          // Also delete PHK
+          this.api.deleteManualEntryNacht(station, year, month, 'PHK').subscribe({
+            next: (phkResponse) => {
+              this.saving.set(false);
+              this.snackBar.open('Alle Daten (PFK und PHK) wurden gelöscht', 'Schließen', { duration: 3000 });
+              
+              // Reset local entries
+              this.initializeEmptyEntries();
+              
+              // Clear related data
+              this.durchschnittPhkAnrechenbar.set(null);
+              this.geleistetePhkStunden.set(null);
+              this.phkTageswerte.set(null);
+            },
+            error: (err) => {
+              this.saving.set(false);
+              console.error('Error deleting PHK data:', err);
+              const errorMessage = err.error?.error || err.message || 'Fehler beim Löschen';
+              this.snackBar.open(errorMessage, 'Schließen', { duration: 3000 });
+            }
+          });
+        },
+        error: (err) => {
+          this.saving.set(false);
+          console.error('Error deleting PFK data:', err);
+          const errorMessage = err.error?.error || err.message || 'Fehler beim Löschen';
+          this.snackBar.open(errorMessage, 'Schließen', { duration: 3000 });
+        }
+      });
+    }
+  }
+
+  clearAllMonthsForStation() {
+    const station = this.selectedStation();
+    
+    if (!station) {
+      this.snackBar.open('Bitte wählen Sie eine Station aus', 'Schließen', { duration: 3000 });
+      return;
+    }
+    
+    const confirmMessage = `Möchten Sie wirklich ALLE Stunden-Daten (PFK und PHK) für ALLE Monate und Jahre für Station ${station} - Nachtschicht löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden!`;
+    
+    if (confirm(confirmMessage)) {
+      this.saving.set(true);
+      this.snackBar.open('Diese Funktion ist für Nachtschicht noch nicht implementiert. Bitte löschen Sie die Daten manuell pro Monat.', 'Schließen', { duration: 5000 });
+      this.saving.set(false);
+      // TODO: Implement backend route for deleting all months for a station in nacht
+    }
+  }
+
+  // File upload methods
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      // Validate file type
+      if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+        this.snackBar.open('Bitte wählen Sie eine Excel-Datei (.xlsx oder .xls)', 'Schließen', { duration: 3000 });
+        return;
+      }
+      this.selectedFile.set(file);
+    }
+  }
+
+  triggerFileSelect(): void {
+    if (this.fileInput) {
+      this.fileInput.nativeElement.click();
+    }
+  }
+
+  clearSelectedFile(): void {
+    this.selectedFile.set(null);
+    if (this.fileInput) {
+      this.fileInput.nativeElement.value = '';
+    }
+  }
+
+  uploadDienstplan(): void {
+    const file = this.selectedFile();
+    if (!file) {
+      this.snackBar.open('Bitte wählen Sie eine Datei aus', 'Schließen', { duration: 3000 });
+      return;
+    }
+
+    this.uploading.set(true);
+
+    this.api.uploadDienstplan(file, this.selectedVariant()).subscribe({
+      next: (response) => {
+        this.uploading.set(false);
+        this.snackBar.open('Dienstplan erfolgreich importiert', 'Schließen', { duration: 3000 });
+
+        // Clear selected file
+        this.clearSelectedFile();
+
+        // Reload data if station, year, month match
+        const station = this.selectedStation();
+        const year = this.selectedYear();
+        const month = this.selectedMonth();
+        const kategorie = this.selectedKategorie();
+
+        if (station && year && month) {
+          // Check if uploaded data matches current selection
+          const matchingUpload = response.uploaded?.find(u =>
+            u.station === station && u.jahr === year && u.monat === month
+          );
+
+          if (matchingUpload) {
+            // Reload data for current selection
+            this.loadDataForPeriod(station, year, month, kategorie);
+          }
+        }
+      },
+      error: (err) => {
+        this.uploading.set(false);
+        console.error('Error uploading Dienstplan:', err);
+        const errorMessage = err.error?.error || err.message || 'Fehler beim Hochladen der Datei';
+        this.snackBar.open(errorMessage, 'Schließen', { duration: 5000 });
+      }
+    });
   }
 
   getPhkStundenForTag(tag: number): string {

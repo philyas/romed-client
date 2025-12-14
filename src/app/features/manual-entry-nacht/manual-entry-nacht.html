@@ -54,6 +54,18 @@
           <mat-icon matSuffix>business</mat-icon>
           <mat-hint>Stationen aus MiNa/MiTa-Bestände</mat-hint>
         </mat-form-field>
+        
+        <!-- Button zum Löschen aller Daten für diese Station -->
+        <button 
+          mat-raised-button 
+          color="warn" 
+          (click)="clearAllMonthsForStation()" 
+          [disabled]="!selectedStation() || saving()"
+          class="delete-all-station-btn">
+          <mat-icon>delete_forever</mat-icon>
+          <span *ngIf="!saving()">Alle Monate zurücksetzen</span>
+          <span *ngIf="saving()">Löscht...</span>
+        </button>
       </div>
 
       <!-- Year and Month Selection -->
@@ -93,6 +105,75 @@
             <mat-icon>{{ kat.value === 'PFK' ? 'verified' : 'support' }}</mat-icon>
             {{ kat.label }}
           </button>
+        </div>
+      </div>
+
+      <!-- File Upload Section -->
+      <div class="upload-section">
+        <mat-divider style="margin: 20px 0;"></mat-divider>
+        <div class="upload-header">
+          <mat-icon>cloud_upload</mat-icon>
+          <h3>Dienstplan-Excel hochladen</h3>
+        </div>
+        <p class="upload-description">
+          Laden Sie eine Dienstplan-Excel-Datei (DP9) hoch, um Arbeitszeiten automatisch zu importieren.
+        </p>
+        <div class="variant-selection" style="margin-bottom: 16px;">
+          <mat-form-field appearance="outline" style="width: 100%;">
+            <mat-label>Berechnungsvariante</mat-label>
+            <mat-select [value]="selectedVariant()" (selectionChange)="selectedVariant.set($event.value)">
+              <mat-option value="legacy">
+                <div style="display: flex; flex-direction: column;">
+                  <strong>Legacy (bis 2025)</strong>
+                  <span style="font-size: 0.85em; color: #666;">Verwendet "Ist"-Zeilen direkt</span>
+                </div>
+              </mat-option>
+              <mat-option value="2026">
+                <div style="display: flex; flex-direction: column;">
+                  <strong>2026 (ab 2026)</strong>
+                  <span style="font-size: 0.85em; color: #666;">Verwendet PPUG-Zeilen nach neuen Regeln</span>
+                </div>
+              </mat-option>
+            </mat-select>
+            <mat-icon matSuffix>settings</mat-icon>
+            <mat-hint>Wählen Sie die Berechnungsvariante basierend auf dem Jahr der Daten</mat-hint>
+          </mat-form-field>
+        </div>
+        <div class="upload-controls">
+          <input 
+            #fileInput 
+            type="file" 
+            accept=".xlsx,.xls" 
+            (change)="onFileSelected($event)"
+            style="display: none;">
+          <button 
+            mat-stroked-button 
+            (click)="triggerFileSelect()"
+            [disabled]="uploading()">
+            <mat-icon>folder_open</mat-icon>
+            Datei auswählen
+          </button>
+          <button 
+            mat-raised-button 
+            color="primary"
+            (click)="uploadDienstplan()"
+            [disabled]="!selectedFile() || uploading()">
+            <mat-spinner *ngIf="uploading()" diameter="20" style="display: inline-block; margin-right: 8px;"></mat-spinner>
+            <mat-icon *ngIf="!uploading()">upload</mat-icon>
+            {{ uploading() ? 'Wird hochgeladen...' : 'Dienstplan hochladen' }}
+          </button>
+          <button 
+            mat-icon-button 
+            *ngIf="selectedFile()"
+            (click)="clearSelectedFile()"
+            color="warn">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        <div class="selected-file" *ngIf="selectedFile()">
+          <mat-icon>description</mat-icon>
+          <span>{{ selectedFile()?.name }}</span>
+          <span class="file-size">({{ ((selectedFile()?.size || 0) / 1024) | number:'1.0-1' }} KB)</span>
         </div>
       </div>
     </mat-card-content>
@@ -215,13 +296,23 @@
             <span class="calc-label">PpUG erfüllt Nein:</span>
             <span class="calc-value">{{ getAnzahlPpugvErfuelltNein() }}</span>
           </div>
+          <div class="calc-separator" *ngIf="geleistetePhkStunden() !== null">|</div>
+          <div class="calc-item" *ngIf="geleistetePhkStunden() !== null">
+            <span class="calc-label">Geleistete AZ PHK:</span>
+            <span class="calc-value geleistete-phk">{{ getGeleistetePhkStundenFormatted() }}</span>
+          </div>
         </div>
       </div>
       
       <div class="header-actions">
         <button mat-button color="warn" (click)="clearAllEntries()" [disabled]="saving()">
           <mat-icon>delete_sweep</mat-icon>
-          {{ saving() ? 'Löscht...' : 'Alle zurücksetzen' }}
+          <span *ngIf="!saving()">Alle {{ selectedKategorie() }} zurücksetzen</span>
+          <span *ngIf="saving()">Löscht...</span>
+        </button>
+        <button mat-button color="warn" (click)="clearAllStationData()" [disabled]="saving()">
+          <mat-icon>delete_forever</mat-icon>
+          {{ saving() ? 'Löscht...' : 'Alle Stunden (PFK + PHK) löschen' }}
         </button>
         <button mat-raised-button color="primary" (click)="saveData()" [disabled]="saving()">
           <mat-icon>save</mat-icon>
@@ -274,6 +365,11 @@
               <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column tatsaechlich-column ist-column">tatsächl. Anrechenbar</th>
               <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column gesamte-anrech-column ist-column">Gesamte anrechb. AZ:</th>
               <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column exam-pflege-column ist-column">Exam. Pflege</th>
+              <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column ppug-erfuellt-v2-column ist-column">
+                <div class="header-with-info">
+                  <span>PpUG erfüllt</span>
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -362,6 +458,13 @@
               <td *ngIf="selectedKategorie() === 'PFK'" class="phk-value-cell exam-pflege-cell ist-cell">
                 <span class="exam-pflege-value">
                   {{ getExamPflegeForTag(entry) }}
+                </span>
+              </td>
+              <td *ngIf="selectedKategorie() === 'PFK'" class="phk-value-cell ppugv-cell ppug-erfuellt-v2-cell"
+                  [class.ppugv-nein]="getPpugErfuelltV2ForTag(entry) === 'Nein'">
+                <span [class.ppug-ja]="getPpugErfuelltV2ForTag(entry) === 'Ja'" 
+                      [class.ppug-nein]="getPpugErfuelltV2ForTag(entry) === 'Nein'">
+                  {{ getPpugErfuelltV2ForTag(entry) }}
                 </span>
               </td>
             </tr>
