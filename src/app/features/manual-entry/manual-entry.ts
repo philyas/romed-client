@@ -83,8 +83,15 @@ export class ManualEntry {
   ppRatioTagBase = signal<number>(10); // Default: 10
   ppRatioNachtBase = signal<number>(20); // Default: 20
   
+  // Schichtstunden aus calculation rules
+  schichtStundenTag = signal<number>(16); // Default: 16
+  schichtStundenNacht = signal<number>(8); // Default: 8
+  
   // Day entries for the selected month
   dayEntries = signal<DayEntry[]>([]);
+  
+  // Tägliche MiNa/MiTa-Werte (für jeden Tag des Monats)
+  dailyMinaMita = signal<Map<number, { mina: number | null; mita: number | null }>>(new Map());
   
   // Durchschnittswerte (aus Backend Tag=0)
   durchschnittPhkAnrechenbar = signal<number | null>(null);
@@ -99,9 +106,6 @@ export class ManualEntry {
     minuten: number;
     gesamtDezimal: number;
   }> | null>(null);
-  
-  // Tägliche MiNa/MiTa-Werte (für jeden Tag des Monats)
-  dailyMinaMita = signal<Map<number, { mina: number | null; mita: number | null }>>(new Map());
   
   // Available categories
   kategorien = [
@@ -158,12 +162,20 @@ export class ManualEntry {
         if (response.success && response.data) {
           const tagBase = response.data.find(c => c.key === 'pp_ratio_tag_base');
           const nachtBase = response.data.find(c => c.key === 'pp_ratio_nacht_base');
+          const schichtTag = response.data.find(c => c.key === 'schicht_stunden_tag');
+          const schichtNacht = response.data.find(c => c.key === 'schicht_stunden_nacht');
           
           if (tagBase && tagBase.value) {
             this.ppRatioTagBase.set(tagBase.value);
           }
           if (nachtBase && nachtBase.value) {
             this.ppRatioNachtBase.set(nachtBase.value);
+          }
+          if (schichtTag && schichtTag.value) {
+            this.schichtStundenTag.set(schichtTag.value);
+          }
+          if (schichtNacht && schichtNacht.value) {
+            this.schichtStundenNacht.set(schichtNacht.value);
           }
         }
       },
@@ -704,6 +716,20 @@ export class ManualEntry {
       // PpUG nach PFK = MiTa / pp_ratio_tag_base
       const ppRatioBase = this.ppRatioTagBase();
       const result = dayData.mita / ppRatioBase;
+      return result.toFixed(2);
+    }
+    return '-';
+  }
+
+  getPpugNachPfkInStundenForTag(tag: number): string {
+    const dailyMap = this.dailyMinaMita();
+    const dayData = dailyMap.get(tag);
+    if (dayData && dayData.mita !== null) {
+      // PpUG nach PFK in Std. = (MiTa / pp_ratio_tag_base) × Schichtstunden Tag
+      // = MiTa × Schichtstunden Tag / pp_ratio_tag_base
+      const ppRatioBase = this.ppRatioTagBase();
+      const schichtStunden = this.schichtStundenTag();
+      const result = (dayData.mita * schichtStunden) / ppRatioBase;
       return result.toFixed(2);
     }
     return '-';

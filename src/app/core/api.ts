@@ -17,24 +17,6 @@ export interface UploadFileResult {
   schemaId?: string;
   schemaName?: string;
   values?: Record<string, unknown>[];
-  dailyData?: Array<{
-    Station?: string;
-    Datum?: string | number;
-    DatumISO?: string;
-    Jahr?: number;
-    Monat?: number;
-    MiNa_Bestand?: number | null;
-    MiTa_Bestand?: number | null;
-  }>;
-  monthlyAverages?: Array<{
-    Station?: string;
-    Monat?: number;
-    Jahr?: number;
-    MiNa_Durchschnitt?: number | null;
-    MiTa_Durchschnitt?: number | null;
-    Anzahl_Tage?: number | null;
-  }>;
-  metadata?: Record<string, unknown>;
   error?: string;
 }
 
@@ -379,6 +361,16 @@ export class Api {
 
   deleteKostenstelle(kostenstelle: string): Observable<{ success: boolean; message: string; deleted: string }> {
     return this.http.delete<{ success: boolean; message: string; deleted: string }>(`${this.baseUrl}/kostenstellen/${encodeURIComponent(kostenstelle)}`);
+  }
+
+  importKostenstellenFromFile(file: File): Observable<{ success: boolean; message: string; imported: number; total: number }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<{ success: boolean; message: string; imported: number; total: number }>(`${this.baseUrl}/kostenstellen/import`, formData);
+  }
+
+  importKostenstellenFromSample(): Observable<{ success: boolean; message: string; imported: number }> {
+    return this.http.post<{ success: boolean; message: string; imported: number }>(`${this.baseUrl}/kostenstellen/import-sample`, {});
   }
 
   // Backup

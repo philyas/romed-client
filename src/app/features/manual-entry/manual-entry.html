@@ -326,6 +326,7 @@
               <th class="action-column">Reset</th>
               <th class="phk-column">MiTa</th>
               <th class="phk-column">PpUG nach PFK</th>
+              <th class="phk-column">in Std.</th>
               <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">
                 <div class="header-with-info">
                   <span>PFK Normal</span>
@@ -421,6 +422,9 @@
               </td>
               <td class="phk-value-cell">
                 <span class="ppug-value">{{ getPpugNachPfkForTag(entry.tag) }}</span>
+              </td>
+              <td class="phk-value-cell">
+                <span class="ppug-stunden-value">{{ getPpugNachPfkInStundenForTag(entry.tag) }}</span>
               </td>
               <td *ngIf="selectedKategorie() === 'PFK'" class="phk-value-cell">
                 {{ getPhkValue(entry, 'pfkNormal') }}
