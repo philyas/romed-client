@@ -261,7 +261,7 @@
         </mat-card-title>
         
         <!-- Berechnete Werte (nur bei PFK) -->
-        <div class="header-calculations" *ngIf="selectedKategorie() === 'PFK' && durchschnittPhkAnrechenbar() !== null">
+        <div class="header-calculations" *ngIf="selectedKategorie() === 'PFK' && selectedStation()">
           <div class="calc-item">
             <span class="calc-label">MiNa-Ø Station:</span>
             <span class="calc-value konstante">{{ belegteBettenKonstante().toFixed(2) }}</span>
