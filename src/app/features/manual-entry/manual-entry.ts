@@ -710,10 +710,10 @@ export class ManualEntry {
     const avgMinutesPfk = totalMinutes / daysWithData;
     const avgHoursPfk = avgMinutesPfk / 60;
     
-    // Berechne durchschnittliche tatsächlich anrechenbare PHK-Stunden
+    // Berechne durchschnittliche tatsächlich anrechenbare PHK-Stunden (wie Backend - nur Tage mit usable > 0)
     const phkTageswerte = this.phkTageswerte();
-    let totalTatsaechlichAnrechenbar = 0;
-    let daysWithPhkData = 0;
+    let tatsaechlichAnrechenbar = 0;
+    const collected: number[] = [];
     
     entries.forEach(entry => {
       const phkAnrechenbar = entry.phkAnrechenbar || 0;
@@ -722,19 +722,27 @@ export class ManualEntry {
       if (tagData) {
         const phkStundenDezimal = tagData.gesamtDezimal;
         // Regel: Wenn PHK-Stunden >= PHK Anrechenbar, dann nimm PHK Anrechenbar, sonst PHK-Stunden
-        const tatsaechlichAnrechenbar = phkStundenDezimal >= phkAnrechenbar ? phkAnrechenbar : phkStundenDezimal;
-        totalTatsaechlichAnrechenbar += tatsaechlichAnrechenbar;
-        daysWithPhkData++;
+        const usable = phkStundenDezimal >= phkAnrechenbar ? phkAnrechenbar : phkStundenDezimal;
+        // Nur Tage mit usable > 0 einbeziehen (wie im Backend)
+        if (usable > 0) {
+          collected.push(usable);
+        }
       }
     });
     
-    if (daysWithPhkData === 0) return null;
+    if (collected.length > 0) {
+      tatsaechlichAnrechenbar = collected.reduce((sum, value) => sum + value, 0) / collected.length;
+    } else {
+      // Fallback zu Durchschnittswert wenn keine Tageswerte verfügbar (wie im Backend)
+      tatsaechlichAnrechenbar = this.durchschnittPhkAnrechenbar() || 0;
+    }
     
-    const avgTatsaechlichAnrechenbar = totalTatsaechlichAnrechenbar / daysWithPhkData;
+    const avgTatsaechlichAnrechenbar = tatsaechlichAnrechenbar;
     const gesamtAnrechenbar = avgHoursPfk + avgTatsaechlichAnrechenbar;
     
-    // Exam. Pflege = Gesamt Anrechenbar / 16
-    const examPflege = gesamtAnrechenbar / 16;
+    const schichtStunden = this.schichtStundenTag();
+    // Exam. Pflege = Gesamt Anrechenbar / Schichtstunden (aus Config, Standard: 16 Stunden, 6-22 Uhr)
+    const examPflege = gesamtAnrechenbar / schichtStunden;
     
     return examPflege;
   }
@@ -1223,6 +1231,392 @@ export class ManualEntry {
         this.snackBar.open(errorMessage, 'Schließen', { duration: 5000 });
       }
     });
+  }
+
+  openStatInfoModal(statType: string) {
+    const schichtStunden = this.schichtStundenTag();
+    const phkAnteilBase = 10;
+    const phkAnteil = 1 - (1 / phkAnteilBase);
+    const ppRatioBase = this.ppRatioTagBase();
+    const entries = this.dayEntries();
+    const dailyMap = this.dailyMinaMita();
+    const belegteBetten = this.belegteBettenKonstante();
+
+    let modalData: any = {};
+
+    switch (statType) {
+      case 'gesamt':
+        const totalHours = this.getTotalHours();
+        modalData = {
+          title: 'Gesamt Stunden',
+          steps: [
+            {
+              name: 'Gesamt Stunden',
+              formula: `Gesamt = Summe aller eingegebenen Stunden und Minuten`,
+              description: `Addiert alle manuell eingegebenen Arbeitsstunden und Minuten für alle Tage des Monats`,
+              example: `Wenn Tag 1: 8h 30min, Tag 2: 7h 45min → Gesamt = 16h 15min`
+            }
+          ],
+          dataSource: 'Manuell eingegebene Stunden und Minuten pro Tag'
+        };
+        break;
+
+      case 'durchschnitt':
+        const avgHours = this.getAverageHoursPerDay();
+        modalData = {
+          title: `Durchschnitt ${this.selectedKategorie()}`,
+          steps: [
+            {
+              name: 'Durchschnitt pro Tag',
+              formula: `Durchschnitt = Gesamt Stunden / Anzahl Tage mit Daten`,
+              description: `Berechnet den durchschnittlichen Stundenwert pro Tag, wobei nur Tage mit Stunden > 0 berücksichtigt werden`,
+              example: `Wenn Gesamt = 160h und 20 Tage mit Daten → Durchschnitt = 8h/Tag`
+            }
+          ],
+          dataSource: 'Gesamt Stunden (berechnet) und Anzahl Tage mit Daten'
+        };
+        break;
+
+      case 'tageImMonat':
+        const days = this.daysInMonth();
+        modalData = {
+          title: 'Tage im Monat',
+          steps: [
+            {
+              name: 'Tage im Monat',
+              formula: `Tage = Anzahl Tage im ausgewählten Monat`,
+              description: `Die Anzahl der Tage im ausgewählten Monat (28-31 Tage, abhängig vom Monat)`,
+              example: `Januar = 31 Tage, Februar = 28/29 Tage (je nach Jahr)`
+            }
+          ],
+          dataSource: 'Kalenderdaten'
+        };
+        break;
+
+      case 'phkAnteil':
+        modalData = {
+          title: 'PHK-Anteil',
+          steps: [
+            {
+              name: 'PHK-Anteil',
+              formula: `PHK-Anteil = 1 - (1 / Basiswert)`,
+              description: `Der PHK-Anteil wird aus einem konfigurierbaren Basiswert berechnet. Standard: 90%`,
+              example: `1 - (1 / ${phkAnteilBase}) = ${phkAnteil.toFixed(4)} (${(phkAnteil * 100).toFixed(0)}%)`
+            }
+          ],
+          constants: [
+            { name: 'PHK-Anteil Basiswert', value: `${phkAnteilBase}`, unit: 'Zahl' },
+            { name: 'PHK-Anteil', value: `${phkAnteil.toFixed(4)}`, unit: `(${(phkAnteil * 100).toFixed(0)}%)` }
+          ],
+          dataSource: 'Konfigurierbarer Basiswert (Standard: 10)'
+        };
+        break;
+
+      case 'phkAnrechenbar':
+        const phkAnrechenbar = this.durchschnittPhkAnrechenbar();
+        modalData = {
+          title: '⌀ PHK Anrechenbar',
+          steps: [
+            {
+              name: 'PHK Anrechenbar',
+              formula: `PHK Anrechenbar = PHK End × Schichtdauer`,
+              description: `Berechnet die anrechenbaren PHK-Stunden basierend auf der PHK-End-Schichtanzahl`,
+              example: `Wenn PHK End = 0.56 und Schichtdauer = ${schichtStunden}h → ${(0.56 * schichtStunden).toFixed(2)}h`
+            },
+            {
+              name: 'PHK End',
+              formula: `PHK End = Gesamt PFK+PHK - PFK Normal`,
+              description: `Die Differenz zwischen Gesamt-Personal und PFK-Personal`,
+              example: `5.56 - 5.0 = 0.56 PHK-Schichten`
+            }
+          ],
+          constants: [
+            { name: 'Schichtdauer', value: `${schichtStunden}`, unit: 'Stunden' }
+          ],
+          dataSource: 'Berechnet aus PFK-Stunden und PHK-Anteil'
+        };
+        break;
+
+      case 'gesamtAnrechenbar':
+        const gesamtAnrechenbar = this.getGesamtAnrechenbar();
+        modalData = {
+          title: '⌀ Gesamt Anrechenbar',
+          steps: [
+            {
+              name: 'Gesamt Anrechenbar',
+              formula: `Gesamt Anrechenbar = ⌀ PFK-Stunden + ⌀ Tatsächlich Anrechenbar`,
+              description: `Summe aus durchschnittlichen PFK-Stunden und durchschnittlichen tatsächlich anrechenbaren PHK-Stunden`,
+              example: `Wenn ⌀ PFK = 5.0h und ⌀ Tatsächlich Anrechenbar = 8.5h → Gesamt = 13.5h`
+            },
+            {
+              name: 'Tatsächlich Anrechenbar',
+              formula: `Tatsächlich Anrechenbar = min(Geleistete AZ PHK, PHK Anrechenbar)`,
+              description: `Der kleinere Wert von tatsächlich geleisteten PHK-Stunden und berechneten PHK Anrechenbar`,
+              example: `Wenn geleistet: 8.5h, berechnet: 8.96h → tatsächlich: 8.5h`
+            }
+          ],
+          dataSource: 'PFK-Stunden (eingegeben) und PHK-Stunden (aus PHK-Reiter)'
+        };
+        break;
+
+      case 'examPflege':
+        const examPflege = this.getExamPflege();
+        modalData = {
+          title: 'Exam. Pflege',
+          steps: [
+            {
+              name: 'Exam. Pflege',
+              formula: `Exam. Pflege = Gesamt Anrechenbar / Schichtstunden`,
+              description: `Berechnet die Anzahl der examinierten Pflegekräfte basierend auf der gesamten anrechenbaren Arbeitszeit`,
+              example: `Wenn Gesamt Anrechenbar = 88.5h und Schichtstunden = ${schichtStunden}: 88.5 / ${schichtStunden} = ${examPflege ? examPflege.toFixed(4) : 'N/A'}`
+            },
+            {
+              name: 'Gesamt Anrechenbar',
+              formula: `Gesamt Anrechenbar = ⌀ PFK-Stunden + ⌀ Tatsächlich Anrechenbar`,
+              description: `Summe aus PFK- und PHK-Stunden`,
+              example: `Arbeitszeit + min(Geleistete PHK, PHK Anrechenbar)`
+            }
+          ],
+          constants: [
+            { name: 'Schichtstunden (Tag)', value: `${schichtStunden}`, unit: 'Stunden' }
+          ],
+          dataSource: 'Gesamt Anrechenbar (berechnet)'
+        };
+        break;
+
+      case 'patientenProPflegekraft':
+        const examPflegeForPatienten = this.getExamPflege();
+        const patienten = this.getPatientenProPflegekraft();
+        modalData = {
+          title: 'Patienten/Pflegekraft',
+          steps: [
+            {
+              name: 'Patienten/Pflegekraft',
+              formula: `Patienten/Pflegekraft = Exam. Pflege / MiTa-Durchschnitt`,
+              description: `Berechnet das Verhältnis von Patienten zu Pflegekräften`,
+              example: `Wenn Exam. Pflege = ${examPflegeForPatienten ? examPflegeForPatienten.toFixed(4) : 'N/A'} und MiTa = ${belegteBetten ? belegteBetten.toFixed(2) : 'N/A'} → ${patienten || 'N/A'}`
+            },
+            {
+              name: 'Exam. Pflege',
+              formula: `Exam. Pflege = Gesamt Anrechenbar / Schichtstunden`,
+              description: `Anzahl examinierter Pflegekräfte`,
+              example: `Berechnet aus Gesamt Anrechenbar`
+            },
+            {
+              name: 'MiTa-Durchschnitt',
+              formula: `MiTa = Durchschnittliche Tagesbelegung`,
+              description: `Die mittlere Tagesbelegung aus MiNa/MiTa-Beständen`,
+              example: `Wird täglich aus den Bestandsdaten ermittelt`
+            }
+          ],
+          dataSource: 'Exam. Pflege (berechnet) und MiTa (aus MiNa/MiTa-Beständen)'
+        };
+        break;
+
+      case 'geleistetePhk':
+        const geleistetePhk = this.geleistetePhkStunden();
+        modalData = {
+          title: '⌀ Geleistete AZ PHK',
+          steps: [
+            {
+              name: 'Geleistete AZ PHK',
+              formula: `Geleistete AZ PHK = Durchschnitt der tatsächlich geleisteten PHK-Stunden`,
+              description: `Die durchschnittlich von PHK geleisteten Arbeitsstunden, berechnet aus den manuell eingegebenen PHK-Stunden pro Tag`,
+              example: `Wird aus den manuell eingegebenen PHK-Stunden pro Tag ermittelt (nur Tage mit Stunden > 0)`
+            }
+          ],
+          dataSource: 'Manuell eingegebene PHK-Stunden (aus PHK-Reiter)'
+        };
+        break;
+
+      case 'ppugvErfuelltProzent':
+        const ppugvProzent = this.getPpugvErfuelltNeinProzent();
+        modalData = {
+          title: 'PpUG erfüllt %',
+          steps: [
+            {
+              name: 'PpUG erfüllt %',
+              formula: `PpUG erfüllt % = (Anzahl Tage mit "Nein" / Gesamt Tage) × 100`,
+              description: `Prozentsatz der Tage, an denen das PpUG nicht erfüllt wurde`,
+              example: `Wenn 5 von 30 Tagen "Nein" → ${ppugvProzent ? ppugvProzent.toFixed(2) : 'N/A'}%`
+            },
+            {
+              name: 'PpUG erfüllt',
+              formula: `PpUG erfüllt = (Exam. Pflege >= PpUG nach PFK) ? 'Ja' : 'Nein'`,
+              description: `Prüft täglich, ob die examinierte Pflegekraft-Anzahl ausreicht`,
+              example: `Wenn Exam. Pflege >= PpUG nach PFK → 'Ja', sonst 'Nein'`
+            }
+          ],
+          dataSource: 'Tägliche Berechnung von Exam. Pflege und PpUG nach PFK'
+        };
+        break;
+
+      case 'deltaSollIst':
+        const delta = this.getDeltaSollIstPflegfachkraft();
+        modalData = {
+          title: 'Delta Soll-Ist Pflegfachkraft',
+          steps: [
+            {
+              name: 'Delta Soll-Ist',
+              formula: `Delta = ⌀ PFK Normal - ⌀ PpUG nach PFK`,
+              description: `Differenz zwischen tatsächlich vorhandenen PFK-Schichten und benötigten PFK-Schichten`,
+              example: `Wenn ⌀ PFK Normal = 5.0 und ⌀ PpUG nach PFK = 4.5 → Delta = ${delta ? delta.toFixed(4) : 'N/A'}`
+            },
+            {
+              name: '⌀ PFK Normal',
+              formula: `⌀ PFK Normal = Durchschnitt von PFK Normal über alle Tage`,
+              description: `Durchschnittliche Anzahl PFK-Schichten`,
+              example: `Berechnet aus eingegebenen PFK-Stunden`
+            },
+            {
+              name: '⌀ PpUG nach PFK',
+              formula: `⌀ PpUG nach PFK = Durchschnitt von (MiTa / Pp-Ratio)`,
+              description: `Durchschnittlicher benötigter Pflegekraft-Bedarf`,
+              example: `Berechnet aus täglichen MiTa-Werten`
+            }
+          ],
+          constants: [
+            { name: 'Pp-Ratio Basiswert (Tag)', value: `${ppRatioBase}`, unit: 'Zahl' }
+          ],
+          dataSource: 'PFK Normal (eingegeben) und MiTa (aus Beständen)'
+        };
+        break;
+
+      case 'ppRatio':
+        const ppRatio = this.getPPRatio();
+        modalData = {
+          title: 'P:P (Patienten zu Pflegekraft)',
+          steps: [
+            {
+              name: 'P:P',
+              formula: `P:P = ⌀ MiTa / ⌀ PFK Normal`,
+              description: `Verhältnis von durchschnittlicher Tagesbelegung zu durchschnittlicher PFK-Anzahl`,
+              example: `Wenn ⌀ MiTa = 20.0 und ⌀ PFK Normal = 5.0 → P:P = ${ppRatio ? ppRatio.toFixed(2) : 'N/A'}`
+            },
+            {
+              name: '⌀ MiTa',
+              formula: `⌀ MiTa = Durchschnitt der täglichen MiTa-Werte`,
+              description: `Durchschnittliche Tagesbelegung`,
+              example: `Berechnet aus täglichen MiNa/MiTa-Beständen`
+            },
+            {
+              name: '⌀ PFK Normal',
+              formula: `⌀ PFK Normal = Durchschnitt von PFK Normal`,
+              description: `Durchschnittliche PFK-Schichtanzahl`,
+              example: `Berechnet aus eingegebenen PFK-Stunden`
+            }
+          ],
+          dataSource: 'MiTa (aus Beständen) und PFK Normal (eingegeben)'
+        };
+        break;
+
+      case 'mitaDurchschnitt':
+        modalData = {
+          title: 'MiTa-Ø Station',
+          steps: [
+            {
+              name: 'MiTa-Durchschnitt',
+              formula: `MiTa-Ø = Durchschnitt der täglichen MiTa-Werte`,
+              description: `Die mittlere Tagesbelegung (MiTa) wird aus den MiNa/MiTa-Beständen für jeden Tag des Monats geladen und dann gemittelt`,
+              example: `Wird täglich aus den Bestandsdaten ermittelt und dann gemittelt`
+            }
+          ],
+          dataSource: 'MiNa/MiTa-Bestände (täglich aktualisiert)'
+        };
+        break;
+
+      case 'ppugNachPfkDurchschnitt':
+        const ppugNachPfk = this.getDurchschnittPpugNachPfk();
+        modalData = {
+          title: 'PpUG nach PFK Ø',
+          steps: [
+            {
+              name: 'PpUG nach PFK Durchschnitt',
+              formula: `⌀ PpUG nach PFK = Durchschnitt von (MiTa / Pp-Ratio)`,
+              description: `Berechnet den durchschnittlichen benötigten Pflegekraft-Bedarf basierend auf der Tagesbelegung`,
+              example: `Für jeden Tag: MiTa / ${ppRatioBase}, dann Durchschnitt über alle Tage`
+            }
+          ],
+          constants: [
+            { name: 'Pp-Ratio Basiswert (Tag)', value: `${ppRatioBase}`, unit: 'Zahl' }
+          ],
+          dataSource: 'MiTa (aus MiNa/MiTa-Beständen)'
+        };
+        break;
+
+      case 'pfkNormalDurchschnitt':
+        const pfkNormal = this.getDurchschnittPfkNormal();
+        modalData = {
+          title: 'PFK Normal Ø',
+          steps: [
+            {
+              name: 'PFK Normal Durchschnitt',
+              formula: `⌀ PFK Normal = Durchschnitt von (PFK-Stunden / Schichtdauer)`,
+              description: `Berechnet die durchschnittliche Anzahl der vollen PFK-Schichten`,
+              example: `Für jeden Tag: PFK-Stunden / ${schichtStunden}, dann Durchschnitt über alle Tage`
+            }
+          ],
+          constants: [
+            { name: 'Schichtdauer', value: `${schichtStunden}`, unit: 'Stunden' }
+          ],
+          dataSource: 'Manuell eingegebene PFK-Stunden pro Tag'
+        };
+        break;
+
+      case 'phkAusstattung':
+        const phkAusstattung = this.getDurchschnittPhkAusstattung();
+        modalData = {
+          title: 'PHK-Ausstattung Ø',
+          steps: [
+            {
+              name: 'PHK-Ausstattung',
+              formula: `PHK-Ausstattung = ⌀ Tatsächlich Anrechenbar / Schichtstunden`,
+              description: `Berechnet die durchschnittliche PHK-Ausstattung basierend auf tatsächlich anrechenbaren PHK-Stunden`,
+              example: `Wenn ⌀ Tatsächlich Anrechenbar = 8.5h und Schichtstunden = ${schichtStunden} → ${phkAusstattung || 'N/A'}`
+            },
+            {
+              name: 'Tatsächlich Anrechenbar',
+              formula: `Tatsächlich Anrechenbar = min(Geleistete AZ PHK, PHK Anrechenbar)`,
+              description: `Der kleinere Wert von geleisteten und berechneten PHK-Stunden`,
+              example: `Wenn geleistet: 8.5h, berechnet: 8.96h → tatsächlich: 8.5h`
+            }
+          ],
+          constants: [
+            { name: 'Schichtstunden (Tag)', value: `${schichtStunden}`, unit: 'Stunden' }
+          ],
+          dataSource: 'Tatsächlich Anrechenbar (berechnet)'
+        };
+        break;
+
+      case 'ppugvErfuelltNein':
+        const anzahlNein = this.getAnzahlPpugvErfuelltNein();
+        modalData = {
+          title: 'PpUGV erfüllt Nein',
+          steps: [
+            {
+              name: 'Anzahl Tage mit "Nein"',
+              formula: `Anzahl = Summe aller Tage mit PpUG erfüllt = 'Nein'`,
+              description: `Zählt die Anzahl der Tage im Monat, an denen das PpUG nicht erfüllt wurde`,
+              example: `Wenn 5 Tage "Nein" → Anzahl = ${anzahlNein || 'N/A'}`
+            },
+            {
+              name: 'PpUG erfüllt',
+              formula: `PpUG erfüllt = (Exam. Pflege >= PpUG nach PFK) ? 'Ja' : 'Nein'`,
+              description: `Tägliche Prüfung, ob die examinierte Pflegekraft-Anzahl ausreicht`,
+              example: `Wenn Exam. Pflege < PpUG nach PFK → 'Nein'`
+            }
+          ],
+          dataSource: 'Tägliche Berechnung von Exam. Pflege und PpUG nach PFK'
+        };
+        break;
+    }
+
+    if (modalData.title) {
+      this.dialog.open(CalculationInfoDialog, {
+        width: '600px',
+        data: modalData
+      });
+    }
   }
 
   openCalculationModal(columnType: string) {
