@@ -1315,17 +1315,17 @@ export class ManualEntry {
       case 'phkAnrechenbar':
         const phkAnrechenbar = this.durchschnittPhkAnrechenbar();
         modalData = {
-          title: '⌀ PHK Anrechenbar',
+          title: '⌀ Anrechenbare AZ PHK',
           steps: [
             {
-              name: 'PHK Anrechenbar',
-              formula: `PHK Anrechenbar = PHK End × Schichtdauer`,
-              description: `Berechnet die anrechenbaren PHK-Stunden basierend auf der PHK-End-Schichtanzahl`,
-              example: `Wenn PHK End = 0.56 und Schichtdauer = ${schichtStunden}h → ${(0.56 * schichtStunden).toFixed(2)}h`
+              name: 'Anrechenbare AZ PHK (PHK Anrechenbar)',
+              formula: `Anrechenbare AZ PHK (PHK Anrechenbar) = davon PHK (PHK End) × Schichtdauer`,
+              description: `Berechnet die anrechenbaren PHK-Stunden basierend auf der davon PHK (PHK End)-Schichtanzahl`,
+              example: `Wenn davon PHK (PHK End) = 0.56 und Schichtdauer = ${schichtStunden}h → ${(0.56 * schichtStunden).toFixed(2)}h`
             },
             {
-              name: 'PHK End',
-              formula: `PHK End = Gesamt PFK+PHK - PFK Normal`,
+              name: 'davon PHK (PHK End)',
+              formula: `davon PHK (PHK End) = Gesamt PFK+PHK - Ergibt PFK (PFK Normal)`,
               description: `Die Differenz zwischen Gesamt-Personal und PFK-Personal`,
               example: `5.56 - 5.0 = 0.56 PHK-Schichten`
             }
@@ -1350,8 +1350,8 @@ export class ManualEntry {
             },
             {
               name: 'Tatsächlich Anrechenbar',
-              formula: `Tatsächlich Anrechenbar = min(Geleistete AZ PHK, PHK Anrechenbar)`,
-              description: `Der kleinere Wert von tatsächlich geleisteten PHK-Stunden und berechneten PHK Anrechenbar`,
+              formula: `Tatsächlich Anrechenbar = min(Geleistete AZ PHK, Anrechenbare AZ PHK (PHK Anrechenbar))`,
+              description: `Der kleinere Wert von tatsächlich geleisteten PHK-Stunden und berechneten Anrechenbare AZ PHK (PHK Anrechenbar)`,
               example: `Wenn geleistet: 8.5h, berechnet: 8.96h → tatsächlich: 8.5h`
             }
           ],
@@ -1392,9 +1392,9 @@ export class ManualEntry {
           steps: [
             {
               name: 'Patienten/Pflegekraft',
-              formula: `Patienten/Pflegekraft = Exam. Pflege / MiTa-Durchschnitt`,
+              formula: `Patienten/Pflegekraft = Exam. Pflege / MiTa Bestände (MiTa)-Durchschnitt`,
               description: `Berechnet das Verhältnis von Patienten zu Pflegekräften`,
-              example: `Wenn Exam. Pflege = ${examPflegeForPatienten ? examPflegeForPatienten.toFixed(4) : 'N/A'} und MiTa = ${belegteBetten ? belegteBetten.toFixed(2) : 'N/A'} → ${patienten || 'N/A'}`
+              example: `Wenn Exam. Pflege = ${examPflegeForPatienten ? examPflegeForPatienten.toFixed(4) : 'N/A'} und MiTa Bestände (MiTa) = ${belegteBetten ? belegteBetten.toFixed(2) : 'N/A'} → ${patienten || 'N/A'}`
             },
             {
               name: 'Exam. Pflege',
@@ -1403,13 +1403,13 @@ export class ManualEntry {
               example: `Berechnet aus Gesamt Anrechenbar`
             },
             {
-              name: 'MiTa-Durchschnitt',
-              formula: `MiTa = Durchschnittliche Tagesbelegung`,
+              name: 'MiTa Bestände (MiTa)-Durchschnitt',
+              formula: `MiTa Bestände (MiTa) = Durchschnittliche Tagesbelegung`,
               description: `Die mittlere Tagesbelegung aus MiNa/MiTa-Beständen`,
               example: `Wird täglich aus den Bestandsdaten ermittelt`
             }
           ],
-          dataSource: 'Exam. Pflege (berechnet) und MiTa (aus MiNa/MiTa-Beständen)'
+          dataSource: 'Exam. Pflege (berechnet) und MiTa Bestände (MiTa) (aus MiNa/MiTa-Beständen)'
         };
         break;
 
@@ -1458,27 +1458,27 @@ export class ManualEntry {
           steps: [
             {
               name: 'Delta Soll-Ist',
-              formula: `Delta = ⌀ PFK Normal - ⌀ PpUG nach PFK`,
+              formula: `Delta = ⌀ Ergibt PFK (PFK Normal) - ⌀ PpUG nach PFK`,
               description: `Differenz zwischen tatsächlich vorhandenen PFK-Schichten und benötigten PFK-Schichten`,
-              example: `Wenn ⌀ PFK Normal = 5.0 und ⌀ PpUG nach PFK = 4.5 → Delta = ${delta ? delta.toFixed(4) : 'N/A'}`
+              example: `Wenn ⌀ Ergibt PFK (PFK Normal) = 5.0 und ⌀ PpUG nach PFK = 4.5 → Delta = ${delta ? delta.toFixed(4) : 'N/A'}`
             },
             {
-              name: '⌀ PFK Normal',
-              formula: `⌀ PFK Normal = Durchschnitt von PFK Normal über alle Tage`,
+              name: '⌀ Ergibt PFK (PFK Normal)',
+              formula: `⌀ Ergibt PFK (PFK Normal) = Durchschnitt von Ergibt PFK (PFK Normal) über alle Tage`,
               description: `Durchschnittliche Anzahl PFK-Schichten`,
               example: `Berechnet aus eingegebenen PFK-Stunden`
             },
             {
               name: '⌀ PpUG nach PFK',
-              formula: `⌀ PpUG nach PFK = Durchschnitt von (MiTa / Pp-Ratio)`,
+              formula: `⌀ PpUG nach PFK = Durchschnitt von (MiTa Bestände (MiTa) / Pp-Ratio)`,
               description: `Durchschnittlicher benötigter Pflegekraft-Bedarf`,
-              example: `Berechnet aus täglichen MiTa-Werten`
+              example: `Berechnet aus täglichen MiTa Bestände (MiTa)-Werten`
             }
           ],
           constants: [
             { name: 'Pp-Ratio Basiswert (Tag)', value: `${ppRatioBase}`, unit: 'Zahl' }
           ],
-          dataSource: 'PFK Normal (eingegeben) und MiTa (aus Beständen)'
+          dataSource: 'Ergibt PFK (PFK Normal) (eingegeben) und MiTa Bestände (MiTa) (aus Beständen)'
         };
         break;
 
@@ -1489,35 +1489,35 @@ export class ManualEntry {
           steps: [
             {
               name: 'P:P',
-              formula: `P:P = ⌀ MiTa / ⌀ PFK Normal`,
+              formula: `P:P = ⌀ MiTa Bestände (MiTa) / ⌀ Ergibt PFK (PFK Normal)`,
               description: `Verhältnis von durchschnittlicher Tagesbelegung zu durchschnittlicher PFK-Anzahl`,
-              example: `Wenn ⌀ MiTa = 20.0 und ⌀ PFK Normal = 5.0 → P:P = ${ppRatio ? ppRatio.toFixed(2) : 'N/A'}`
+              example: `Wenn ⌀ MiTa Bestände (MiTa) = 20.0 und ⌀ Ergibt PFK (PFK Normal) = 5.0 → P:P = ${ppRatio ? ppRatio.toFixed(2) : 'N/A'}`
             },
             {
-              name: '⌀ MiTa',
-              formula: `⌀ MiTa = Durchschnitt der täglichen MiTa-Werte`,
+              name: '⌀ MiTa Bestände (MiTa)',
+              formula: `⌀ MiTa Bestände (MiTa) = Durchschnitt der täglichen MiTa Bestände (MiTa)-Werte`,
               description: `Durchschnittliche Tagesbelegung`,
               example: `Berechnet aus täglichen MiNa/MiTa-Beständen`
             },
             {
-              name: '⌀ PFK Normal',
-              formula: `⌀ PFK Normal = Durchschnitt von PFK Normal`,
+              name: '⌀ Ergibt PFK (PFK Normal)',
+              formula: `⌀ Ergibt PFK (PFK Normal) = Durchschnitt von Ergibt PFK (PFK Normal)`,
               description: `Durchschnittliche PFK-Schichtanzahl`,
               example: `Berechnet aus eingegebenen PFK-Stunden`
             }
           ],
-          dataSource: 'MiTa (aus Beständen) und PFK Normal (eingegeben)'
+          dataSource: 'MiTa Bestände (MiTa) (aus Beständen) und Ergibt PFK (PFK Normal) (eingegeben)'
         };
         break;
 
       case 'mitaDurchschnitt':
         modalData = {
-          title: 'MiTa-Ø Station',
+          title: 'MiTa Bestände (MiTa)-Ø Station',
           steps: [
             {
-              name: 'MiTa-Durchschnitt',
-              formula: `MiTa-Ø = Durchschnitt der täglichen MiTa-Werte`,
-              description: `Die mittlere Tagesbelegung (MiTa) wird aus den MiNa/MiTa-Beständen für jeden Tag des Monats geladen und dann gemittelt`,
+              name: 'MiTa Bestände (MiTa)-Durchschnitt',
+              formula: `MiTa Bestände (MiTa)-Ø = Durchschnitt der täglichen MiTa Bestände (MiTa)-Werte`,
+              description: `Die mittlere Tagesbelegung (MiTa Bestände (MiTa)) wird aus den MiNa/MiTa-Beständen für jeden Tag des Monats geladen und dann gemittelt`,
               example: `Wird täglich aus den Bestandsdaten ermittelt und dann gemittelt`
             }
           ],
@@ -1532,26 +1532,26 @@ export class ManualEntry {
           steps: [
             {
               name: 'PpUG nach PFK Durchschnitt',
-              formula: `⌀ PpUG nach PFK = Durchschnitt von (MiTa / Pp-Ratio)`,
+              formula: `⌀ PpUG nach PFK = Durchschnitt von (MiTa Bestände (MiTa) / Pp-Ratio)`,
               description: `Berechnet den durchschnittlichen benötigten Pflegekraft-Bedarf basierend auf der Tagesbelegung`,
-              example: `Für jeden Tag: MiTa / ${ppRatioBase}, dann Durchschnitt über alle Tage`
+              example: `Für jeden Tag: MiTa Bestände (MiTa) / ${ppRatioBase}, dann Durchschnitt über alle Tage`
             }
           ],
           constants: [
             { name: 'Pp-Ratio Basiswert (Tag)', value: `${ppRatioBase}`, unit: 'Zahl' }
           ],
-          dataSource: 'MiTa (aus MiNa/MiTa-Beständen)'
+          dataSource: 'MiTa Bestände (MiTa) (aus MiNa/MiTa-Beständen)'
         };
         break;
 
       case 'pfkNormalDurchschnitt':
         const pfkNormal = this.getDurchschnittPfkNormal();
         modalData = {
-          title: 'PFK Normal Ø',
+          title: 'Ergibt PFK (PFK Normal) Ø',
           steps: [
             {
-              name: 'PFK Normal Durchschnitt',
-              formula: `⌀ PFK Normal = Durchschnitt von (PFK-Stunden / Schichtdauer)`,
+              name: 'Ergibt PFK (PFK Normal) Durchschnitt',
+              formula: `⌀ Ergibt PFK (PFK Normal) = Durchschnitt von (PFK-Stunden / Schichtdauer)`,
               description: `Berechnet die durchschnittliche Anzahl der vollen PFK-Schichten`,
               example: `Für jeden Tag: PFK-Stunden / ${schichtStunden}, dann Durchschnitt über alle Tage`
             }
@@ -1631,11 +1631,11 @@ export class ManualEntry {
     switch (columnType) {
       case 'pfkNormal':
         modalData = {
-          title: 'PFK Normal',
+          title: 'Ergibt PFK (PFK Normal)',
           steps: [
             {
-              name: 'PFK Normal',
-              formula: `PFK Normal = PFK-Stunden / Schichtdauer`,
+              name: 'Ergibt PFK (PFK Normal)',
+              formula: `Ergibt PFK (PFK Normal) = PFK-Stunden / Schichtdauer`,
               description: `Anzahl der vollen PFK-Schichten`,
               example: `Bei ${schichtStunden} Stunden Schichtdauer: 80 Stunden / ${schichtStunden} = 5.0 Schichten`
             }
@@ -1658,7 +1658,7 @@ export class ManualEntry {
             },
             {
               name: 'Gesamt PFK+PHK',
-              formula: `Gesamt PFK+PHK = PFK Normal / PHK-Anteil`,
+              formula: `Gesamt PFK+PHK = Ergibt PFK (PFK Normal) / PHK-Anteil`,
               description: `Gesamtanzahl Personal (PFK + PHK zusammen)`,
               example: `5.0 / ${phkAnteil.toFixed(4)} = 5.56 Gesamt-Schichten`
             }
@@ -1672,11 +1672,11 @@ export class ManualEntry {
 
       case 'phkEnd':
         modalData = {
-          title: 'PHK End',
+          title: 'davon PHK (PHK End)',
           steps: [
             {
-              name: 'PHK End',
-              formula: `PHK End = Gesamt PFK+PHK - PFK Normal`,
+              name: 'davon PHK (PHK End)',
+              formula: `davon PHK (PHK End) = Gesamt PFK+PHK - Ergibt PFK (PFK Normal)`,
               description: `Anzahl PHK-Schichten (Differenz zwischen Gesamt-Personal und PFK-Personal)`,
               example: `5.56 - 5.0 = 0.56 PHK-Schichten`
             }
@@ -1686,11 +1686,11 @@ export class ManualEntry {
 
       case 'phkAnrechenbar':
         modalData = {
-          title: 'PHK Anrechenbar',
+          title: 'Anrechenbare AZ PHK (PHK Anrechenbar)',
           steps: [
             {
-              name: 'PHK Anrechenbar',
-              formula: `PHK Anrechenbar = PHK End × Schichtdauer`,
+              name: 'Anrechenbare AZ PHK (PHK Anrechenbar)',
+              formula: `Anrechenbare AZ PHK (PHK Anrechenbar) = davon PHK (PHK End) × Schichtdauer`,
               description: `Anrechenbare PHK-Arbeitsstunden (für Berechnungen)`,
               example: `0.56 × ${schichtStunden} = ${(0.56 * schichtStunden).toFixed(2)} Stunden`
             }
@@ -1721,8 +1721,8 @@ export class ManualEntry {
           steps: [
             {
               name: 'Tatsächlich Anrechenbar',
-              formula: `Tatsächlich Anrechenbar = min(Geleistete AZ PHK, PHK Anrechenbar)`,
-              description: `Der kleinere Wert von geleisteten PHK-Stunden und berechneten PHK Anrechenbar`,
+              formula: `Tatsächlich Anrechenbar = min(Geleistete AZ PHK, Anrechenbare AZ PHK (PHK Anrechenbar))`,
+              description: `Der kleinere Wert von geleisteten PHK-Stunden und berechneten Anrechenbare AZ PHK (PHK Anrechenbar)`,
               example: `Wenn geleistet: 8.5h, berechnet: 8.96h → tatsächlich: 8.5h`
             }
           ]
@@ -1731,12 +1731,12 @@ export class ManualEntry {
 
       case 'mita':
         modalData = {
-          title: 'MiTa (Mittlere Tagesbelegung)',
+          title: 'MiTa Bestände (MiTa) (Mittlere Tagesbelegung)',
           steps: [
             {
-              name: 'MiTa',
-              formula: `MiTa = Durchschnittliche Tagesbelegung`,
-              description: `Die mittlere Tagesbelegung (MiTa) wird aus den MiNa/MiTa-Beständen für den jeweiligen Tag geladen`,
+              name: 'MiTa Bestände (MiTa)',
+              formula: `MiTa Bestände (MiTa) = Durchschnittliche Tagesbelegung`,
+              description: `Die mittlere Tagesbelegung (MiTa Bestände (MiTa)) wird aus den MiNa/MiTa-Beständen für den jeweiligen Tag geladen`,
               example: `Wird täglich aus den Bestandsdaten ermittelt`
             }
           ],
@@ -1751,15 +1751,15 @@ export class ManualEntry {
           steps: [
             {
               name: 'PpUG nach PFK',
-              formula: `PpUG nach PFK = MiTa / Pp-Ratio Basiswert`,
+              formula: `PpUG nach PFK = MiTa Bestände (MiTa) / Pp-Ratio Basiswert`,
               description: `Berechnet die benötigte Pflegekraft-Anzahl basierend auf der Tagesbelegung`,
-              example: `Wenn MiTa = 20.0 und Pp-Ratio Basis = ${ppRatioBase}, dann: 20.0 / ${ppRatioBase} = ${(20.0 / ppRatioBase).toFixed(2)}`
+              example: `Wenn MiTa Bestände (MiTa) = 20.0 und Pp-Ratio Basis = ${ppRatioBase}, dann: 20.0 / ${ppRatioBase} = ${(20.0 / ppRatioBase).toFixed(2)}`
             }
           ],
           constants: [
             { name: 'Pp-Ratio Basiswert (Tag)', value: `${ppRatioBase}`, unit: 'Zahl' }
           ],
-          dataSource: 'MiTa (aus MiNa/MiTa-Beständen)'
+          dataSource: 'MiTa Bestände (MiTa) (aus MiNa/MiTa-Beständen)'
         };
         break;
 
@@ -1770,16 +1770,16 @@ export class ManualEntry {
           steps: [
             {
               name: 'PpUG nach PFK in Stunden',
-              formula: `PpUG nach PFK in Std. = (MiTa × Schichtstunden) / Pp-Ratio Basiswert`,
+              formula: `PpUG nach PFK in Std. = (MiTa Bestände (MiTa) × Schichtstunden) / Pp-Ratio Basiswert`,
               description: `Umrechnung der benötigten Pflegekraft-Anzahl in Arbeitsstunden`,
-              example: `Wenn MiTa = 20.0, Schichtstunden = ${schichtStunden}, Pp-Ratio = ${ppRatioBase2}: (20.0 × ${schichtStunden}) / ${ppRatioBase2} = ${((20.0 * schichtStunden) / ppRatioBase2).toFixed(2)} Stunden`
+              example: `Wenn MiTa Bestände (MiTa) = 20.0, Schichtstunden = ${schichtStunden}, Pp-Ratio = ${ppRatioBase2}: (20.0 × ${schichtStunden}) / ${ppRatioBase2} = ${((20.0 * schichtStunden) / ppRatioBase2).toFixed(2)} Stunden`
             }
           ],
           constants: [
             { name: 'Pp-Ratio Basiswert (Tag)', value: `${ppRatioBase2}`, unit: 'Zahl' },
             { name: 'Schichtstunden (Tag)', value: `${schichtStunden}`, unit: 'Stunden' }
           ],
-          dataSource: 'MiTa (aus MiNa/MiTa-Beständen)'
+          dataSource: 'MiTa Bestände (MiTa) (aus MiNa/MiTa-Beständen)'
         };
         break;
 
@@ -1790,21 +1790,21 @@ export class ManualEntry {
           steps: [
             {
               name: 'PpUG erfüllt (Version 1)',
-              formula: `PpUG erfüllt = (PFK Normal >= PpUG nach PFK) ? 'Ja' : 'Nein'`,
-              description: `Prüft, ob die vorhandene PFK-Anzahl (PFK Normal) ausreicht, um den PpUG-Bedarf zu decken`,
-              example: `Wenn PFK Normal = 5.0 und PpUG nach PFK = 4.5 → 'Ja' (erfüllt)`
+              formula: `PpUG erfüllt = (Ergibt PFK (PFK Normal) >= PpUG nach PFK) ? 'Ja' : 'Nein'`,
+              description: `Prüft, ob die vorhandene PFK-Anzahl (Ergibt PFK (PFK Normal)) ausreicht, um den PpUG-Bedarf zu decken`,
+              example: `Wenn Ergibt PFK (PFK Normal) = 5.0 und PpUG nach PFK = 4.5 → 'Ja' (erfüllt)`
             },
             {
               name: 'PpUG nach PFK',
-              formula: `PpUG nach PFK = MiTa / Pp-Ratio Basiswert`,
+              formula: `PpUG nach PFK = MiTa Bestände (MiTa) / Pp-Ratio Basiswert`,
               description: `Berechnet den benötigten Pflegekraft-Bedarf`,
-              example: `MiTa / ${ppRatioBase3}`
+              example: `MiTa Bestände (MiTa) / ${ppRatioBase3}`
             }
           ],
           constants: [
             { name: 'Pp-Ratio Basiswert (Tag)', value: `${ppRatioBase3}`, unit: 'Zahl' }
           ],
-          dataSource: 'PFK Normal (aus eingegebenen Stunden) und MiTa (aus Beständen)'
+          dataSource: 'Ergibt PFK (PFK Normal) (aus eingegebenen Stunden) und MiTa Bestände (MiTa) (aus Beständen)'
         };
         break;
 
@@ -1820,8 +1820,8 @@ export class ManualEntry {
             },
             {
               name: 'Tatsächlich anrechenbar',
-              formula: `Tatsächlich anrechenbar = min(Geleistete AZ PHK, PHK Anrechenbar)`,
-              description: `Der kleinere Wert von tatsächlich geleisteten PHK-Stunden und berechneten PHK Anrechenbar`,
+              formula: `Tatsächlich anrechenbar = min(Geleistete AZ PHK, Anrechenbare AZ PHK (PHK Anrechenbar))`,
+              description: `Der kleinere Wert von tatsächlich geleisteten PHK-Stunden und berechneten Anrechenbare AZ PHK (PHK Anrechenbar)`,
               example: `Wenn geleistet: 8.5h, berechnet: 8.96h → tatsächlich: 8.5h`
             }
           ],
@@ -1872,15 +1872,15 @@ export class ManualEntry {
             },
             {
               name: 'PpUG nach PFK',
-              formula: `PpUG nach PFK = MiTa / Pp-Ratio Basiswert`,
+              formula: `PpUG nach PFK = MiTa Bestände (MiTa) / Pp-Ratio Basiswert`,
               description: `Benötigter Pflegekraft-Bedarf`,
-              example: `MiTa / ${ppRatioBase4}`
+              example: `MiTa Bestände (MiTa) / ${ppRatioBase4}`
             }
           ],
           constants: [
             { name: 'Pp-Ratio Basiswert (Tag)', value: `${ppRatioBase4}`, unit: 'Zahl' }
           ],
-          dataSource: 'Exam. Pflege (berechnet) und MiTa (aus Beständen)'
+          dataSource: 'Exam. Pflege (berechnet) und MiTa Bestände (MiTa) (aus Beständen)'
         };
         break;
     }

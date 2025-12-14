@@ -231,7 +231,7 @@
         <div class="stat-item phk-stat" *ngIf="selectedKategorie() === 'PFK' && durchschnittPhkAnrechenbar() !== null">
           <mat-icon>trending_up</mat-icon>
           <div class="stat-content">
-            <span class="stat-label">⌀ PHK Anrechenbar</span>
+            <span class="stat-label">⌀ Anrechenbare AZ PHK</span>
             <span class="stat-value highlight">{{ durchschnittPhkAnrechenbar()?.toFixed(2) }} h/Tag</span>
           </div>
           <button mat-icon-button class="stat-info-button" (click)="openStatInfoModal('phkAnrechenbar')" matTooltip="Berechnung anzeigen">
@@ -320,7 +320,7 @@
         <div class="stat-item" *ngIf="selectedKategorie() === 'PFK' && belegteBettenKonstante() !== null">
           <mat-icon>bed</mat-icon>
           <div class="stat-content">
-            <span class="stat-label">MiTa-Ø Station</span>
+            <span class="stat-label">MiTa Bestände-Ø Station</span>
             <span class="stat-value">{{ belegteBettenKonstante()!.toFixed(2) }}</span>
           </div>
           <button mat-icon-button class="stat-info-button" (click)="openStatInfoModal('mitaDurchschnitt')" matTooltip="Berechnung anzeigen">
@@ -342,7 +342,7 @@
         <div class="stat-item" *ngIf="selectedKategorie() === 'PFK' && getDurchschnittPfkNormal() !== null">
           <mat-icon>person</mat-icon>
           <div class="stat-content">
-            <span class="stat-label">PFK Normal Ø</span>
+            <span class="stat-label">Ergibt PFK Ø</span>
             <span class="stat-value">{{ getDurchschnittPfkNormal() }}</span>
           </div>
           <button mat-icon-button class="stat-info-button" (click)="openStatInfoModal('pfkNormalDurchschnitt')" matTooltip="Berechnung anzeigen">
@@ -440,7 +440,7 @@
               <th class="action-column">Reset</th>
               <th class="phk-column soll-column">
                 <div class="header-with-info">
-                  <span>MiTa</span>
+                  <span>MiTa Bestände</span>
                   <button mat-icon-button class="info-button" (click)="openCalculationModal('mita')" matTooltip="Berechnung anzeigen">
                     <mat-icon>info</mat-icon>
                   </button>
@@ -472,7 +472,7 @@
               </th>
               <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column ist-column">
                 <div class="header-with-info">
-                  <span>PFK Normal</span>
+                  <span>Ergibt PFK</span>
                   <button mat-icon-button class="info-button" (click)="openCalculationModal('pfkNormal')" matTooltip="Berechnung anzeigen">
                     <mat-icon>info</mat-icon>
                   </button>
@@ -488,7 +488,7 @@
               </th>
               <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column ist-column">
                 <div class="header-with-info">
-                  <span>PHK End</span>
+                  <span>davon PHK</span>
                   <button mat-icon-button class="info-button" (click)="openCalculationModal('phkEnd')" matTooltip="Berechnung anzeigen">
                     <mat-icon>info</mat-icon>
                   </button>
@@ -496,7 +496,7 @@
               </th>
               <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column ist-column">
                 <div class="header-with-info">
-                  <span>PHK Anrechenbar</span>
+                  <span>Anrechenbare AZ PHK</span>
                   <button mat-icon-button class="info-button" (click)="openCalculationModal('phkAnrechenbar')" matTooltip="Berechnung anzeigen">
                     <mat-icon>info</mat-icon>
                   </button>
