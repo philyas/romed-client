@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, effect, ViewChild, ElementRef } from '@angular/core';
+import { Component, inject, signal, computed, effect, ViewChild, ElementRef, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -10,7 +10,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatDialogModule, MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Api } from '../../core/api';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -1164,6 +1164,390 @@ export class ManualEntryNacht {
     const examPflege = gesamtAnrechbareAZ / schichtStunden;
     
     return examPflege.toFixed(4);
+  }
+
+  openCalculationModal(columnType: string) {
+    // Da wir in der Nacht-Komponente sind, ist die Schicht immer 'nacht'
+    const schicht = 'nacht';
+    const schichtStunden = 8;
+    const phkAnteilBase = 10; // Standard-Wert, könnte aus API geladen werden
+    const phkAnteil = 1 - (1 / phkAnteilBase);
+
+    let modalData: any = {};
+
+    switch (columnType) {
+      case 'pfkNormal':
+        modalData = {
+          title: 'PFK Normal',
+          steps: [
+            {
+              name: 'PFK Normal',
+              formula: `PFK Normal = PFK-Stunden / Schichtdauer`,
+              description: `Anzahl der vollen PFK-Schichten`,
+              example: `Bei ${schichtStunden} Stunden Schichtdauer: 64 Stunden / ${schichtStunden} = 8.0 Schichten`
+            }
+          ],
+          constants: [
+            { name: 'Schichtdauer', value: `${schichtStunden}`, unit: 'Stunden' }
+          ]
+        };
+        break;
+
+      case 'gesamtPfkPhk':
+        modalData = {
+          title: 'Gesamt PFK+PHK',
+          steps: [
+            {
+              name: 'PHK-Anteil berechnen',
+              formula: `PHK-Anteil = 1 - (1 / Basiswert)`,
+              description: `Berechnung des PHK-Anteils aus dem konfigurierbaren Basiswert`,
+              example: `1 - (1 / ${phkAnteilBase}) = ${phkAnteil.toFixed(4)} (${(phkAnteil * 100).toFixed(0)}%)`
+            },
+            {
+              name: 'Gesamt PFK+PHK',
+              formula: `Gesamt PFK+PHK = PFK Normal / PHK-Anteil`,
+              description: `Gesamtanzahl Personal (PFK + PHK zusammen)`,
+              example: `8.0 / ${phkAnteil.toFixed(4)} = ${(8.0 / phkAnteil).toFixed(2)} Gesamt-Schichten`
+            }
+          ],
+          constants: [
+            { name: 'PHK-Anteil Basiswert', value: `${phkAnteilBase}`, unit: 'Zahl' },
+            { name: 'PHK-Anteil', value: `${phkAnteil.toFixed(4)}`, unit: `(${(phkAnteil * 100).toFixed(0)}%)` }
+          ]
+        };
+        break;
+
+      case 'phkEnd':
+        modalData = {
+          title: 'PHK End',
+          steps: [
+            {
+              name: 'PHK End',
+              formula: `PHK End = Gesamt PFK+PHK - PFK Normal`,
+              description: `Anzahl PHK-Schichten (Differenz zwischen Gesamt-Personal und PFK-Personal)`,
+              example: `8.89 - 8.0 = 0.89 PHK-Schichten`
+            }
+          ]
+        };
+        break;
+
+      case 'phkAnrechenbar':
+        modalData = {
+          title: 'PHK Anrechenbar',
+          steps: [
+            {
+              name: 'PHK Anrechenbar',
+              formula: `PHK Anrechenbar = PHK End × Schichtdauer`,
+              description: `Anrechenbare PHK-Arbeitsstunden (für Berechnungen)`,
+              example: `0.89 × ${schichtStunden} = ${(0.89 * schichtStunden).toFixed(2)} Stunden`
+            }
+          ],
+          constants: [
+            { name: 'Schichtdauer', value: `${schichtStunden}`, unit: 'Stunden' }
+          ]
+        };
+        break;
+
+      case 'geleistetePhk':
+        modalData = {
+          title: 'Geleistete AZ PHK',
+          steps: [
+            {
+              name: 'Geleistete PHK-Stunden',
+              formula: `Geleistete AZ PHK = Tatsächlich geleistete PHK-Stunden`,
+              description: `Die tatsächlich von PHK geleisteten Arbeitsstunden (aus PHK-Reiter)`,
+              example: `Wird aus den manuell eingegebenen PHK-Stunden pro Tag ermittelt`
+            }
+          ],
+          dataSource: 'Manuell eingegebene PHK-Stunden (aus PHK-Reiter)'
+        };
+        break;
+
+      case 'tatsaechlichAnrechenbar':
+        modalData = {
+          title: 'Tatsächlich Anrechenbar',
+          steps: [
+            {
+              name: 'Tatsächlich Anrechenbar',
+              formula: `Tatsächlich Anrechenbar = min(Geleistete AZ PHK, PHK Anrechenbar)`,
+              description: `Der kleinere Wert von geleisteten PHK-Stunden und berechneten PHK Anrechenbar`,
+              example: `Wenn geleistet: 7.0h, berechnet: 7.12h → tatsächlich: 7.0h`
+            }
+          ]
+        };
+        break;
+
+      case 'mina':
+        modalData = {
+          title: 'MiNa (Mittlere Nachtbelegung)',
+          steps: [
+            {
+              name: 'MiNa',
+              formula: `MiNa = Durchschnittliche Nachtbelegung`,
+              description: `Die mittlere Nachtbelegung (MiNa) wird aus den MiNa/MiTa-Beständen für den jeweiligen Tag geladen`,
+              example: `Wird täglich aus den Bestandsdaten ermittelt`
+            }
+          ],
+          dataSource: 'MiNa/MiTa-Bestände (täglich aktualisiert)'
+        };
+        break;
+
+      case 'ppugNachPfk':
+        const ppRatioBase = this.ppRatioNachtBase();
+        modalData = {
+          title: 'PpUG nach PFK',
+          steps: [
+            {
+              name: 'PpUG nach PFK',
+              formula: `PpUG nach PFK = MiNa / Pp-Ratio Basiswert`,
+              description: `Berechnet die benötigte Pflegekraft-Anzahl basierend auf der Nachtbelegung`,
+              example: `Wenn MiNa = 20.0 und Pp-Ratio Basis = ${ppRatioBase}, dann: 20.0 / ${ppRatioBase} = ${(20.0 / ppRatioBase).toFixed(2)}`
+            }
+          ],
+          constants: [
+            { name: 'Pp-Ratio Basiswert (Nacht)', value: `${ppRatioBase}`, unit: 'Zahl' }
+          ],
+          dataSource: 'MiNa (aus MiNa/MiTa-Beständen)'
+        };
+        break;
+
+      case 'ppugInStunden':
+        const ppRatioBase2 = this.ppRatioNachtBase();
+        const schichtStunden2 = this.schichtStundenNacht();
+        modalData = {
+          title: 'PpUG nach PFK in Stunden',
+          steps: [
+            {
+              name: 'PpUG nach PFK in Stunden',
+              formula: `PpUG nach PFK in Std. = (MiNa × Schichtstunden) / Pp-Ratio Basiswert`,
+              description: `Umrechnung der benötigten Pflegekraft-Anzahl in Arbeitsstunden`,
+              example: `Wenn MiNa = 20.0, Schichtstunden = ${schichtStunden2}, Pp-Ratio = ${ppRatioBase2}: (20.0 × ${schichtStunden2}) / ${ppRatioBase2} = ${((20.0 * schichtStunden2) / ppRatioBase2).toFixed(2)} Stunden`
+            }
+          ],
+          constants: [
+            { name: 'Pp-Ratio Basiswert (Nacht)', value: `${ppRatioBase2}`, unit: 'Zahl' },
+            { name: 'Schichtstunden (Nacht)', value: `${schichtStunden2}`, unit: 'Stunden' }
+          ],
+          dataSource: 'MiNa (aus MiNa/MiTa-Beständen)'
+        };
+        break;
+
+      case 'ppugErfuellt':
+        const ppRatioBase3 = this.ppRatioNachtBase();
+        modalData = {
+          title: 'PpUG erfüllt',
+          steps: [
+            {
+              name: 'PpUG erfüllt (Version 1)',
+              formula: `PpUG erfüllt = (PFK Normal >= PpUG nach PFK) ? 'Ja' : 'Nein'`,
+              description: `Prüft, ob die vorhandene PFK-Anzahl (PFK Normal) ausreicht, um den PpUG-Bedarf zu decken`,
+              example: `Wenn PFK Normal = 8.0 und PpUG nach PFK = 7.5 → 'Ja' (erfüllt)`
+            },
+            {
+              name: 'PpUG nach PFK',
+              formula: `PpUG nach PFK = MiNa / Pp-Ratio Basiswert`,
+              description: `Berechnet den benötigten Pflegekraft-Bedarf`,
+              example: `MiNa / ${ppRatioBase3}`
+            }
+          ],
+          constants: [
+            { name: 'Pp-Ratio Basiswert (Nacht)', value: `${ppRatioBase3}`, unit: 'Zahl' }
+          ],
+          dataSource: 'PFK Normal (aus eingegebenen Stunden) und MiNa (aus Beständen)'
+        };
+        break;
+
+      case 'gesamteAnrechbareAZ':
+        modalData = {
+          title: 'Gesamte anrechenbare Arbeitszeit',
+          steps: [
+            {
+              name: 'Gesamte anrechenbare AZ',
+              formula: `Gesamte anrechb. AZ = Arbeitszeitstunden + Tatsächlich anrechenbar`,
+              description: `Summe aus eingegebenen Arbeitszeitstunden (PFK) und tatsächlich anrechenbaren PHK-Stunden`,
+              example: `Wenn Arbeitszeit = 64h und tatsächlich anrechenbar = 7.0h → Gesamt = 71.0h`
+            },
+            {
+              name: 'Tatsächlich anrechenbar',
+              formula: `Tatsächlich anrechenbar = min(Geleistete AZ PHK, PHK Anrechenbar)`,
+              description: `Der kleinere Wert von tatsächlich geleisteten PHK-Stunden und berechneten PHK Anrechenbar`,
+              example: `Wenn geleistet: 7.0h, berechnet: 7.12h → tatsächlich: 7.0h`
+            }
+          ],
+          dataSource: 'Eingegebene Arbeitszeitstunden (PFK) und PHK-Stunden (aus PHK-Reiter)'
+        };
+        break;
+
+      case 'examPflege':
+        const schichtStunden3 = this.schichtStundenNacht();
+        modalData = {
+          title: 'Exam. Pflege (Examinierte Pflege)',
+          steps: [
+            {
+              name: 'Exam. Pflege',
+              formula: `Exam. Pflege = Gesamte anrechb. AZ / Schichtstunden`,
+              description: `Berechnet die Anzahl der examinierten Pflegekräfte basierend auf der gesamten anrechenbaren Arbeitszeit`,
+              example: `Wenn Gesamte anrechb. AZ = 71.0h und Schichtstunden = ${schichtStunden3}: 71.0 / ${schichtStunden3} = ${(71.0 / schichtStunden3).toFixed(4)}`
+            },
+            {
+              name: 'Gesamte anrechb. AZ',
+              formula: `Gesamte anrechb. AZ = Arbeitszeitstunden + Tatsächlich anrechenbar`,
+              description: `Summe aus PFK- und PHK-Stunden`,
+              example: `Arbeitszeit + min(Geleistete PHK, PHK Anrechenbar)`
+            }
+          ],
+          constants: [
+            { name: 'Schichtstunden (Nacht)', value: `${schichtStunden3}`, unit: 'Stunden' }
+          ],
+          dataSource: 'Gesamte anrechenbare Arbeitszeit (berechnet)'
+        };
+        break;
+
+      case 'ppugErfuelltV2':
+        const ppRatioBase4 = this.ppRatioNachtBase();
+        modalData = {
+          title: 'PpUG erfüllt (Version 2)',
+          steps: [
+            {
+              name: 'PpUG erfüllt (Version 2)',
+              formula: `PpUG erfüllt = (Exam. Pflege >= PpUG nach PFK) ? 'Ja' : 'Nein'`,
+              description: `Prüft, ob die examinierte Pflegekraft-Anzahl (inkl. PHK-Anteil) ausreicht, um den PpUG-Bedarf zu decken`,
+              example: `Wenn Exam. Pflege = 8.9 und PpUG nach PFK = 7.5 → 'Ja' (erfüllt)`
+            },
+            {
+              name: 'Exam. Pflege',
+              formula: `Exam. Pflege = Gesamte anrechb. AZ / Schichtstunden`,
+              description: `Anzahl examinierter Pflegekräfte (inkl. PHK-Anteil)`,
+              example: `Berechnet aus Gesamte anrechb. AZ`
+            },
+            {
+              name: 'PpUG nach PFK',
+              formula: `PpUG nach PFK = MiNa / Pp-Ratio Basiswert`,
+              description: `Benötigter Pflegekraft-Bedarf`,
+              example: `MiNa / ${ppRatioBase4}`
+            }
+          ],
+          constants: [
+            { name: 'Pp-Ratio Basiswert (Nacht)', value: `${ppRatioBase4}`, unit: 'Zahl' }
+          ],
+          dataSource: 'Exam. Pflege (berechnet) und MiNa (aus Beständen)'
+        };
+        break;
+    }
+
+    this.dialog.open(CalculationInfoDialog, {
+      width: '600px',
+      data: modalData
+    });
+  }
+}
+
+@Component({
+  selector: 'calculation-info-dialog',
+  standalone: true,
+  imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule],
+  template: `
+    <h2 mat-dialog-title>{{ data.title }}</h2>
+    <mat-dialog-content>
+      <div class="calculation-steps" *ngFor="let step of data.steps">
+        <div class="step-header">
+          <mat-icon>calculate</mat-icon>
+          <h3>{{ step.name }}</h3>
+        </div>
+        <div class="formula">{{ step.formula }}</div>
+        <p class="description">{{ step.description }}</p>
+        <div class="example" *ngIf="step.example">
+          <strong>Beispiel:</strong> {{ step.example }}
+        </div>
+      </div>
+      <div class="constants" *ngIf="data.constants && data.constants.length > 0">
+        <h4>Konstanten:</h4>
+        <div class="constant-item" *ngFor="let constant of data.constants">
+          <strong>{{ constant.name }}:</strong> {{ constant.value }} {{ constant.unit }}
+        </div>
+      </div>
+      <div class="data-source" *ngIf="data.dataSource">
+        <h4>Datenquelle:</h4>
+        <p>{{ data.dataSource }}</p>
+      </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button mat-button (click)="close()">Schließen</button>
+    </mat-dialog-actions>
+  `,
+  styles: [`
+    .calculation-steps {
+      margin-bottom: 24px;
+    }
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .step-header mat-icon {
+      color: #0066cc;
+    }
+    .step-header h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+    .formula {
+      background: #f5f5f5;
+      padding: 12px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+    .description {
+      color: #666;
+      margin-bottom: 8px;
+    }
+    .example {
+      background: #e3f2fd;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      margin-top: 8px;
+    }
+    .constants {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #e0e0e0;
+    }
+    .constants h4 {
+      margin: 0 0 8px 0;
+      font-size: 16px;
+    }
+    .constant-item {
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+    .data-source {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #e0e0e0;
+    }
+    .data-source h4 {
+      margin: 0 0 8px 0;
+      font-size: 16px;
+    }
+    .data-source p {
+      margin: 0;
+      color: #666;
+      font-size: 14px;
+    }
+  `]
+})
+export class CalculationInfoDialog {
+  constructor(
+    private dialogRef: MatDialogRef<CalculationInfoDialog>,
+    @Inject(MAT_DIALOG_DATA) public data: any
+  ) {}
+
+  close(): void {
+    this.dialogRef.close();
   }
 }
 

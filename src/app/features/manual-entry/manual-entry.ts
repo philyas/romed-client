@@ -1228,7 +1228,7 @@ export class ManualEntry {
   openCalculationModal(columnType: string) {
     // Da wir in der Tag-Komponente sind, ist die Schicht immer 'tag'
     const schicht = 'tag';
-    const schichtStunden = 16;
+    const schichtStunden = this.schichtStundenTag();
     const phkAnteilBase = 10; // Standard-Wert, könnte aus API geladen werden
     const phkAnteil = 1 - (1 / phkAnteilBase);
 
@@ -1332,6 +1332,161 @@ export class ManualEntry {
               example: `Wenn geleistet: 8.5h, berechnet: 8.96h → tatsächlich: 8.5h`
             }
           ]
+        };
+        break;
+
+      case 'mita':
+        modalData = {
+          title: 'MiTa (Mittlere Tagesbelegung)',
+          steps: [
+            {
+              name: 'MiTa',
+              formula: `MiTa = Durchschnittliche Tagesbelegung`,
+              description: `Die mittlere Tagesbelegung (MiTa) wird aus den MiNa/MiTa-Beständen für den jeweiligen Tag geladen`,
+              example: `Wird täglich aus den Bestandsdaten ermittelt`
+            }
+          ],
+          dataSource: 'MiNa/MiTa-Bestände (täglich aktualisiert)'
+        };
+        break;
+
+      case 'ppugNachPfk':
+        const ppRatioBase = this.ppRatioTagBase();
+        modalData = {
+          title: 'PpUG nach PFK',
+          steps: [
+            {
+              name: 'PpUG nach PFK',
+              formula: `PpUG nach PFK = MiTa / Pp-Ratio Basiswert`,
+              description: `Berechnet die benötigte Pflegekraft-Anzahl basierend auf der Tagesbelegung`,
+              example: `Wenn MiTa = 20.0 und Pp-Ratio Basis = ${ppRatioBase}, dann: 20.0 / ${ppRatioBase} = ${(20.0 / ppRatioBase).toFixed(2)}`
+            }
+          ],
+          constants: [
+            { name: 'Pp-Ratio Basiswert (Tag)', value: `${ppRatioBase}`, unit: 'Zahl' }
+          ],
+          dataSource: 'MiTa (aus MiNa/MiTa-Beständen)'
+        };
+        break;
+
+      case 'ppugInStunden':
+        const ppRatioBase2 = this.ppRatioTagBase();
+        modalData = {
+          title: 'PpUG nach PFK in Stunden',
+          steps: [
+            {
+              name: 'PpUG nach PFK in Stunden',
+              formula: `PpUG nach PFK in Std. = (MiTa × Schichtstunden) / Pp-Ratio Basiswert`,
+              description: `Umrechnung der benötigten Pflegekraft-Anzahl in Arbeitsstunden`,
+              example: `Wenn MiTa = 20.0, Schichtstunden = ${schichtStunden}, Pp-Ratio = ${ppRatioBase2}: (20.0 × ${schichtStunden}) / ${ppRatioBase2} = ${((20.0 * schichtStunden) / ppRatioBase2).toFixed(2)} Stunden`
+            }
+          ],
+          constants: [
+            { name: 'Pp-Ratio Basiswert (Tag)', value: `${ppRatioBase2}`, unit: 'Zahl' },
+            { name: 'Schichtstunden (Tag)', value: `${schichtStunden}`, unit: 'Stunden' }
+          ],
+          dataSource: 'MiTa (aus MiNa/MiTa-Beständen)'
+        };
+        break;
+
+      case 'ppugErfuellt':
+        const ppRatioBase3 = this.ppRatioTagBase();
+        modalData = {
+          title: 'PpUG erfüllt',
+          steps: [
+            {
+              name: 'PpUG erfüllt (Version 1)',
+              formula: `PpUG erfüllt = (PFK Normal >= PpUG nach PFK) ? 'Ja' : 'Nein'`,
+              description: `Prüft, ob die vorhandene PFK-Anzahl (PFK Normal) ausreicht, um den PpUG-Bedarf zu decken`,
+              example: `Wenn PFK Normal = 5.0 und PpUG nach PFK = 4.5 → 'Ja' (erfüllt)`
+            },
+            {
+              name: 'PpUG nach PFK',
+              formula: `PpUG nach PFK = MiTa / Pp-Ratio Basiswert`,
+              description: `Berechnet den benötigten Pflegekraft-Bedarf`,
+              example: `MiTa / ${ppRatioBase3}`
+            }
+          ],
+          constants: [
+            { name: 'Pp-Ratio Basiswert (Tag)', value: `${ppRatioBase3}`, unit: 'Zahl' }
+          ],
+          dataSource: 'PFK Normal (aus eingegebenen Stunden) und MiTa (aus Beständen)'
+        };
+        break;
+
+      case 'gesamteAnrechbareAZ':
+        modalData = {
+          title: 'Gesamte anrechenbare Arbeitszeit',
+          steps: [
+            {
+              name: 'Gesamte anrechenbare AZ',
+              formula: `Gesamte anrechb. AZ = Arbeitszeitstunden + Tatsächlich anrechenbar`,
+              description: `Summe aus eingegebenen Arbeitszeitstunden (PFK) und tatsächlich anrechenbaren PHK-Stunden`,
+              example: `Wenn Arbeitszeit = 80h und tatsächlich anrechenbar = 8.5h → Gesamt = 88.5h`
+            },
+            {
+              name: 'Tatsächlich anrechenbar',
+              formula: `Tatsächlich anrechenbar = min(Geleistete AZ PHK, PHK Anrechenbar)`,
+              description: `Der kleinere Wert von tatsächlich geleisteten PHK-Stunden und berechneten PHK Anrechenbar`,
+              example: `Wenn geleistet: 8.5h, berechnet: 8.96h → tatsächlich: 8.5h`
+            }
+          ],
+          dataSource: 'Eingegebene Arbeitszeitstunden (PFK) und PHK-Stunden (aus PHK-Reiter)'
+        };
+        break;
+
+      case 'examPflege':
+        modalData = {
+          title: 'Exam. Pflege (Examinierte Pflege)',
+          steps: [
+            {
+              name: 'Exam. Pflege',
+              formula: `Exam. Pflege = Gesamte anrechb. AZ / Schichtstunden`,
+              description: `Berechnet die Anzahl der examinierten Pflegekräfte basierend auf der gesamten anrechenbaren Arbeitszeit`,
+              example: `Wenn Gesamte anrechb. AZ = 88.5h und Schichtstunden = ${schichtStunden}: 88.5 / ${schichtStunden} = ${(88.5 / schichtStunden).toFixed(4)}`
+            },
+            {
+              name: 'Gesamte anrechb. AZ',
+              formula: `Gesamte anrechb. AZ = Arbeitszeitstunden + Tatsächlich anrechenbar`,
+              description: `Summe aus PFK- und PHK-Stunden`,
+              example: `Arbeitszeit + min(Geleistete PHK, PHK Anrechenbar)`
+            }
+          ],
+          constants: [
+            { name: 'Schichtstunden (Tag)', value: `${schichtStunden}`, unit: 'Stunden' }
+          ],
+          dataSource: 'Gesamte anrechenbare Arbeitszeit (berechnet)'
+        };
+        break;
+
+      case 'ppugErfuelltV2':
+        const ppRatioBase4 = this.ppRatioTagBase();
+        modalData = {
+          title: 'PpUG erfüllt (Version 2)',
+          steps: [
+            {
+              name: 'PpUG erfüllt (Version 2)',
+              formula: `PpUG erfüllt = (Exam. Pflege >= PpUG nach PFK) ? 'Ja' : 'Nein'`,
+              description: `Prüft, ob die examinierte Pflegekraft-Anzahl (inkl. PHK-Anteil) ausreicht, um den PpUG-Bedarf zu decken`,
+              example: `Wenn Exam. Pflege = 5.5 und PpUG nach PFK = 4.5 → 'Ja' (erfüllt)`
+            },
+            {
+              name: 'Exam. Pflege',
+              formula: `Exam. Pflege = Gesamte anrechb. AZ / Schichtstunden`,
+              description: `Anzahl examinierter Pflegekräfte (inkl. PHK-Anteil)`,
+              example: `Berechnet aus Gesamte anrechb. AZ`
+            },
+            {
+              name: 'PpUG nach PFK',
+              formula: `PpUG nach PFK = MiTa / Pp-Ratio Basiswert`,
+              description: `Benötigter Pflegekraft-Bedarf`,
+              example: `MiTa / ${ppRatioBase4}`
+            }
+          ],
+          constants: [
+            { name: 'Pp-Ratio Basiswert (Tag)', value: `${ppRatioBase4}`, unit: 'Zahl' }
+          ],
+          dataSource: 'Exam. Pflege (berechnet) und MiTa (aus Beständen)'
         };
         break;
     }

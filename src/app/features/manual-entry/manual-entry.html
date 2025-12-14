@@ -387,10 +387,38 @@
               <th>Minuten</th>
               <th>Gesamt</th>
               <th class="action-column">Reset</th>
-              <th class="phk-column soll-column">MiTa</th>
-              <th class="phk-column soll-column">PpUG nach PFK</th>
-              <th class="phk-column soll-column">in Std.</th>
-              <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">PpUG erfüllt</th>
+              <th class="phk-column soll-column">
+                <div class="header-with-info">
+                  <span>MiTa</span>
+                  <button mat-icon-button class="info-button" (click)="openCalculationModal('mita')" matTooltip="Berechnung anzeigen">
+                    <mat-icon>info</mat-icon>
+                  </button>
+                </div>
+              </th>
+              <th class="phk-column soll-column">
+                <div class="header-with-info">
+                  <span>PpUG nach PFK</span>
+                  <button mat-icon-button class="info-button" (click)="openCalculationModal('ppugNachPfk')" matTooltip="Berechnung anzeigen">
+                    <mat-icon>info</mat-icon>
+                  </button>
+                </div>
+              </th>
+              <th class="phk-column soll-column">
+                <div class="header-with-info">
+                  <span>in Std.</span>
+                  <button mat-icon-button class="info-button" (click)="openCalculationModal('ppugInStunden')" matTooltip="Berechnung anzeigen">
+                    <mat-icon>info</mat-icon>
+                  </button>
+                </div>
+              </th>
+              <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">
+                <div class="header-with-info">
+                  <span>PpUG erfüllt</span>
+                  <button mat-icon-button class="info-button" (click)="openCalculationModal('ppugErfuellt')" matTooltip="Berechnung anzeigen">
+                    <mat-icon>info</mat-icon>
+                  </button>
+                </div>
+              </th>
               <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column ist-column">
                 <div class="header-with-info">
                   <span>PFK Normal</span>
@@ -442,16 +470,25 @@
               <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column gesamte-anrech-column ist-column">
                 <div class="header-with-info">
                   <span>Gesamte anrechb. AZ:</span>
+                  <button mat-icon-button class="info-button" (click)="openCalculationModal('gesamteAnrechbareAZ')" matTooltip="Berechnung anzeigen">
+                    <mat-icon>info</mat-icon>
+                  </button>
                 </div>
               </th>
               <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column exam-pflege-column ist-column">
                 <div class="header-with-info">
                   <span>Exam. Pflege</span>
+                  <button mat-icon-button class="info-button" (click)="openCalculationModal('examPflege')" matTooltip="Berechnung anzeigen">
+                    <mat-icon>info</mat-icon>
+                  </button>
                 </div>
               </th>
               <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column ppug-erfuellt-v2-column ist-column">
                 <div class="header-with-info">
                   <span>PpUG erfüllt</span>
+                  <button mat-icon-button class="info-button" (click)="openCalculationModal('ppugErfuelltV2')" matTooltip="Berechnung anzeigen">
+                    <mat-icon>info</mat-icon>
+                  </button>
                 </div>
               </th>
             </tr>
