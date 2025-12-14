@@ -636,18 +636,25 @@
           .header-with-info {
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
             
             .info-button {
               width: 24px;
               height: 24px;
               line-height: 24px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
               
               mat-icon {
                 font-size: 18px;
                 width: 18px;
                 height: 18px;
                 color: rgba(255, 255, 255, 0.9);
+                display: flex;
+                align-items: center;
+                justify-content: center;
               }
               
               &:hover {
