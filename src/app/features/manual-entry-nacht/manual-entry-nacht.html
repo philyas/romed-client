@@ -195,6 +195,21 @@
             <span class="calc-label">Patienten/Pflegekraft:</span>
             <span class="calc-value highlight">{{ getPatientenProPflegekraft() }}</span>
           </div>
+          <div class="calc-separator" *ngIf="getDurchschnittPpugNachPfk() !== null">|</div>
+          <div class="calc-item" *ngIf="getDurchschnittPpugNachPfk() !== null">
+            <span class="calc-label">PpUG nach PFK Ø:</span>
+            <span class="calc-value">{{ getDurchschnittPpugNachPfk() }}</span>
+          </div>
+          <div class="calc-separator" *ngIf="getDurchschnittPfkNormal() !== null">|</div>
+          <div class="calc-item" *ngIf="getDurchschnittPfkNormal() !== null">
+            <span class="calc-label">PFK Normal Ø:</span>
+            <span class="calc-value">{{ getDurchschnittPfkNormal() }}</span>
+          </div>
+          <div class="calc-separator" *ngIf="getDurchschnittPhkAusstattung() !== null">|</div>
+          <div class="calc-item" *ngIf="getDurchschnittPhkAusstattung() !== null">
+            <span class="calc-label">PHK-Ausstattung Ø:</span>
+            <span class="calc-value">{{ getDurchschnittPhkAusstattung() }}</span>
+          </div>
         </div>
       </div>
       

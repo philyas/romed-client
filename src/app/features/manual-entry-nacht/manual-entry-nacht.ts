@@ -655,6 +655,84 @@ export class ManualEntryNacht {
     return patientenProPflegekraft.toFixed(4);
   }
 
+  getDurchschnittPpugNachPfk(): string | null {
+    const dailyMap = this.dailyMinaMita();
+    const ppRatioBase = this.ppRatioNachtBase();
+    
+    if (ppRatioBase === 0) return null;
+    
+    let sum = 0;
+    let count = 0;
+    
+    // Berechne PpUG nach PFK für alle Tage mit MiNa-Daten
+    dailyMap.forEach((dayData, tag) => {
+      if (dayData && dayData.mina !== null) {
+        const ppugNachPfk = dayData.mina / ppRatioBase;
+        sum += ppugNachPfk;
+        count++;
+      }
+    });
+    
+    if (count === 0) return null;
+    
+    const durchschnitt = sum / count;
+    return durchschnitt.toFixed(2);
+  }
+
+  getDurchschnittPfkNormal(): string | null {
+    const entries = this.dayEntries();
+    
+    let sum = 0;
+    let count = 0;
+    
+    // Berechne Durchschnitt von PFK Normal für alle Tage mit Daten
+    entries.forEach(entry => {
+      if (entry.pfkNormal !== undefined && entry.pfkNormal !== null) {
+        sum += entry.pfkNormal;
+        count++;
+      }
+    });
+    
+    if (count === 0) return null;
+    
+    const durchschnitt = sum / count;
+    return durchschnitt.toFixed(4);
+  }
+
+  getDurchschnittPhkAusstattung(): string | null {
+    const entries = this.dayEntries();
+    const phkTageswerte = this.phkTageswerte();
+    const schichtStunden = this.schichtStundenNacht();
+    
+    if (!phkTageswerte || schichtStunden === 0) return null;
+    
+    let sum = 0;
+    let count = 0;
+    
+    // Berechne Durchschnitt von "Tatsächlich Anrechenbar" für alle Tage mit Daten
+    entries.forEach(entry => {
+      const tagData = phkTageswerte.find(t => t.tag === entry.tag);
+      if (tagData) {
+        const phkAnrechenbar = entry.phkAnrechenbar || 0;
+        const phkStundenDezimal = tagData.gesamtDezimal;
+        
+        // Regel: Wenn PHK-Stunden >= PHK Anrechenbar, dann nimm PHK Anrechenbar, sonst PHK-Stunden
+        const tatsaechlichAnrechenbar = phkStundenDezimal >= phkAnrechenbar ? phkAnrechenbar : phkStundenDezimal;
+        
+        sum += tatsaechlichAnrechenbar;
+        count++;
+      }
+    });
+    
+    if (count === 0) return null;
+    
+    // Durchschnitt von "Tatsächlich Anrechenbar" durch Schichtstunden
+    const durchschnittTatsaechlichAnrechenbar = sum / count;
+    const phkAusstattung = durchschnittTatsaechlichAnrechenbar / schichtStunden;
+    
+    return phkAusstattung.toFixed(4);
+  }
+
   getGeleistetePhkStundenFormatted(): string | null {
     const geleistetePhk = this.geleistetePhkStunden();
     if (!geleistetePhk) return null;
