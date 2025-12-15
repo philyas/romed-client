@@ -143,11 +143,13 @@ interface KostenstellenMappingItem {
                   </mat-card-header>
                   <mat-card-content class="info-content">
                     <h4>Monatsverlauf</h4>
-                    <p>Zeigt die Entwicklung der Mehrarbeitszeit über die Monate des Jahres {{ selectedYear() }}.</p>
+                    <p *ngIf="selectedKST() === 'all'">Zeigt die durchschnittliche Mehrarbeitszeit über alle Kostenstellen pro Monat des Jahres {{ selectedYear() }}.</p>
+                    <p *ngIf="selectedKST() !== 'all'">Zeigt die Entwicklung der Mehrarbeitszeit für die ausgewählte Kostenstelle über die Monate des Jahres {{ selectedYear() }}.</p>
                     <ul>
-                      <li><strong>Y-Achse:</strong> Mehrarbeitszeit in Stunden</li>
+                      <li><strong>Y-Achse:</strong> Mehrarbeitszeit in Stunden <span *ngIf="selectedKST() === 'all'">(Durchschnitt)</span></li>
                       <li><strong>X-Achse:</strong> Monate</li>
                       <li><strong>Datenquelle:</strong> Salden Zeitkonten {{ selectedBereich() }}</li>
+                      <li *ngIf="selectedKST() === 'all'"><strong>Hinweis:</strong> Bei "Alle Kostenstellen" wird der Durchschnitt pro Monat angezeigt, da Salden keine kumulativen Werte sind.</li>
                     </ul>
                     <div class="stats">
                       <div class="stat-item">
@@ -212,19 +214,19 @@ interface KostenstellenMappingItem {
                   </mat-card-header>
                   <mat-card-content class="info-content">
                     <h4>Kostenstellenvergleich</h4>
-                    <p>Vergleicht die Mehrarbeitszeit über alle Kostenstellen des Pflegedienstes.</p>
+                    <p>Vergleicht die durchschnittliche Mehrarbeitszeit über alle Kostenstellen des Pflegedienstes.</p>
                     <ul>
-                      <li><strong>Top 10:</strong> Kostenstellen mit höchster Mehrarbeitszeit</li>
-                      <li><strong>Summe:</strong> Gesamte Mehrarbeitszeit über alle Monate</li>
+                      <li><strong>Top 10:</strong> Kostenstellen mit höchster durchschnittlicher Mehrarbeitszeit</li>
+                      <li><strong>Durchschnitt:</strong> Durchschnittlicher Saldo über alle verfügbaren Monate pro Kostenstelle</li>
                     </ul>
                     <div class="stats">
                       <div class="stat-item">
-                        <span class="stat-label">Gesamtsumme:</span>
-                        <span class="stat-value">{{ vergleichStats().total.toFixed(2) }} Std</span>
-                      </div>
-                      <div class="stat-item">
                         <span class="stat-label">Höchste KST:</span>
                         <span class="stat-value">{{ vergleichStats().maxKST }}</span>
+                      </div>
+                      <div class="stat-item">
+                        <span class="stat-label">Höchster Durchschnitt:</span>
+                        <span class="stat-value">{{ vergleichStats().maxValue.toFixed(2) }} Std</span>
                       </div>
                     </div>
                   </mat-card-content>
@@ -705,8 +707,10 @@ export class SaldenZeitkontenCharts implements OnInit, OnChanges {
     const targetYear = this.selectedYear();
     const months = Array.from({ length: 12 }, (_, index) => index + 1);
 
+    // Für einzelne Kostenstellen: Wert pro Monat (sollte nur einen Wert pro Monat/KST geben)
     const kostentragerMap = new Map<string, Map<number, number>>();
-    const aggregatedMap = new Map<number, number>();
+    // Für "Alle Kostenstellen": Durchschnitt pro Monat (nicht Summe)
+    const aggregatedMap = new Map<number, { sum: number; count: number }>();
 
     data.forEach(row => {
       if (!row || row.Jahr !== targetYear || !row.Monat) {
@@ -723,13 +727,18 @@ export class SaldenZeitkontenCharts implements OnInit, OnChanges {
         return;
       }
 
+      // Für einzelne Kostenstelle: Wert direkt setzen (falls mehrere Einträge, nehmen wir den letzten)
       if (!kostentragerMap.has(key)) {
         kostentragerMap.set(key, new Map());
       }
       const monthMap = kostentragerMap.get(key)!;
-      monthMap.set(month, (monthMap.get(month) || 0) + (row.Summe || 0));
+      monthMap.set(month, row.Summe || 0);
 
-      aggregatedMap.set(month, (aggregatedMap.get(month) || 0) + (row.Summe || 0));
+      // Für "Alle Kostenstellen": Summe und Anzahl für Durchschnitt
+      const currentAgg = aggregatedMap.get(month) || { sum: 0, count: 0 };
+      currentAgg.sum += row.Summe || 0;
+      currentAgg.count += 1;
+      aggregatedMap.set(month, currentAgg);
     });
 
     if (kostentragerMap.size === 0) {
@@ -752,8 +761,13 @@ export class SaldenZeitkontenCharts implements OnInit, OnChanges {
 
     const series: ComparisonSeries[] = [];
 
+    // Für "Alle Kostenstellen": Durchschnitt berechnen
     if (aggregatedMap.size > 0) {
-      series.push(buildSeries('all', 'Alle Kostenstellen', aggregatedMap));
+      const averageMap = new Map<number, number>();
+      aggregatedMap.forEach((data, month) => {
+        averageMap.set(month, data.count > 0 ? data.sum / data.count : 0);
+      });
+      series.push(buildSeries('all', 'Alle Kostenstellen (Durchschnitt)', averageMap));
     }
 
     const sortedKeys = Array.from(kostentragerMap.keys()).sort((a, b) => {
@@ -881,31 +895,69 @@ export class SaldenZeitkontenCharts implements OnInit, OnChanges {
   monatsverlaufChartData = computed<ChartData<'line'>>(() => {
     const data = this.filteredData();
     const monthNames = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+    const kst = this.selectedKST();
     
-    // Group by month
-    const monthlyData = new Map<number, number>();
-    data.forEach(row => {
-      const current = monthlyData.get(row.Monat) || 0;
-      monthlyData.set(row.Monat, current + row.Summe);
-    });
-    
-    // Sort by month
-    const sortedMonths = Array.from(monthlyData.keys()).sort((a, b) => a - b);
-    const labels = sortedMonths.map(m => monthNames[m - 1]);
-    const values = sortedMonths.map(m => monthlyData.get(m) || 0);
-    
-    return {
-      labels,
-      datasets: [{
-        label: 'Mehrarbeitszeit (Stunden)',
-        data: values,
-        borderColor: '#667eea',
-        backgroundColor: 'rgba(102, 126, 234, 0.1)',
-        borderWidth: 2,
-        fill: true,
-        tension: 0.4
-      }]
-    };
+    if (kst === 'all') {
+      // Bei "Alle Kostenstellen": Durchschnitt pro Monat berechnen
+      // (nicht Summe, da Salden keine kumulativen Werte sind)
+      const monthlyData = new Map<number, { sum: number; count: number }>();
+      
+      data.forEach(row => {
+        const month = row.Monat;
+        const current = monthlyData.get(month) || { sum: 0, count: 0 };
+        current.sum += row.Summe || 0;
+        current.count += 1;
+        monthlyData.set(month, current);
+      });
+      
+      // Sort by month and calculate average
+      const sortedMonths = Array.from(monthlyData.keys()).sort((a, b) => a - b);
+      const labels = sortedMonths.map(m => monthNames[m - 1]);
+      const values = sortedMonths.map(m => {
+        const monthData = monthlyData.get(m)!;
+        return monthData.count > 0 ? monthData.sum / monthData.count : 0;
+      });
+      
+      return {
+        labels,
+        datasets: [{
+          label: 'Durchschnitt Mehrarbeitszeit (Stunden)',
+          data: values,
+          borderColor: '#667eea',
+          backgroundColor: 'rgba(102, 126, 234, 0.1)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.4
+        }]
+      };
+    } else {
+      // Bei einzelner Kostenstelle: Summe aller Einträge pro Monat
+      // (kann mehrere Einträge geben z.B. durch verschiedene Berufsgruppen/Funktionen)
+      const monthlyData = new Map<number, number>();
+      data.forEach(row => {
+        const month = row.Monat;
+        const current = monthlyData.get(month) || 0;
+        monthlyData.set(month, current + (row.Summe || 0));
+      });
+      
+      // Sort by month
+      const sortedMonths = Array.from(monthlyData.keys()).sort((a, b) => a - b);
+      const labels = sortedMonths.map(m => monthNames[m - 1]);
+      const values = sortedMonths.map(m => monthlyData.get(m) || 0);
+      
+      return {
+        labels,
+        datasets: [{
+          label: 'Mehrarbeitszeit (Stunden)',
+          data: values,
+          borderColor: '#667eea',
+          backgroundColor: 'rgba(102, 126, 234, 0.1)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.4
+        }]
+      };
+    }
   });
 
   monatsverlaufStats = computed(() => {
@@ -923,26 +975,35 @@ export class SaldenZeitkontenCharts implements OnInit, OnChanges {
   vergleichChartData = computed<ChartData<'bar'>>(() => {
     const data = this.filteredData();
     
-    // Group by KST
-    const kstData = new Map<string, { beschreibung: string; summe: number }>();
+    // Group by KST - berechne Durchschnitt pro Kostenstelle (nicht Summe über alle Monate)
+    // da Salden den aktuellen Stand zeigen, nicht kumulative Werte
+    const kstData = new Map<string, { beschreibung: string; summe: number; count: number }>();
     data.forEach(row => {
-      const current = kstData.get(row.KST) || { beschreibung: row.Beschreibung, summe: 0 };
-      current.summe += row.Summe;
+      const current = kstData.get(row.KST) || { beschreibung: row.Beschreibung, summe: 0, count: 0 };
+      current.summe += row.Summe || 0;
+      current.count += 1;
       kstData.set(row.KST, current);
     });
     
-    // Sort by summe and take top 10
-    const sorted = Array.from(kstData.entries())
-      .sort((a, b) => b[1].summe - a[1].summe)
+    // Berechne Durchschnitt pro KST
+    const kstAverages = Array.from(kstData.entries()).map(([kst, data]) => ({
+      kst,
+      beschreibung: data.beschreibung,
+      durchschnitt: data.count > 0 ? data.summe / data.count : 0
+    }));
+    
+    // Sort by durchschnitt and take top 10
+    const sorted = kstAverages
+      .sort((a, b) => b.durchschnitt - a.durchschnitt)
       .slice(0, 10);
     
-    const labels = sorted.map(([kst, data]) => data.beschreibung);
-    const values = sorted.map(([kst, data]) => data.summe);
+    const labels = sorted.map(item => item.beschreibung);
+    const values = sorted.map(item => item.durchschnitt);
     
     return {
       labels,
       datasets: [{
-        label: 'Mehrarbeitszeit (Stunden)',
+        label: 'Durchschnitt Mehrarbeitszeit (Stunden)',
         data: values,
         backgroundColor: 'rgba(245, 87, 108, 0.6)',
         borderColor: '#f5576c',
@@ -962,12 +1023,12 @@ export class SaldenZeitkontenCharts implements OnInit, OnChanges {
     const values = data.datasets[0].data as number[];
     const labels = data.labels as string[];
     
-    const total = values.reduce((a, b) => a + b, 0);
-    const maxIndex = values.indexOf(Math.max(...values));
+    const maxIndex = values.length > 0 ? values.indexOf(Math.max(...values)) : -1;
+    const maxValue = values.length > 0 ? Math.max(...values) : 0;
     
     return {
-      total,
-      maxKST: labels[maxIndex] || '-'
+      maxKST: maxIndex >= 0 ? labels[maxIndex] : '-',
+      maxValue
     };
   });
 
