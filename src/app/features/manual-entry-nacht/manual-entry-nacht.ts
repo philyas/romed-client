@@ -15,6 +15,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { Api } from '../../core/api';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { RecomputeConfigDialogComponent } from '../manual-entry/recompute-config-dialog.component';
 import { MatDividerModule } from '@angular/material/divider';
 
 interface DayEntry {
@@ -74,6 +75,7 @@ export class ManualEntryNacht {
   loading = signal<boolean>(false);
   saving = signal<boolean>(false);
   uploading = signal<boolean>(false);
+  recomputing = signal<boolean>(false);
   selectedFile = signal<File | null>(null);
   selectedVariant = signal<'2026' | 'legacy'>('legacy');
   
@@ -87,6 +89,10 @@ export class ManualEntryNacht {
   // Schichtstunden aus calculation rules
   schichtStundenTag = signal<number>(16); // Default: 16
   schichtStundenNacht = signal<number>(8); // Default: 8
+  
+  // PHK-Anteil Base aus calculation rules
+  phkAnteilTagBase = signal<number | null>(null);
+  phkAnteilNachtBase = signal<number | null>(null);
   
   // Day entries for the selected month
   dayEntries = signal<DayEntry[]>([]);
@@ -107,6 +113,10 @@ export class ManualEntryNacht {
     minuten: number;
     gesamtDezimal: number;
   }> | null>(null);
+  
+  // Config Snapshot (gespeicherte Konfiguration zum Zeitpunkt der Speicherung)
+  configSnapshot = signal<import('../../core/api').ConfigSnapshot | null>(null);
+  loadingConfigSnapshot = signal<boolean>(false);
   
   // Available categories
   kategorien = [
@@ -187,6 +197,8 @@ export class ManualEntryNacht {
           const nachtBase = response.data.find(c => c.key === 'pp_ratio_nacht_base');
           const schichtTag = response.data.find(c => c.key === 'schicht_stunden_tag');
           const schichtNacht = response.data.find(c => c.key === 'schicht_stunden_nacht');
+          const phkAnteilTag = response.data.find(c => c.key === 'phk_anteil_tag_base');
+          const phkAnteilNacht = response.data.find(c => c.key === 'phk_anteil_nacht_base');
           
           if (tagBase && tagBase.value) {
             this.ppRatioTagBase.set(tagBase.value);
@@ -199,6 +211,12 @@ export class ManualEntryNacht {
           }
           if (schichtNacht && schichtNacht.value) {
             this.schichtStundenNacht.set(schichtNacht.value);
+          }
+          if (phkAnteilTag && phkAnteilTag.value) {
+            this.phkAnteilTagBase.set(phkAnteilTag.value);
+          }
+          if (phkAnteilNacht && phkAnteilNacht.value) {
+            this.phkAnteilNachtBase.set(phkAnteilNacht.value);
           }
         }
       },
@@ -285,6 +303,9 @@ export class ManualEntryNacht {
       }
     });
     
+    // Lade Config-Snapshot parallel
+    this.loadConfigSnapshot(station, jahr, monat, kategorie);
+    
     this.api.getManualEntryNachtData(station, jahr, monat, kategorie).subscribe({
       next: (response) => {
         if (response.data.length > 0) {
@@ -356,6 +377,21 @@ export class ManualEntryNacht {
     });
   }
 
+  loadConfigSnapshot(station: string, jahr: number, monat: number, kategorie: 'PFK' | 'PHK') {
+    this.loadingConfigSnapshot.set(true);
+    this.api.getConfigSnapshotNacht(station, jahr, monat, kategorie).subscribe({
+      next: (snapshot) => {
+        this.configSnapshot.set(snapshot);
+        this.loadingConfigSnapshot.set(false);
+      },
+      error: (err) => {
+        console.error('Error loading config snapshot:', err);
+        this.configSnapshot.set(null);
+        this.loadingConfigSnapshot.set(false);
+      }
+    });
+  }
+
   onStationChange(station: string) {
     this.selectedStation.set(station);
     // MiNa-Durchschnitt wird jetzt aus täglichen Werten berechnet (in loadDataForPeriod)
@@ -413,11 +449,90 @@ export class ManualEntryNacht {
       next: (response) => {
         this.saving.set(false);
         this.snackBar.open('Nachtschicht-Daten erfolgreich gespeichert', 'Schließen', { duration: 2000 });
+        // Reload data and config snapshot after save
+        this.loadDataForPeriod(station, jahr, monat, kategorie);
       },
       error: (err) => {
         this.saving.set(false);
         console.error('Error saving data:', err);
         this.snackBar.open('Fehler beim Speichern', 'Schließen', { duration: 3000 });
+      }
+    });
+  }
+
+  hasData(): boolean {
+    return this.dayEntries().some(entry => entry.stunden > 0 || entry.minuten > 0);
+  }
+
+  recomputeData() {
+    const station = this.selectedStation();
+    if (!station) {
+      this.snackBar.open('Bitte wählen Sie eine Station aus', 'Schließen', { duration: 3000 });
+      return;
+    }
+
+    const jahr = this.selectedYear();
+    const monat = this.selectedMonth();
+    const kategorie = this.selectedKategorie();
+
+    // Check if data exists
+    if (!this.hasData()) {
+      this.snackBar.open('Keine Daten vorhanden zum Neuberechnen', 'Schließen', { duration: 3000 });
+      return;
+    }
+
+    // Get current configuration values for Nacht
+    const schichtStunden = this.schichtStundenNacht();
+    const ppRatioBase = this.ppRatioNachtBase();
+    const phkAnteilBase = this.phkAnteilNachtBase();
+
+    // Open dialog with configuration
+    const dialogRef = this.dialog.open(RecomputeConfigDialogComponent, {
+      width: '600px',
+      data: {
+        station: station,
+        jahr: jahr,
+        monat: monat,
+        kategorie: kategorie,
+        schicht: 'nacht' as const,
+        schicht_stunden: schichtStunden,
+        phk_anteil_base: phkAnteilBase,
+        pp_ratio_base: ppRatioBase,
+        schichtLabel: 'Nacht'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((result: any) => {
+      if (result && result.confirmed) {
+        this.performRecompute(
+          station, 
+          jahr, 
+          monat, 
+          kategorie as 'PFK' | 'PHK',
+          result.config
+        );
+      }
+    });
+  }
+
+  private performRecompute(station: string, jahr: number, monat: number, kategorie: 'PFK' | 'PHK', configOverrides?: { schicht_stunden?: number; phk_anteil_base?: number | null; pp_ratio_base?: number }) {
+    this.recomputing.set(true);
+
+    this.api.recomputeManualEntryNacht(station, jahr, monat, kategorie, configOverrides).subscribe({
+      next: (response) => {
+        this.recomputing.set(false);
+        const message = response.updatedEntries > 0
+          ? `${response.message} (${response.updatedEntries} Einträge aktualisiert)`
+          : response.message;
+        this.snackBar.open(message, 'Schließen', { duration: 4000 });
+        // Reload data and config snapshot after recompute
+        this.loadDataForPeriod(station, jahr, monat, kategorie);
+      },
+      error: (err) => {
+        this.recomputing.set(false);
+        console.error('Error recomputing data:', err);
+        const errorMessage = err.error?.error || err.message || 'Fehler beim Neuberechnen';
+        this.snackBar.open(errorMessage, 'Schließen', { duration: 5000 });
       }
     });
   }

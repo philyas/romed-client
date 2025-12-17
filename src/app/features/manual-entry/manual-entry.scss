@@ -1066,5 +1066,104 @@
       }
     }
   }
+
+  // Config Snapshot Styles
+  .config-snapshot-info {
+    margin-top: 16px;
+    padding: 16px;
+    background-color: #f5f5f5;
+    border-radius: 8px;
+    border-left: 4px solid #0066cc;
+
+    .config-snapshot-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+
+      mat-icon {
+        color: #0066cc;
+      }
+
+      .config-snapshot-title {
+        font-weight: 600;
+        font-size: 16px;
+        color: #333;
+      }
+
+      mat-chip {
+        font-size: 12px;
+      }
+    }
+
+    .config-loading {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      color: #666;
+    }
+
+    .config-values {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+
+      .config-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        background-color: white;
+        border-radius: 4px;
+
+        .config-label {
+          font-weight: 500;
+          color: #666;
+        }
+
+        .config-value {
+          font-weight: 600;
+          color: #0066cc;
+        }
+      }
+
+      .config-timestamp {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        font-size: 12px;
+        color: #666;
+        background-color: white;
+        border-radius: 4px;
+
+        mat-icon {
+          font-size: 16px;
+          width: 16px;
+          height: 16px;
+        }
+      }
+
+      .config-message {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        font-size: 12px;
+        color: #666;
+        background-color: #fff3cd;
+        border-radius: 4px;
+        border-left: 3px solid #ffc107;
+
+        mat-icon {
+          font-size: 16px;
+          width: 16px;
+          height: 16px;
+          color: #ffc107;
+        }
+      }
+    }
+  }
 }
 

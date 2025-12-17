@@ -108,6 +108,50 @@
         </div>
       </div>
 
+      <!-- Config Snapshot Info -->
+      <div class="config-snapshot-info" *ngIf="selectedStation() && (configSnapshot() || loadingConfigSnapshot())">
+        <mat-divider style="margin: 16px 0;"></mat-divider>
+        <div class="config-snapshot-header">
+          <mat-icon>settings</mat-icon>
+          <span class="config-snapshot-title">Verwendete Konfiguration</span>
+          <mat-chip *ngIf="configSnapshot()?.isCurrentConfig" color="accent" selected>
+            Aktuelle Konfiguration
+          </mat-chip>
+          <mat-chip *ngIf="configSnapshot() && !configSnapshot()?.isCurrentConfig" color="primary" selected>
+            Gespeicherter Snapshot
+          </mat-chip>
+        </div>
+        <div *ngIf="loadingConfigSnapshot()" class="config-loading">
+          <mat-progress-spinner mode="indeterminate" diameter="20"></mat-progress-spinner>
+          <span>Lade Konfiguration...</span>
+        </div>
+        <div *ngIf="configSnapshot() && !loadingConfigSnapshot()" class="config-values">
+          <div class="config-item">
+            <span class="config-label">Schichtstunden ({{ configSnapshot()!.schicht === 'tag' ? 'Tag' : 'Nacht' }}):</span>
+            <span class="config-value">{{ configSnapshot()!.schicht_stunden_used }}h</span>
+          </div>
+          <div class="config-item" *ngIf="configSnapshot()!.phk_anteil_base_used !== null">
+            <span class="config-label">PHK-Anteil Basis:</span>
+            <span class="config-value">{{ configSnapshot()!.phk_anteil_base_used }}</span>
+          </div>
+          <div class="config-item">
+            <span class="config-label">P:P-Ratio Basis ({{ configSnapshot()!.schicht === 'tag' ? 'Tag' : 'Nacht' }}):</span>
+            <span class="config-value">{{ configSnapshot()!.pp_ratio_base_used }}</span>
+          </div>
+          <div class="config-timestamp" *ngIf="configSnapshot()!.erstellt_am">
+            <mat-icon>schedule</mat-icon>
+            <span>Gespeichert am: {{ configSnapshot()!.erstellt_am | date:'dd.MM.yyyy HH:mm' }}</span>
+            <span *ngIf="configSnapshot()!.aktualisiert_am && configSnapshot()!.aktualisiert_am !== configSnapshot()!.erstellt_am">
+              (Aktualisiert: {{ configSnapshot()!.aktualisiert_am | date:'dd.MM.yyyy HH:mm' }})
+            </span>
+          </div>
+          <div class="config-message" *ngIf="configSnapshot()!.message">
+            <mat-icon>info</mat-icon>
+            <span>{{ configSnapshot()!.message }}</span>
+          </div>
+        </div>
+      </div>
+
       <!-- File Upload Section -->
       <div class="upload-section">
         <mat-divider style="margin: 20px 0;"></mat-divider>
@@ -402,6 +446,15 @@
         <button mat-raised-button color="primary" (click)="saveData()" [disabled]="saving()">
           <mat-icon>save</mat-icon>
           {{ saving() ? 'Speichert...' : 'Manuell Speichern' }}
+        </button>
+        <button 
+          mat-raised-button 
+          color="accent" 
+          (click)="recomputeData()" 
+          [disabled]="recomputing() || saving() || !selectedStation() || !hasData()"
+          matTooltip="Berechnete Werte (PFK Normal, Gesamt PFK/PHK, PHK End, PHK Anrechenbar) mit aktueller Konfiguration neu berechnen">
+          <mat-icon>refresh</mat-icon>
+          {{ recomputing() ? 'Neuberechnung...' : 'Neuberechnen' }}
         </button>
       </div>
     </mat-card-header>

@@ -155,6 +155,21 @@ export interface PatientenPflegekraftOverviewResponse {
   };
 }
 
+export interface ConfigSnapshot {
+  station: string;
+  jahr: number;
+  monat: number;
+  kategorie: string;
+  schicht: 'tag' | 'nacht';
+  schicht_stunden_used: number;
+  phk_anteil_base_used: number | null;
+  pp_ratio_base_used: number;
+  erstellt_am: string | null;
+  aktualisiert_am: string | null;
+  isCurrentConfig?: boolean;
+  message?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -514,6 +529,78 @@ export class Api {
   getCalculationConstantsByCategory(category: string): Observable<{ success: boolean; data: CalculationConstant[] }> {
     return this.http.get<{ success: boolean; data: CalculationConstant[] }>(
       `${this.baseUrl}/api/calculation-constants/category/${category}`
+    );
+  }
+
+  // Config Snapshot API
+  getConfigSnapshot(station: string, jahr: number, monat: number, kategorie: string, schicht: 'tag' | 'nacht' = 'tag'): Observable<ConfigSnapshot> {
+    const params = new HttpParams()
+      .set('station', station)
+      .set('jahr', jahr.toString())
+      .set('monat', monat.toString())
+      .set('kategorie', kategorie)
+      .set('schicht', schicht);
+    return this.http.get<ConfigSnapshot>(`${this.baseUrl}/manual-entry/config-snapshot`, { params });
+  }
+
+  getConfigSnapshotNacht(station: string, jahr: number, monat: number, kategorie: string): Observable<ConfigSnapshot> {
+    const params = new HttpParams()
+      .set('station', station)
+      .set('jahr', jahr.toString())
+      .set('monat', monat.toString())
+      .set('kategorie', kategorie);
+    return this.http.get<ConfigSnapshot>(`${this.baseUrl}/manual-entry-nacht/config-snapshot`, { params });
+  }
+
+  // Recompute API
+  recomputeManualEntry(
+    station: string, 
+    jahr: number, 
+    monat: number, 
+    kategorie: string, 
+    schicht: 'tag' | 'nacht' = 'tag',
+    configOverrides?: { schicht_stunden?: number; phk_anteil_base?: number | null; pp_ratio_base?: number }
+  ): Observable<{ success: boolean; message: string; updatedEntries: number; daysWithData?: number }> {
+    const body: any = { station, jahr, monat, kategorie, schicht };
+    if (configOverrides) {
+      if (configOverrides.schicht_stunden !== undefined) {
+        body.schicht_stunden = configOverrides.schicht_stunden;
+      }
+      if (configOverrides.phk_anteil_base !== undefined && configOverrides.phk_anteil_base !== null) {
+        body.phk_anteil_base = configOverrides.phk_anteil_base;
+      }
+      if (configOverrides.pp_ratio_base !== undefined) {
+        body.pp_ratio_base = configOverrides.pp_ratio_base;
+      }
+    }
+    return this.http.post<{ success: boolean; message: string; updatedEntries: number; daysWithData?: number }>(
+      `${this.baseUrl}/manual-entry/recompute`,
+      body
+    );
+  }
+
+  recomputeManualEntryNacht(
+    station: string, 
+    jahr: number, 
+    monat: number, 
+    kategorie: string,
+    configOverrides?: { schicht_stunden?: number; phk_anteil_base?: number | null; pp_ratio_base?: number }
+  ): Observable<{ success: boolean; message: string; updatedEntries: number; daysWithData?: number }> {
+    const body: any = { station, jahr, monat, kategorie };
+    if (configOverrides) {
+      if (configOverrides.schicht_stunden !== undefined) {
+        body.schicht_stunden = configOverrides.schicht_stunden;
+      }
+      if (configOverrides.phk_anteil_base !== undefined && configOverrides.phk_anteil_base !== null) {
+        body.phk_anteil_base = configOverrides.phk_anteil_base;
+      }
+      if (configOverrides.pp_ratio_base !== undefined) {
+        body.pp_ratio_base = configOverrides.pp_ratio_base;
+      }
+    }
+    return this.http.post<{ success: boolean; message: string; updatedEntries: number; daysWithData?: number }>(
+      `${this.baseUrl}/manual-entry-nacht/recompute`,
+      body
     );
   }
 
