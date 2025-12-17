@@ -1373,7 +1373,7 @@ export class ManualEntry {
   openStatInfoModal(statType: string) {
     const schichtStunden = this.schichtStundenTag();
     const phkAnteilBase = 10;
-    const phkAnteil = 1 - (1 / phkAnteilBase);
+    const phkAnteil = 1 - (phkAnteilBase / 100);
     const ppRatioBase = this.ppRatioTagBase();
     const entries = this.dayEntries();
     const dailyMap = this.dailyMinaMita();
@@ -1436,9 +1436,9 @@ export class ManualEntry {
           steps: [
             {
               name: 'PHK-Anteil',
-              formula: `PHK-Anteil = 1 - (1 / Basiswert)`,
+              formula: `PHK-Anteil = 1 - (Basiswert / 100)`,
               description: `Der PHK-Anteil wird aus einem konfigurierbaren Basiswert berechnet. Standard: 90%`,
-              example: `1 - (1 / ${phkAnteilBase}) = ${phkAnteil.toFixed(4)} (${(phkAnteil * 100).toFixed(0)}%)`
+              example: `1 - (${phkAnteilBase} / 100) = ${phkAnteil.toFixed(4)} (${(phkAnteil * 100).toFixed(0)}%)`
             }
           ],
           constants: [
@@ -1761,7 +1761,7 @@ export class ManualEntry {
     const schicht = 'tag';
     const schichtStunden = this.schichtStundenTag();
     const phkAnteilBase = 10; // Standard-Wert, könnte aus API geladen werden
-    const phkAnteil = 1 - (1 / phkAnteilBase);
+    const phkAnteil = 1 - (phkAnteilBase / 100);
 
     let modalData: any = {};
 
@@ -1789,9 +1789,9 @@ export class ManualEntry {
           steps: [
             {
               name: 'PHK-Anteil berechnen',
-              formula: `PHK-Anteil = 1 - (1 / Basiswert)`,
+              formula: `PHK-Anteil = 1 - (Basiswert / 100)`,
               description: `Berechnung des PHK-Anteils aus dem konfigurierbaren Basiswert`,
-              example: `1 - (1 / ${phkAnteilBase}) = ${phkAnteil.toFixed(4)} (${(phkAnteil * 100).toFixed(0)}%)`
+              example: `1 - (${phkAnteilBase} / 100) = ${phkAnteil.toFixed(4)} (${(phkAnteil * 100).toFixed(0)}%)`
             },
             {
               name: 'Gesamt PFK+PHK',
