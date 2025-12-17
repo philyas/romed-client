@@ -383,13 +383,13 @@
           </button>
         </div>
 
-        <div class="stat-item" *ngIf="selectedKategorie() === 'PFK' && getDurchschnittPhkAusstattung() !== null">
-          <mat-icon>group</mat-icon>
+        <div class="stat-item" *ngIf="selectedKategorie() === 'PFK' && getDurchschnittTatsaechlichAnrechenbar() !== null">
+          <mat-icon>check_circle</mat-icon>
           <div class="stat-content">
-            <span class="stat-label">PHK-Ausstattung Ø</span>
-            <span class="stat-value">{{ getDurchschnittPhkAusstattung() }}</span>
+            <span class="stat-label">⌀ Tatsächlich Anrechenbar</span>
+            <span class="stat-value">{{ getDurchschnittTatsaechlichAnrechenbar() }}</span>
           </div>
-          <button mat-icon-button class="stat-info-button" (click)="openStatInfoModal('phkAusstattung')" matTooltip="Berechnung anzeigen">
+          <button mat-icon-button class="stat-info-button" (click)="openStatInfoModal('tatsaechlichAnrechenbar')" matTooltip="Berechnung anzeigen">
             <mat-icon>info</mat-icon>
           </button>
         </div>

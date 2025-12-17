@@ -1009,6 +1009,11 @@ export class ManualEntry {
   }
 
   getDurchschnittPhkAusstattung(): string | null {
+    // PHK-Ausstattung ist identisch mit Durchschnitt tatsächlich anrechenbar
+    return this.getDurchschnittTatsaechlichAnrechenbar();
+  }
+
+  getDurchschnittTatsaechlichAnrechenbar(): string | null {
     const entries = this.dayEntries();
     const phkTageswerte = this.phkTageswerte();
     const schichtStunden = this.schichtStundenTag();
@@ -1035,11 +1040,11 @@ export class ManualEntry {
     
     if (count === 0) return null;
     
-    // Durchschnitt von "Tatsächlich Anrechenbar" durch Schichtstunden
-    const durchschnittTatsaechlichAnrechenbar = sum / count;
-    const phkAusstattung = durchschnittTatsaechlichAnrechenbar / schichtStunden;
+    // Durchschnitt von "Tatsächlich Anrechenbar" in Stunden, dann durch Schichtstunden für Schichtanzahl
+    const durchschnittTatsaechlichAnrechenbarHours = sum / count;
+    const durchschnittTatsaechlichAnrechenbar = durchschnittTatsaechlichAnrechenbarHours / schichtStunden;
     
-    return phkAusstattung.toFixed(4);
+    return durchschnittTatsaechlichAnrechenbar.toFixed(4);
   }
 
   getAnzahlPpugvErfuelltNein(): number | null {
