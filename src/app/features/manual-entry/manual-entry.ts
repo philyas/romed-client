@@ -1018,24 +1018,26 @@ export class ManualEntry {
     const phkTageswerte = this.phkTageswerte();
     const schichtStunden = this.schichtStundenTag();
     
-    if (!phkTageswerte || schichtStunden === 0) return null;
+    if (schichtStunden === 0) return null;
     
     let sum = 0;
     let count = 0;
     
-    // Berechne Durchschnitt von "Tatsächlich Anrechenbar" für alle Tage mit Daten
+    // Berechne Durchschnitt von "Tatsächlich Anrechenbar" für ALLE Tage (inkl. 0.00)
+    // Wie in Excel: Alle Tage werden berücksichtigt, auch wenn sie 0.00 haben
     entries.forEach(entry => {
-      const tagData = phkTageswerte.find(t => t.tag === entry.tag);
-      if (tagData) {
-        const phkAnrechenbar = entry.phkAnrechenbar || 0;
-        const phkStundenDezimal = tagData.gesamtDezimal;
-        
-        // Regel: Wenn PHK-Stunden >= PHK Anrechenbar, dann nimm PHK Anrechenbar, sonst PHK-Stunden
-        const tatsaechlichAnrechenbar = phkStundenDezimal >= phkAnrechenbar ? phkAnrechenbar : phkStundenDezimal;
-        
-        sum += tatsaechlichAnrechenbar;
-        count++;
-      }
+      // Nur Tage > 0 (nicht der Durchschnitts-Eintrag Tag=0)
+      if (entry.tag <= 0) return;
+      
+      const tagData = phkTageswerte?.find(t => t.tag === entry.tag);
+      const phkAnrechenbar = entry.phkAnrechenbar || 0;
+      const phkStundenDezimal = tagData?.gesamtDezimal || 0;
+      
+      // Regel: Wenn PHK-Stunden >= PHK Anrechenbar, dann nimm PHK Anrechenbar, sonst PHK-Stunden
+      const tatsaechlichAnrechenbar = phkStundenDezimal >= phkAnrechenbar ? phkAnrechenbar : phkStundenDezimal;
+      
+      sum += tatsaechlichAnrechenbar;
+      count++; // Zähle ALLE Tage, auch wenn tatsaechlichAnrechenbar = 0
     });
     
     if (count === 0) return null;
