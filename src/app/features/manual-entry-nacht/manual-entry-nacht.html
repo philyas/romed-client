@@ -110,7 +110,7 @@
 
       <!-- Config Snapshot Info -->
       <div class="config-snapshot-info" *ngIf="selectedStation() && (configSnapshot() || loadingConfigSnapshot())">
-        <mat-divider style="margin: 16px 0;"></mat-divider>
+        <mat-divider style="margin: 12px 0;"></mat-divider>
         <div class="config-snapshot-header">
           <mat-icon>settings</mat-icon>
           <span class="config-snapshot-title">Verwendete Konfiguration</span>
@@ -163,15 +163,15 @@
 
       <!-- File Upload Section -->
       <div class="upload-section">
-        <mat-divider style="margin: 20px 0;"></mat-divider>
+        <mat-divider style="margin: 12px 0;"></mat-divider>
         <div class="upload-header">
           <mat-icon>cloud_upload</mat-icon>
           <h3>Dienstplan-Excel hochladen</h3>
         </div>
-        <p class="upload-description">
+        <p class="upload-description" style="font-size: 13px; margin: 8px 0;">
           Laden Sie eine Dienstplan-Excel-Datei (DP9) hoch, um Arbeitszeiten automatisch zu importieren.
         </p>
-        <div class="variant-selection" style="margin-bottom: 16px;">
+        <div class="variant-selection" style="margin-bottom: 12px;">
           <mat-form-field appearance="outline" style="width: 100%;">
             <mat-label>Berechnungsvariante</mat-label>
             <mat-select [value]="selectedVariant()" (selectionChange)="selectedVariant.set($event.value)">
