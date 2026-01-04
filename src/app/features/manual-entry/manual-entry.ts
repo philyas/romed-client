@@ -17,6 +17,8 @@ import { Api } from '../../core/api';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { RecomputeConfigDialogComponent } from './recompute-config-dialog.component';
+import { UploadConfigDialogComponent } from './upload-config-dialog.component';
+import { StationConfigDialogComponent } from './station-config-dialog.component';
 
 interface DayEntry {
   tag: number;
@@ -385,6 +387,42 @@ export class ManualEntry {
         console.error('Error loading config snapshot:', err);
         this.configSnapshot.set(null);
         this.loadingConfigSnapshot.set(false);
+      }
+    });
+  }
+
+  openStationConfigDialog() {
+    const station = this.selectedStation();
+    const kategorie = this.selectedKategorie();
+    
+    if (!station) {
+      this.snackBar.open('Bitte wählen Sie zuerst eine Station aus', 'Schließen', {
+        duration: 3000
+      });
+      return;
+    }
+
+    const dialogRef = this.dialog.open(StationConfigDialogComponent, {
+      width: '600px',
+      data: {
+        station,
+        kategorie,
+        schicht: 'tag' as const,
+        schichtLabel: 'Tag'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === true) {
+        // Config wurde gespeichert, neu laden
+        const station = this.selectedStation();
+        const year = this.selectedYear();
+        const month = this.selectedMonth();
+        const kategorie = this.selectedKategorie();
+        
+        if (station && year && month && kategorie) {
+          this.loadConfigSnapshot(station, year, month, kategorie);
+        }
       }
     });
   }
@@ -1332,9 +1370,41 @@ export class ManualEntry {
       return;
     }
 
+    // Get station and kategorie for config dialog
+    // Use selected station if available, otherwise use first available station
+    const station = this.selectedStation() || (this.stations().length > 0 ? this.stations()[0] : '');
+    const kategorie = this.selectedKategorie();
+
+    if (!station) {
+      this.snackBar.open('Bitte wählen Sie eine Station aus', 'Schließen', { duration: 3000 });
+      return;
+    }
+
+    // Open config dialog before upload
+    // Note: Upload can contain multiple stations/kategorien/schichten, but we use the selected one for config
+    // The config will be applied to all uploads in the file
+    const dialogRef = this.dialog.open(UploadConfigDialogComponent, {
+      width: '600px',
+      data: {
+        station: station,
+        kategorie: kategorie,
+        schicht: 'tag' as const, // Default to tag, config applies to both tag and nacht
+        schichtLabel: 'Tag'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((result: any) => {
+      if (result && result.confirmed) {
+        // Perform upload with config
+        this.performUpload(file, result.config);
+      }
+    });
+  }
+
+  private performUpload(file: File, configOverrides?: { schicht_stunden?: number; phk_anteil_base?: number | null; pp_ratio_base?: number }): void {
     this.uploading.set(true);
 
-    this.api.uploadDienstplan(file, this.selectedVariant()).subscribe({
+    this.api.uploadDienstplan(file, this.selectedVariant(), configOverrides).subscribe({
       next: (response) => {
         this.uploading.set(false);
         this.dialog.open(DienstplanUploadSuccessDialog, {

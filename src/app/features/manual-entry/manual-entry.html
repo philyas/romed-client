@@ -1,15 +1,12 @@
-<div class="manual-entry-container">
-  <mat-card class="header-card">
-    <mat-card-header>
-      <mat-card-title>
-        <mat-icon>edit_calendar</mat-icon>
-        Manuelle Stundeneingabe
-      </mat-card-title>
-      <mat-card-subtitle>
-        Erfassen Sie Arbeitsstunden manuell für Ihre Station
-      </mat-card-subtitle>
-    </mat-card-header>
-  </mat-card>
+<div class="main-content">
+  <div class="manual-entry">
+    <!-- Header -->
+    <div class="header-row">
+      <div>
+        <h2>Manuelle Stundeneingabe</h2>
+        <p class="subtitle">Erfassen Sie Arbeitsstunden manuell für Ihre Station</p>
+      </div>
+    </div>
 
   <!-- Station Selection / Creation -->
   <mat-card class="selection-card">
@@ -120,6 +117,15 @@
           <mat-chip *ngIf="configSnapshot() && !configSnapshot()?.isCurrentConfig" color="primary" selected>
             Gespeicherter Snapshot
           </mat-chip>
+          <button 
+            mat-stroked-button 
+            color="primary"
+            (click)="openStationConfigDialog()"
+            matTooltip="Stationskonfiguration dauerhaft bearbeiten"
+            class="edit-config-button">
+            <mat-icon>edit</mat-icon>
+            Konfiguration bearbeiten
+          </button>
         </div>
         <div *ngIf="loadingConfigSnapshot()" class="config-loading">
           <mat-progress-spinner mode="indeterminate" diameter="20"></mat-progress-spinner>
@@ -704,13 +710,12 @@
     </mat-card-content>
   </mat-card>
 
-  <!-- Empty State -->
-  <mat-card class="empty-state" *ngIf="!selectedStation()">
-    <mat-card-content>
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="!selectedStation()">
       <mat-icon>business</mat-icon>
       <h3>Keine Station ausgewählt</h3>
       <p>Wählen Sie eine Station aus den MiNa/MiTa-Beständen aus, um mit der Stundeneingabe zu beginnen.</p>
-    </mat-card-content>
-  </mat-card>
+    </div>
+  </div>
 </div>
 

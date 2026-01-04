@@ -317,11 +317,59 @@ export class Api {
     return this.http.get<{ station: string; dailyValues: Array<{ tag: number; mina: number | null; mita: number | null }> }>(`${this.baseUrl}/manual-entry/daily-mina-mita`, { params });
   }
 
-  uploadDienstplan(file: File, variant: '2026' | 'legacy' = 'legacy'): Observable<{ success: boolean; message: string; uploaded: any[]; totalEntries: number }> {
+  getUploadConfig(station: string, kategorie: string, schicht: 'tag' | 'nacht' = 'tag'): Observable<{
+    station: string;
+    kategorie: string;
+    schicht: string;
+    schicht_stunden: number;
+    phk_anteil_base: number | null;
+    pp_ratio_base: number;
+    fromSnapshot: boolean;
+    snapshotMonth?: number;
+    snapshotYear?: number;
+    message?: string;
+  }> {
+    let params = new HttpParams()
+      .set('station', station)
+      .set('kategorie', kategorie)
+      .set('schicht', schicht);
+    return this.http.get<{
+      station: string;
+      kategorie: string;
+      schicht: string;
+      schicht_stunden: number;
+      phk_anteil_base: number | null;
+      pp_ratio_base: number;
+      fromSnapshot: boolean;
+      snapshotMonth?: number;
+      snapshotYear?: number;
+      message?: string;
+    }>(`${this.baseUrl}/manual-entry/upload-config`, { params });
+  }
+
+  uploadDienstplan(
+    file: File, 
+    variant: '2026' | 'legacy' = 'legacy',
+    configOverrides?: { schicht_stunden?: number; phk_anteil_base?: number | null; pp_ratio_base?: number }
+  ): Observable<{ success: boolean; message: string; uploaded: any[]; totalEntries: number }> {
     const form = new FormData();
     form.append('file', file);
     // Kein schicht-Parameter: Beide Schichten (Tag und Nacht) werden verarbeitet
     form.append('variant', variant);
+    
+    // Add config overrides if provided
+    if (configOverrides) {
+      if (configOverrides.schicht_stunden !== undefined && configOverrides.schicht_stunden !== null) {
+        form.append('schicht_stunden', configOverrides.schicht_stunden.toString());
+      }
+      if (configOverrides.phk_anteil_base !== undefined && configOverrides.phk_anteil_base !== null) {
+        form.append('phk_anteil_base', configOverrides.phk_anteil_base.toString());
+      }
+      if (configOverrides.pp_ratio_base !== undefined && configOverrides.pp_ratio_base !== null) {
+        form.append('pp_ratio_base', configOverrides.pp_ratio_base.toString());
+      }
+    }
+    
     return this.http.post<{ success: boolean; message: string; uploaded: any[]; totalEntries: number }>(`${this.baseUrl}/manual-entry/upload-dienstplan`, form);
   }
 
@@ -550,6 +598,100 @@ export class Api {
       .set('monat', monat.toString())
       .set('kategorie', kategorie);
     return this.http.get<ConfigSnapshot>(`${this.baseUrl}/manual-entry-nacht/config-snapshot`, { params });
+  }
+
+  // Station Config API (persistent configuration)
+  getStationConfig(station: string, kategorie: string, schicht: 'tag' | 'nacht' = 'tag'): Observable<{
+    station: string;
+    kategorie: string;
+    schicht: string;
+    schicht_stunden: number;
+    phk_anteil_base: number | null;
+    pp_ratio_base: number;
+    fromSnapshot: boolean;
+    snapshotMonth?: number;
+    snapshotYear?: number;
+    message?: string;
+  }> {
+    const params = new HttpParams()
+      .set('station', station)
+      .set('kategorie', kategorie)
+      .set('schicht', schicht);
+    return this.http.get<{
+      station: string;
+      kategorie: string;
+      schicht: string;
+      schicht_stunden: number;
+      phk_anteil_base: number | null;
+      pp_ratio_base: number;
+      fromSnapshot: boolean;
+      snapshotMonth?: number;
+      snapshotYear?: number;
+      message?: string;
+    }>(`${this.baseUrl}/manual-entry/station-config`, { params });
+  }
+
+  updateStationConfig(
+    station: string,
+    kategorie: string,
+    schicht: 'tag' | 'nacht',
+    config: { schicht_stunden: number; phk_anteil_base: number | null; pp_ratio_base: number }
+  ): Observable<{ success: boolean; message: string }> {
+    return this.http.put<{ success: boolean; message: string }>(
+      `${this.baseUrl}/manual-entry/station-config`,
+      {
+        station,
+        kategorie,
+        schicht,
+        ...config
+      }
+    );
+  }
+
+  getStationConfigNacht(station: string, kategorie: string): Observable<{
+    station: string;
+    kategorie: string;
+    schicht: string;
+    schicht_stunden: number;
+    phk_anteil_base: number | null;
+    pp_ratio_base: number;
+    fromSnapshot: boolean;
+    snapshotMonth?: number;
+    snapshotYear?: number;
+    message?: string;
+  }> {
+    const params = new HttpParams()
+      .set('station', station)
+      .set('kategorie', kategorie)
+      .set('schicht', 'nacht');
+    return this.http.get<{
+      station: string;
+      kategorie: string;
+      schicht: string;
+      schicht_stunden: number;
+      phk_anteil_base: number | null;
+      pp_ratio_base: number;
+      fromSnapshot: boolean;
+      snapshotMonth?: number;
+      snapshotYear?: number;
+      message?: string;
+    }>(`${this.baseUrl}/manual-entry-nacht/station-config`, { params });
+  }
+
+  updateStationConfigNacht(
+    station: string,
+    kategorie: string,
+    config: { schicht_stunden: number; phk_anteil_base: number | null; pp_ratio_base: number }
+  ): Observable<{ success: boolean; message: string }> {
+    return this.http.put<{ success: boolean; message: string }>(
+      `${this.baseUrl}/manual-entry-nacht/station-config`,
+      {
+        station,
+        kategorie,
+        schicht: 'nacht',
+        ...config
+      }
+    );
   }
 
   // Recompute API

@@ -972,6 +972,7 @@
       align-items: center;
       gap: 12px;
       margin-bottom: 12px;
+      flex-wrap: wrap;
 
       mat-icon {
         color: #0066cc;
@@ -981,6 +982,19 @@
         font-weight: 600;
         font-size: 16px;
         color: #333;
+        flex: 1;
+      }
+
+      .edit-config-button {
+        margin-left: auto;
+        flex-shrink: 0;
+        
+        mat-icon {
+          margin-right: 4px;
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+        }
       }
 
       mat-chip {

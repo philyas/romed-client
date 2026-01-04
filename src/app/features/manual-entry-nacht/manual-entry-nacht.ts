@@ -16,6 +16,7 @@ import { Api } from '../../core/api';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { RecomputeConfigDialogComponent } from '../manual-entry/recompute-config-dialog.component';
+import { StationConfigDialogComponent } from '../manual-entry/station-config-dialog.component';
 import { MatDividerModule } from '@angular/material/divider';
 
 interface DayEntry {
@@ -388,6 +389,42 @@ export class ManualEntryNacht {
         console.error('Error loading config snapshot:', err);
         this.configSnapshot.set(null);
         this.loadingConfigSnapshot.set(false);
+      }
+    });
+  }
+
+  openStationConfigDialog() {
+    const station = this.selectedStation();
+    const kategorie = this.selectedKategorie();
+    
+    if (!station) {
+      this.snackBar.open('Bitte wählen Sie zuerst eine Station aus', 'Schließen', {
+        duration: 3000
+      });
+      return;
+    }
+
+    const dialogRef = this.dialog.open(StationConfigDialogComponent, {
+      width: '600px',
+      data: {
+        station,
+        kategorie,
+        schicht: 'nacht' as const,
+        schichtLabel: 'Nacht'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === true) {
+        // Config wurde gespeichert, neu laden
+        const station = this.selectedStation();
+        const year = this.selectedYear();
+        const month = this.selectedMonth();
+        const kategorie = this.selectedKategorie();
+        
+        if (station && year && month && kategorie) {
+          this.loadConfigSnapshot(station, year, month, kategorie);
+        }
       }
     });
   }

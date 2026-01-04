@@ -120,6 +120,15 @@
           <mat-chip *ngIf="configSnapshot() && !configSnapshot()?.isCurrentConfig" color="primary" selected>
             Gespeicherter Snapshot
           </mat-chip>
+          <button 
+            mat-stroked-button 
+            color="primary"
+            (click)="openStationConfigDialog()"
+            matTooltip="Stationskonfiguration dauerhaft bearbeiten"
+            class="edit-config-button">
+            <mat-icon>edit</mat-icon>
+            Konfiguration bearbeiten
+          </button>
         </div>
         <div *ngIf="loadingConfigSnapshot()" class="config-loading">
           <mat-progress-spinner mode="indeterminate" diameter="20"></mat-progress-spinner>
