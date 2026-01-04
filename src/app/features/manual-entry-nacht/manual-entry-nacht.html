@@ -1,15 +1,12 @@
-<div class="manual-entry-container">
-  <mat-card class="header-card">
-    <mat-card-header>
-      <mat-card-title>
-        <mat-icon>nightlight</mat-icon>
-        Manuelle Stundeneingabe - Nachtschicht
-      </mat-card-title>
-      <mat-card-subtitle>
-        Erfassen Sie Arbeitsstunden der Nachtschicht manuell für Ihre Station
-      </mat-card-subtitle>
-    </mat-card-header>
-  </mat-card>
+<div class="main-content">
+  <div class="manual-entry-container">
+    <!-- Header -->
+    <div class="header-row">
+      <div>
+        <h2>Manuelle Stundeneingabe - Nachtschicht</h2>
+        <p class="subtitle">Erfassen Sie Arbeitsstunden der Nachtschicht manuell für Ihre Station</p>
+      </div>
+    </div>
 
   <!-- Station Selection / Creation -->
   <mat-card class="selection-card">
@@ -110,7 +107,7 @@
 
       <!-- Config Snapshot Info -->
       <div class="config-snapshot-info" *ngIf="selectedStation() && (configSnapshot() || loadingConfigSnapshot())">
-        <mat-divider style="margin: 12px 0;"></mat-divider>
+        <mat-divider style="margin: 16px 0;"></mat-divider>
         <div class="config-snapshot-header">
           <mat-icon>settings</mat-icon>
           <span class="config-snapshot-title">Verwendete Konfiguration</span>
@@ -163,15 +160,15 @@
 
       <!-- File Upload Section -->
       <div class="upload-section">
-        <mat-divider style="margin: 12px 0;"></mat-divider>
+        <mat-divider style="margin: 20px 0;"></mat-divider>
         <div class="upload-header">
           <mat-icon>cloud_upload</mat-icon>
           <h3>Dienstplan-Excel hochladen</h3>
         </div>
-        <p class="upload-description" style="font-size: 13px; margin: 8px 0;">
+        <p class="upload-description">
           Laden Sie eine Dienstplan-Excel-Datei (DP9) hoch, um Arbeitszeiten automatisch zu importieren.
         </p>
-        <div class="variant-selection" style="margin-bottom: 12px;">
+        <div class="variant-selection" style="margin-bottom: 16px;">
           <mat-form-field appearance="outline" style="width: 100%;">
             <mat-label>Berechnungsvariante</mat-label>
             <mat-select [value]="selectedVariant()" (selectionChange)="selectedVariant.set($event.value)">
@@ -713,13 +710,12 @@
     </mat-card-content>
   </mat-card>
 
-  <!-- Empty State -->
-  <mat-card class="empty-state" *ngIf="!selectedStation()">
-    <mat-card-content>
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="!selectedStation()">
       <mat-icon>business</mat-icon>
       <h3>Keine Station ausgewählt</h3>
       <p>Wählen Sie eine Station aus den MiNa/MiTa-Beständen aus, um mit der Nachtschicht-Stundeneingabe zu beginnen.</p>
-    </mat-card-content>
-  </mat-card>
+    </div>
+  </div>
 </div>
 
