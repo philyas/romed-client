@@ -9,7 +9,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatTabsModule } from '@angular/material/tabs';
 import { firstValueFrom } from 'rxjs';
 import { Api } from '../../core/api';
 
@@ -41,7 +40,6 @@ interface StationConfigValues {
     MatInputModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
-    MatTabsModule
   ],
   template: `
     <h2 mat-dialog-title>
@@ -50,108 +48,96 @@ interface StationConfigValues {
     </h2>
 
     <mat-dialog-content>
-      <div class="config-tabs" *ngIf="!loading">
-        <mat-tab-group>
-          <mat-tab label="Tag (PFK)">
-            <div class="tab-content">
-              <div class="config-section">
-                <h3>Tag-Schicht Konfiguration (PFK)</h3>
-                <div class="config-form">
-                  <mat-form-field appearance="outline">
-                    <mat-label>Schichtstunden</mat-label>
-                    <input matInput type="number" step="0.1" min="0.1"
-                           [(ngModel)]="editedConfigs.tag_pfk.schicht_stunden">
-                    <span matSuffix>h</span>
-                  </mat-form-field>
+      <div class="config-content" *ngIf="!loading">
+        <div class="config-grid">
+          <!-- Tag PFK -->
+          <div class="config-section">
+            <h4>Tag-Schicht (PFK)</h4>
+            <div class="config-form">
+              <mat-form-field appearance="outline">
+                <mat-label>Schichtstunden</mat-label>
+                <input matInput type="number" step="0.1" min="0.1"
+                       [(ngModel)]="editedConfigs.tag_pfk.schicht_stunden">
+                <span matSuffix>h</span>
+              </mat-form-field>
 
-                  <mat-form-field appearance="outline">
-                    <mat-label>PHK-Anteil Basis</mat-label>
-                    <input matInput type="number" step="0.1" min="1"
-                           [(ngModel)]="editedConfigs.tag_pfk.phk_anteil_base">
-                  </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>PHK-Anteil Basis</mat-label>
+                <input matInput type="number" step="0.1" min="1"
+                       [(ngModel)]="editedConfigs.tag_pfk.phk_anteil_base">
+              </mat-form-field>
 
-                  <mat-form-field appearance="outline">
-                    <mat-label>P:P-Ratio Basis</mat-label>
-                    <input matInput type="number" step="0.1" min="0.1"
-                           [(ngModel)]="editedConfigs.tag_pfk.pp_ratio_base">
-                  </mat-form-field>
-                </div>
-              </div>
+              <mat-form-field appearance="outline">
+                <mat-label>P:P-Ratio Basis</mat-label>
+                <input matInput type="number" step="0.1" min="0.1"
+                       [(ngModel)]="editedConfigs.tag_pfk.pp_ratio_base">
+              </mat-form-field>
             </div>
-          </mat-tab>
+          </div>
 
-          <mat-tab label="Nacht (PFK)">
-            <div class="tab-content">
-              <div class="config-section">
-                <h3>Nacht-Schicht Konfiguration (PFK)</h3>
-                <div class="config-form">
-                  <mat-form-field appearance="outline">
-                    <mat-label>Schichtstunden</mat-label>
-                    <input matInput type="number" step="0.1" min="0.1"
-                           [(ngModel)]="editedConfigs.nacht_pfk.schicht_stunden">
-                    <span matSuffix>h</span>
-                  </mat-form-field>
+          <!-- Nacht PFK -->
+          <div class="config-section">
+            <h4>Nacht-Schicht (PFK)</h4>
+            <div class="config-form">
+              <mat-form-field appearance="outline">
+                <mat-label>Schichtstunden</mat-label>
+                <input matInput type="number" step="0.1" min="0.1"
+                       [(ngModel)]="editedConfigs.nacht_pfk.schicht_stunden">
+                <span matSuffix>h</span>
+              </mat-form-field>
 
-                  <mat-form-field appearance="outline">
-                    <mat-label>PHK-Anteil Basis</mat-label>
-                    <input matInput type="number" step="0.1" min="1"
-                           [(ngModel)]="editedConfigs.nacht_pfk.phk_anteil_base">
-                  </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>PHK-Anteil Basis</mat-label>
+                <input matInput type="number" step="0.1" min="1"
+                       [(ngModel)]="editedConfigs.nacht_pfk.phk_anteil_base">
+              </mat-form-field>
 
-                  <mat-form-field appearance="outline">
-                    <mat-label>P:P-Ratio Basis</mat-label>
-                    <input matInput type="number" step="0.1" min="0.1"
-                           [(ngModel)]="editedConfigs.nacht_pfk.pp_ratio_base">
-                  </mat-form-field>
-                </div>
-              </div>
+              <mat-form-field appearance="outline">
+                <mat-label>P:P-Ratio Basis</mat-label>
+                <input matInput type="number" step="0.1" min="0.1"
+                       [(ngModel)]="editedConfigs.nacht_pfk.pp_ratio_base">
+              </mat-form-field>
             </div>
-          </mat-tab>
+          </div>
 
-          <mat-tab label="Tag (PHK)">
-            <div class="tab-content">
-              <div class="config-section">
-                <h3>Tag-Schicht Konfiguration (PHK)</h3>
-                <div class="config-form">
-                  <mat-form-field appearance="outline">
-                    <mat-label>Schichtstunden</mat-label>
-                    <input matInput type="number" step="0.1" min="0.1"
-                           [(ngModel)]="editedConfigs.tag_phk.schicht_stunden">
-                    <span matSuffix>h</span>
-                  </mat-form-field>
+          <!-- Tag PHK -->
+          <div class="config-section">
+            <h4>Tag-Schicht (PHK)</h4>
+            <div class="config-form">
+              <mat-form-field appearance="outline">
+                <mat-label>Schichtstunden</mat-label>
+                <input matInput type="number" step="0.1" min="0.1"
+                       [(ngModel)]="editedConfigs.tag_phk.schicht_stunden">
+                <span matSuffix>h</span>
+              </mat-form-field>
 
-                  <mat-form-field appearance="outline">
-                    <mat-label>P:P-Ratio Basis</mat-label>
-                    <input matInput type="number" step="0.1" min="0.1"
-                           [(ngModel)]="editedConfigs.tag_phk.pp_ratio_base">
-                  </mat-form-field>
-                </div>
-              </div>
+              <mat-form-field appearance="outline">
+                <mat-label>P:P-Ratio Basis</mat-label>
+                <input matInput type="number" step="0.1" min="0.1"
+                       [(ngModel)]="editedConfigs.tag_phk.pp_ratio_base">
+              </mat-form-field>
             </div>
-          </mat-tab>
+          </div>
 
-          <mat-tab label="Nacht (PHK)">
-            <div class="tab-content">
-              <div class="config-section">
-                <h3>Nacht-Schicht Konfiguration (PHK)</h3>
-                <div class="config-form">
-                  <mat-form-field appearance="outline">
-                    <mat-label>Schichtstunden</mat-label>
-                    <input matInput type="number" step="0.1" min="0.1"
-                           [(ngModel)]="editedConfigs.nacht_phk.schicht_stunden">
-                    <span matSuffix>h</span>
-                  </mat-form-field>
+          <!-- Nacht PHK -->
+          <div class="config-section">
+            <h4>Nacht-Schicht (PHK)</h4>
+            <div class="config-form">
+              <mat-form-field appearance="outline">
+                <mat-label>Schichtstunden</mat-label>
+                <input matInput type="number" step="0.1" min="0.1"
+                       [(ngModel)]="editedConfigs.nacht_phk.schicht_stunden">
+                <span matSuffix>h</span>
+              </mat-form-field>
 
-                  <mat-form-field appearance="outline">
-                    <mat-label>P:P-Ratio Basis</mat-label>
-                    <input matInput type="number" step="0.1" min="0.1"
-                           [(ngModel)]="editedConfigs.nacht_phk.pp_ratio_base">
-                  </mat-form-field>
-                </div>
-              </div>
+              <mat-form-field appearance="outline">
+                <mat-label>P:P-Ratio Basis</mat-label>
+                <input matInput type="number" step="0.1" min="0.1"
+                       [(ngModel)]="editedConfigs.nacht_phk.pp_ratio_base">
+              </mat-form-field>
             </div>
-          </mat-tab>
-        </mat-tab-group>
+          </div>
+        </div>
       </div>
 
       <div class="loading-container" *ngIf="loading">
@@ -177,32 +163,42 @@ interface StationConfigValues {
     }
 
     mat-dialog-content {
-      min-width: 600px;
-      max-width: 800px;
+      min-width: 800px;
+      max-width: 1200px;
       max-height: 80vh;
     }
 
-    .config-tabs {
+    .config-content {
       margin-top: 16px;
     }
 
-    .tab-content {
-      padding: 20px 0;
+    .config-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 24px;
     }
 
     .config-section {
-      h3 {
-        margin: 0 0 20px 0;
-        font-size: 18px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 20px;
+      border: 1px solid #e0e0e0;
+
+      h4 {
+        margin: 0 0 16px 0;
+        font-size: 16px;
         font-weight: 600;
-        color: #333;
+        color: #00acc1;
+        text-align: center;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #00acc1;
       }
     }
 
     .config-form {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 16px;
+      grid-template-columns: 1fr;
+      gap: 12px;
       margin-top: 16px;
     }
 
@@ -277,6 +273,7 @@ export class StationConfigEditDialogComponent {
       (config.phk_anteil_base === null || config.phk_anteil_base > 0)
     );
   }
+
 
   onCancel(): void {
     this.dialogRef.close(false);
