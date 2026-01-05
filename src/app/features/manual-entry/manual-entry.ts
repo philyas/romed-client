@@ -15,7 +15,6 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Api } from '../../core/api';
 import { Router, ActivatedRoute } from '@angular/router';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { RecomputeConfigDialogComponent } from './recompute-config-dialog.component';
 import { UploadConfigDialogComponent } from './upload-config-dialog.component';
 import { StationConfigDialogComponent } from './station-config-dialog.component';
@@ -52,7 +51,6 @@ interface GeleistetePhkStunden {
     MatProgressSpinnerModule,
     MatSnackBarModule,
     MatDialogModule,
-    MatButtonToggleModule,
     MatDividerModule,
     MatTooltipModule
   ],
@@ -228,23 +226,6 @@ export class ManualEntry {
     });
   }
 
-  onShiftToggle(value: 'tag' | 'nacht') {
-    if (value === 'nacht') {
-      // Preserve current selection when switching to nacht tab
-      const queryParams: any = {};
-      const station = this.selectedStation();
-      const year = this.selectedYear();
-      const month = this.selectedMonth();
-      const kategorie = this.selectedKategorie();
-      
-      if (station) queryParams.station = station;
-      if (year) queryParams.year = year.toString();
-      if (month) queryParams.month = month.toString();
-      if (kategorie) queryParams.kategorie = kategorie;
-      
-      this.router.navigate(['/manual-entry-nacht'], { queryParams });
-    }
-  }
 
   loadStations() {
     this.api.getManualEntryStations().subscribe({

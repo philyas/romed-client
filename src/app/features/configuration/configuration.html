@@ -153,84 +153,147 @@
           </div>
         </mat-tab>
 
-        <mat-tab label="Formeln und Regeln">
-          <div class="tab-content formeln-tab">
-            <div class="formeln-section">
+        <mat-tab label="Formel & Regeln">
+          <div class="tab-content formel-regeln-tab">
+            <div class="formel-regeln-header">
               <h3>
                 <mat-icon>calculate</mat-icon>
-                Berechnungskonstanten
+                Stationskonfiguration - Formeln & Regeln
               </h3>
-              <p>Passen Sie die Konstanten für die Arbeitszeiten-Berechnungen an. Änderungen wirken sich auf alle zukünftigen Berechnungen aus.</p>
-              
-              <div class="loading-spinner" *ngIf="loadingConstants()">
+              <div class="header-actions">
+                <button
+                  mat-raised-button
+                  color="accent"
+                  (click)="refreshStationConfigs()"
+                  [disabled]="loadingStationConfigs()">
+                  <mat-icon>refresh</mat-icon>
+                  {{ loadingStationConfigs() ? 'Lädt...' : 'Aktualisieren' }}
+                </button>
+              </div>
+            </div>
+
+            <p class="tab-description">
+              Hier können Sie für jede Station individuelle Konfigurationen für Formeln und Regeln festlegen.
+              Diese Werte werden bei der Berechnung von Arbeitszeiten verwendet.
+            </p>
+
+            <!-- Station Config Table -->
+            <div class="station-config-section">
+              <div class="loading-spinner" *ngIf="loadingStationConfigs()">
                 <mat-spinner diameter="40"></mat-spinner>
-                <p>Konstanten werden geladen...</p>
+                <p>Stationskonfigurationen werden geladen...</p>
               </div>
 
-              <div class="constants-list" *ngIf="!loadingConstants() && constants().length > 0">
-                <div class="constant-item" *ngFor="let constant of constants()">
-                  <div class="constant-info">
-                    <div class="constant-header">
-                      <h4>{{ constant.name }}</h4>
-                      <mat-chip *ngIf="!constant.is_editable" color="warn">Nicht bearbeitbar</mat-chip>
+              <div class="station-config-list" *ngIf="!loadingStationConfigs() && stationConfigs().length > 0">
+                <div class="station-config-item" *ngFor="let stationConfig of stationConfigs(); trackBy: trackByStation">
+                  <div class="station-header">
+                    <div class="station-info">
+                      <mat-icon>business</mat-icon>
+                      <h4>{{ stationConfig.station }}</h4>
                     </div>
-                    <p class="constant-description" *ngIf="constant.description">{{ constant.description }}</p>
-                    <div class="constant-details">
-                      <span class="constant-key">
-                        <mat-icon>key</mat-icon>
-                        {{ constant.key }}
-                      </span>
-                      <span class="constant-category">
-                        <mat-icon>category</mat-icon>
-                        {{ constant.category }}
-                      </span>
-                      <span class="constant-unit" *ngIf="constant.unit">
-                        <mat-icon>straighten</mat-icon>
-                        {{ constant.unit }}
-                      </span>
+                    <div class="station-actions">
+                      <button
+                        mat-raised-button
+                        color="primary"
+                        (click)="editStationConfig(stationConfig)"
+                        [disabled]="savingStationConfig()"
+                        matTooltip="Stationskonfiguration bearbeiten">
+                        <mat-icon>edit</mat-icon>
+                        Bearbeiten
+                      </button>
                     </div>
                   </div>
-                  <div class="constant-value">
-                    <mat-form-field appearance="outline" *ngIf="constant.is_editable">
-                      <mat-label>Wert</mat-label>
-                      <input
-                        matInput
-                        type="number"
-                        step="0.0001"
-                        [value]="editingValues[constant.key] ?? constant.value"
-                        (input)="onConstantValueChange(constant.key, $event)"
-                        [disabled]="savingConstants()">
-                      <mat-hint *ngIf="constant.unit">{{ constant.unit }}</mat-hint>
-                    </mat-form-field>
-                    <div class="constant-value-display" *ngIf="!constant.is_editable">
-                      <strong>{{ constant.value }}</strong>
-                      <span *ngIf="constant.unit"> {{ constant.unit }}</span>
+
+                  <div class="config-overview">
+                    <div class="config-row">
+                      <div class="config-section">
+                        <h5>Tag-Schicht (PFK)</h5>
+                        <div class="config-values" *ngIf="stationConfig.tag_pfk">
+                          <div class="config-value">
+                            <span class="label">Schichtstunden:</span>
+                            <span class="value">{{ stationConfig.tag_pfk.schicht_stunden }}h</span>
+                          </div>
+                          <div class="config-value">
+                            <span class="label">PHK-Anteil:</span>
+                            <span class="value">{{ stationConfig.tag_pfk.phk_anteil_base }}</span>
+                          </div>
+                          <div class="config-value">
+                            <span class="label">P:P-Ratio:</span>
+                            <span class="value">{{ stationConfig.tag_pfk.pp_ratio_base }}</span>
+                          </div>
+                        </div>
+                        <div class="no-config" *ngIf="!stationConfig.tag_pfk">
+                          <mat-icon>info</mat-icon>
+                          <span>Keine Konfiguration vorhanden</span>
+                        </div>
+                      </div>
+
+                      <div class="config-section">
+                        <h5>Nacht-Schicht (PFK)</h5>
+                        <div class="config-values" *ngIf="stationConfig.nacht_pfk">
+                          <div class="config-value">
+                            <span class="label">Schichtstunden:</span>
+                            <span class="value">{{ stationConfig.nacht_pfk.schicht_stunden }}h</span>
+                          </div>
+                          <div class="config-value">
+                            <span class="label">PHK-Anteil:</span>
+                            <span class="value">{{ stationConfig.nacht_pfk.phk_anteil_base }}</span>
+                          </div>
+                          <div class="config-value">
+                            <span class="label">P:P-Ratio:</span>
+                            <span class="value">{{ stationConfig.nacht_pfk.pp_ratio_base }}</span>
+                          </div>
+                        </div>
+                        <div class="no-config" *ngIf="!stationConfig.nacht_pfk">
+                          <mat-icon>info</mat-icon>
+                          <span>Keine Konfiguration vorhanden</span>
+                        </div>
+                      </div>
+
+                      <div class="config-section">
+                        <h5>Tag-Schicht (PHK)</h5>
+                        <div class="config-values" *ngIf="stationConfig.tag_phk">
+                          <div class="config-value">
+                            <span class="label">Schichtstunden:</span>
+                            <span class="value">{{ stationConfig.tag_phk.schicht_stunden }}h</span>
+                          </div>
+                          <div class="config-value">
+                            <span class="label">P:P-Ratio:</span>
+                            <span class="value">{{ stationConfig.tag_phk.pp_ratio_base }}</span>
+                          </div>
+                        </div>
+                        <div class="no-config" *ngIf="!stationConfig.tag_phk">
+                          <mat-icon>info</mat-icon>
+                          <span>Keine Konfiguration vorhanden</span>
+                        </div>
+                      </div>
+
+                      <div class="config-section">
+                        <h5>Nacht-Schicht (PHK)</h5>
+                        <div class="config-values" *ngIf="stationConfig.nacht_phk">
+                          <div class="config-value">
+                            <span class="label">Schichtstunden:</span>
+                            <span class="value">{{ stationConfig.nacht_phk.schicht_stunden }}h</span>
+                          </div>
+                          <div class="config-value">
+                            <span class="label">P:P-Ratio:</span>
+                            <span class="value">{{ stationConfig.nacht_phk.pp_ratio_base }}</span>
+                          </div>
+                        </div>
+                        <div class="no-config" *ngIf="!stationConfig.nacht_phk">
+                          <mat-icon>info</mat-icon>
+                          <span>Keine Konfiguration vorhanden</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-                
-                <div class="constants-actions">
-                  <button 
-                    mat-raised-button 
-                    color="primary" 
-                    (click)="saveConstants()" 
-                    [disabled]="savingConstants() || !hasChanges()">
-                    <mat-icon>{{ savingConstants() ? 'hourglass_empty' : 'save' }}</mat-icon>
-                    {{ savingConstants() ? 'Speichert...' : 'Änderungen speichern' }}
-                  </button>
-                  <button 
-                    mat-button 
-                    (click)="resetConstants()" 
-                    [disabled]="savingConstants() || !hasChanges()">
-                    <mat-icon>refresh</mat-icon>
-                    Zurücksetzen
-                  </button>
-                </div>
               </div>
 
-              <div class="empty-state" *ngIf="!loadingConstants() && constants().length === 0">
-                <mat-icon>info</mat-icon>
-                <p>Keine Berechnungskonstanten gefunden</p>
+              <div class="empty-state" *ngIf="!loadingStationConfigs() && stationConfigs().length === 0">
+                <mat-icon>calculate</mat-icon>
+                <p>Keine Stationskonfigurationen vorhanden</p>
+                <p class="hint">Stationskonfigurationen werden automatisch angezeigt, sobald Daten vorhanden sind</p>
               </div>
             </div>
           </div>
@@ -244,19 +307,19 @@
                 SQL-Backup-Verwaltung
               </h3>
               <p>Erstellen Sie ein SQL-Backup der Datenbank. Backups werden unter <code>STORAGE_DIR/backups</code> gespeichert.</p>
-              
+
               <div class="backup-actions">
-                <button 
-                  mat-raised-button 
-                  color="primary" 
-                  (click)="createBackup()" 
+                <button
+                  mat-raised-button
+                  color="primary"
+                  (click)="createBackup()"
                   [disabled]="creatingBackup() || loadingBackups()">
                   <mat-icon>{{ creatingBackup() ? 'hourglass_empty' : 'backup' }}</mat-icon>
                   {{ creatingBackup() ? 'Backup wird erstellt...' : 'SQL-Backup erstellen' }}
                 </button>
-                <button 
-                  mat-raised-button 
-                  (click)="loadBackups()" 
+                <button
+                  mat-raised-button
+                  (click)="loadBackups()"
                   [disabled]="creatingBackup() || loadingBackups()">
                   <mat-icon>refresh</mat-icon>
                   {{ loadingBackups() ? 'Lädt...' : 'Aktualisieren' }}

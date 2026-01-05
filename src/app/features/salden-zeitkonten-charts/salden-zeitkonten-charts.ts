@@ -840,7 +840,7 @@ export class SaldenZeitkontenCharts implements OnInit, OnChanges {
       tooltip: {
         callbacks: {
           label: (context) => {
-            return `${context.dataset.label}: ${context.parsed.y.toFixed(2)} Std`;
+            return `${context.dataset.label}: ${(context.parsed.y ?? 0).toFixed(2)} Std`;
           }
         }
       }
@@ -871,7 +871,7 @@ export class SaldenZeitkontenCharts implements OnInit, OnChanges {
       tooltip: {
         callbacks: {
           label: (context) => {
-            return `${context.parsed.x.toFixed(2)} Std`;
+            return `${(context.parsed.x ?? 0).toFixed(2)} Std`;
           }
         }
       }

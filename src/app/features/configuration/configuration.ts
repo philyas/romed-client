@@ -15,8 +15,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { Api, CalculationConstant } from '../../core/api';
+import { Api } from '../../core/api';
 import { KostenstelleDialogComponent, KostenstelleDialogResult } from './kostenstelle-dialog.component';
+import { StationConfigEditDialogComponent } from './station-config-edit-dialog.component';
 
 interface Kostenstelle {
   kostenstelle: string;
@@ -25,6 +26,20 @@ interface Kostenstelle {
   standortnummer?: string | number | null;
   ik?: string | number | null;
   paediatrie?: string | null;
+}
+
+interface StationConfigValues {
+  schicht_stunden: number;
+  phk_anteil_base: number | null;
+  pp_ratio_base: number;
+}
+
+interface StationConfig {
+  station: string;
+  tag_pfk: StationConfigValues | null;
+  nacht_pfk: StationConfigValues | null;
+  tag_phk: StationConfigValues | null;
+  nacht_phk: StationConfigValues | null;
 }
 
 
@@ -70,11 +85,10 @@ export class Configuration implements OnInit {
   backups = signal<Array<{ name: string; timestamp: string; size: number; sizeFormatted: string }>>([]);
   loadingBackups = signal(false);
 
-  // Calculation Constants
-  constants = signal<CalculationConstant[]>([]);
-  loadingConstants = signal(false);
-  savingConstants = signal(false);
-  editingValues: Record<string, number | undefined> = {};
+  // Station Config
+  stationConfigs = signal<StationConfig[]>([]);
+  loadingStationConfigs = signal(false);
+  savingStationConfig = signal(false);
 
   ngOnInit() {
     this.dataSource.filterPredicate = (data, filter) => {
@@ -93,7 +107,7 @@ export class Configuration implements OnInit {
     this.loadKostenstellen();
     void this.loadStationOptions();
     this.loadBackups();
-    this.loadConstants();
+    this.loadStationConfigs();
   }
 
   loadKostenstellen() {
@@ -271,83 +285,126 @@ export class Configuration implements OnInit {
     });
   }
 
-  // Calculation Constants Methods
-  loadConstants() {
-    this.loadingConstants.set(true);
-    this.api.getCalculationConstants().subscribe({
-      next: (response) => {
-        this.constants.set(response.data);
-        // Initialize editing values with current values
-        this.editingValues = {};
-        response.data.forEach(c => {
-          this.editingValues[c.key] = c.value;
-        });
-        this.loadingConstants.set(false);
-      },
-      error: (err) => {
-        console.error('Error loading calculation constants:', err);
-        this.snackBar.open('Fehler beim Laden der Berechnungskonstanten', 'Schließen', { duration: 3000 });
-        this.loadingConstants.set(false);
-      }
-    });
+  // Station Config Methods
+  refreshStationConfigs() {
+    this.loadStationConfigs();
   }
 
-  onConstantValueChange(key: string, event: Event) {
-    const input = event.target as HTMLInputElement;
-    const value = parseFloat(input.value);
-    if (!isNaN(value)) {
-      this.editingValues[key] = value;
-    }
-  }
+  loadStationConfigs() {
+    this.loadingStationConfigs.set(true);
+    // Get all stations from both day and night manual entry
+    Promise.all([
+      firstValueFrom(this.api.getManualEntryStations()),
+      firstValueFrom(this.api.getManualEntryNachtStations())
+    ]).then(([dayStations, nightStations]) => {
+      const allStations = new Set<string>([
+        ...(dayStations?.stations ?? []),
+        ...(nightStations?.stations ?? [])
+      ]);
 
-  hasChanges(): boolean {
-    return this.constants().some(c => {
-      if (!c.is_editable) return false;
-      const currentValue = this.editingValues[c.key];
-      return currentValue !== undefined && currentValue !== c.value;
-    });
-  }
-
-  resetConstants() {
-    this.constants().forEach(c => {
-      this.editingValues[c.key] = c.value;
-    });
-  }
-
-  saveConstants() {
-    if (!this.hasChanges()) {
-      return;
-    }
-
-    this.savingConstants.set(true);
-    const constantsToUpdate = this.constants().filter(c => {
-      if (!c.is_editable) return false;
-      const newValue = this.editingValues[c.key];
-      return newValue !== undefined && newValue !== c.value;
-    });
-
-    const updatePromises = constantsToUpdate.map(c => {
-      const newValue = this.editingValues[c.key];
-      if (newValue === undefined) {
-        throw new Error(`Value for constant ${c.key} is undefined`);
-      }
-      return firstValueFrom(this.api.updateCalculationConstant(c.key, newValue));
-    });
-
-    Promise.all(updatePromises).then(() => {
-      this.savingConstants.set(false);
-      this.snackBar.open(
-        `${constantsToUpdate.length} Konstante(n) erfolgreich aktualisiert`,
-        'Schließen',
-        { duration: 3000 }
+      // Load config for each station and category combination
+      const configPromises: Promise<StationConfig>[] = Array.from(allStations).map(station =>
+        this.loadStationConfig(station)
       );
-      this.loadConstants(); // Reload to get updated values
-    }).catch((err) => {
-      console.error('Error saving calculation constants:', err);
-      this.savingConstants.set(false);
-      const errorMessage = err.error?.error || err.message || 'Fehler beim Speichern der Konstanten';
-      this.snackBar.open(errorMessage, 'Schließen', { duration: 5000 });
+
+      Promise.all(configPromises).then(stationConfigs => {
+        this.stationConfigs.set(stationConfigs);
+        this.loadingStationConfigs.set(false);
+      }).catch(err => {
+        console.error('Error loading station configs:', err);
+        this.snackBar.open('Fehler beim Laden der Stationskonfigurationen', 'Schließen', { duration: 3000 });
+        this.loadingStationConfigs.set(false);
+      });
+    }).catch(err => {
+      console.error('Error loading stations:', err);
+      this.snackBar.open('Fehler beim Laden der Stationen', 'Schließen', { duration: 3000 });
+      this.loadingStationConfigs.set(false);
     });
+  }
+
+  private async loadStationConfig(station: string): Promise<StationConfig> {
+    const config: StationConfig = {
+      station,
+      tag_pfk: null,
+      nacht_pfk: null,
+      tag_phk: null,
+      nacht_phk: null
+    };
+
+    try {
+      // Load Tag PFK
+      const tagPfk = await firstValueFrom(this.api.getStationConfig(station, 'PFK', 'tag'));
+      config.tag_pfk = {
+        schicht_stunden: tagPfk.schicht_stunden,
+        phk_anteil_base: tagPfk.phk_anteil_base,
+        pp_ratio_base: tagPfk.pp_ratio_base
+      };
+    } catch (err) {
+      // Config doesn't exist, keep null
+    }
+
+    try {
+      // Load Nacht PFK
+      const nachtPfk = await firstValueFrom(this.api.getStationConfigNacht(station, 'PFK'));
+      config.nacht_pfk = {
+        schicht_stunden: nachtPfk.schicht_stunden,
+        phk_anteil_base: nachtPfk.phk_anteil_base,
+        pp_ratio_base: nachtPfk.pp_ratio_base
+      };
+    } catch (err) {
+      // Config doesn't exist, keep null
+    }
+
+    try {
+      // Load Tag PHK
+      const tagPhk = await firstValueFrom(this.api.getStationConfig(station, 'PHK', 'tag'));
+      config.tag_phk = {
+        schicht_stunden: tagPhk.schicht_stunden,
+        phk_anteil_base: null, // PHK doesn't have this
+        pp_ratio_base: tagPhk.pp_ratio_base
+      };
+    } catch (err) {
+      // Config doesn't exist, keep null
+    }
+
+    try {
+      // Load Nacht PHK
+      const nachtPhk = await firstValueFrom(this.api.getStationConfigNacht(station, 'PHK'));
+      config.nacht_phk = {
+        schicht_stunden: nachtPhk.schicht_stunden,
+        phk_anteil_base: null, // PHK doesn't have this
+        pp_ratio_base: nachtPhk.pp_ratio_base
+      };
+    } catch (err) {
+      // Config doesn't exist, keep null
+    }
+
+    return config;
+  }
+
+  editStationConfig(stationConfig: StationConfig) {
+    // Open a dialog for editing the station config
+    // We'll implement this as a separate component similar to the existing station config dialog
+    this.openStationConfigEditDialog(stationConfig);
+  }
+
+  private openStationConfigEditDialog(stationConfig: StationConfig) {
+    const dialogRef = this.dialog.open(StationConfigEditDialogComponent, {
+      width: '800px',
+      maxWidth: '90vw',
+      data: { stationConfig },
+      disableClose: true
+    });
+
+    dialogRef.afterClosed().subscribe((result: boolean | null) => {
+      if (result) {
+        this.loadStationConfigs(); // Reload configs after successful edit
+      }
+    });
+  }
+
+  trackByStation(index: number, item: StationConfig): string {
+    return item.station;
   }
 
 }

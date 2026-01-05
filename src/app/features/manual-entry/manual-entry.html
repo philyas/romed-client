@@ -12,33 +12,6 @@
   <mat-card class="selection-card">
     <mat-card-content>
       <div class="selection-row">
-        <mat-button-toggle-group [value]="'tag'" (change)="onShiftToggle($event.value)">
-          <mat-button-toggle value="tag">
-            <mat-icon>light_mode</mat-icon>
-            Tag
-          </mat-button-toggle>
-          <mat-button-toggle value="nacht">
-            <mat-icon>nightlight</mat-icon>
-            Nacht
-          </mat-button-toggle>
-        </mat-button-toggle-group>
-      </div>
-
-      <!-- Shift times (Tag/Nacht) -->
-      <div class="selection-row shift-times">
-        <mat-chip-set class="shift-chips">
-          <mat-chip color="primary" selected>
-            <mat-icon>schedule</mat-icon>
-            Tag: 06:00–22:00 (16h)
-          </mat-chip>
-          <mat-chip>
-            <mat-icon>schedule</mat-icon>
-            Nacht: 22:00–06:00 (8h)
-          </mat-chip>
-        </mat-chip-set>
-      </div>
-
-      <div class="selection-row">
         <!-- Station Dropdown -->
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Station auswählen</mat-label>

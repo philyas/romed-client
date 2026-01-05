@@ -362,9 +362,9 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
           callbacks: {
             label: (context) => {
               if (isPercentage) {
-                return `${context.dataset.label}: ${context.parsed.y.toFixed(2)}%`;
+                return `${context.dataset.label}: ${(context.parsed.y ?? 0).toFixed(2)}%`;
               } else {
-                return `${context.dataset.label}: ${context.parsed.y.toFixed(2)} Stunden`;
+                return `${context.dataset.label}: ${(context.parsed.y ?? 0).toFixed(2)} Stunden`;
               }
             }
           }
@@ -396,9 +396,9 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
           callbacks: {
             label: (context) => {
               if (isPercentage) {
-                return `${context.dataset.label}: ${context.parsed.y.toFixed(2)}%`;
+                return `${context.dataset.label}: ${(context.parsed.y ?? 0).toFixed(2)}%`;
               } else {
-                return `${context.dataset.label}: ${context.parsed.y.toFixed(2)}`;
+                return `${context.dataset.label}: ${(context.parsed.y ?? 0).toFixed(2)}`;
               }
             }
           }
@@ -429,9 +429,9 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
           callbacks: {
             label: (context) => {
               if (context.datasetIndex === 0) {
-                return `K in %: ${context.parsed.y.toFixed(2)}%`;
+                return `K in %: ${(context.parsed.y ?? 0).toFixed(2)}%`;
               } else {
-                return `Trend: ${context.parsed.y.toFixed(2)}%`;
+                return `Trend: ${(context.parsed.y ?? 0).toFixed(2)}%`;
               }
             }
           }

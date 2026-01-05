@@ -811,9 +811,9 @@ export class COCharts implements OnInit, OnChanges {
           callbacks: {
             label: (context) => {
               if (isPercentage) {
-                return `${context.dataset.label}: ${context.parsed.y.toFixed(2)}%`;
+                return `${context.dataset.label}: ${(context.parsed.y ?? 0).toFixed(2)}%`;
               } else {
-                return `${context.dataset.label}: ${context.parsed.y.toFixed(0)}`;
+                return `${context.dataset.label}: ${(context.parsed.y ?? 0).toFixed(0)}`;
               }
             }
           }

@@ -401,7 +401,7 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
         intersect: false,
         callbacks: {
           label: (context) => {
-            return `${context.dataset.label}: ${context.parsed.y.toLocaleString('de-DE')}`;
+            return `${context.dataset.label}: ${(context.parsed.y ?? 0).toLocaleString('de-DE')}`;
           }
         }
       }

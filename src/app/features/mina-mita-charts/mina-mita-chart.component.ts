@@ -499,7 +499,7 @@ export class MinaMitaChart implements OnInit, OnChanges {
           callbacks: {
             label: (context) => {
               const label = context.dataset.label || '';
-              const value = context.parsed.y.toFixed(2);
+              const value = (context.parsed.y ?? 0).toFixed(2);
               return `${label}: ${value} Patienten`;
             }
           }
