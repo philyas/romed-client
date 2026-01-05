@@ -153,12 +153,12 @@
           </div>
         </mat-tab>
 
-        <mat-tab label="Formel & Regeln">
-          <div class="tab-content formel-regeln-tab">
+        <mat-tab label="Stationskonfiguration">
+          <div class="tab-content stationskonfiguration-tab">
             <div class="formel-regeln-header">
               <h3>
                 <mat-icon>calculate</mat-icon>
-                Stationskonfiguration - Formeln & Regeln
+                Stationskonfiguration - Arbeitszeitparameter
               </h3>
               <div class="header-actions">
                 <button
@@ -173,8 +173,8 @@
             </div>
 
             <p class="tab-description">
-              Hier können Sie für jede Station individuelle Konfigurationen für Formeln und Regeln festlegen.
-              Diese Werte werden bei der Berechnung von Arbeitszeiten verwendet.
+              Hier können Sie für jede Station individuelle Parameter für die Arbeitszeitberechnung festlegen.
+              Diese Werte (Schichtstunden, PHK-Anteil, P:P-Ratio) werden bei der Berechnung von Arbeitszeiten verwendet.
             </p>
 
             <!-- Station Config Table -->
@@ -184,8 +184,34 @@
                 <p>Stationskonfigurationen werden geladen...</p>
               </div>
 
-              <div class="station-config-list" *ngIf="!loadingStationConfigs() && stationConfigs().length > 0">
-                <div class="station-config-item" *ngFor="let stationConfig of stationConfigs(); trackBy: trackByStation">
+              <!-- Station Search -->
+              <div class="station-search-section" *ngIf="!loadingStationConfigs() && stationConfigs().length > 0">
+                <mat-form-field appearance="outline" class="station-search-field">
+                  <mat-label>Station suchen</mat-label>
+                  <input
+                    matInput
+                    type="text"
+                    placeholder="Stationsname eingeben..."
+                    [value]="stationSearchTerm()"
+                    (input)="applyStationFilter($event.target.value)"
+                    aria-label="Station suchen">
+                  <button
+                    *ngIf="stationSearchTerm()"
+                    mat-icon-button
+                    matSuffix
+                    aria-label="Suche löschen"
+                    (click)="applyStationFilter('')">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </mat-form-field>
+                <p class="search-info">
+                  {{ filteredStationConfigs().length }} von {{ stationConfigs().length }} Stationen
+                  <span *ngIf="stationSearchTerm()"> (gefiltert nach "{{ stationSearchTerm() }}")</span>
+                </p>
+              </div>
+
+              <div class="station-config-list" *ngIf="!loadingStationConfigs() && filteredStationConfigs().length > 0">
+                <div class="station-config-item" *ngFor="let stationConfig of filteredStationConfigs(); trackBy: trackByStation">
                   <div class="station-header">
                     <div class="station-info">
                       <mat-icon>business</mat-icon>
@@ -294,6 +320,16 @@
                 <mat-icon>calculate</mat-icon>
                 <p>Keine Stationskonfigurationen vorhanden</p>
                 <p class="hint">Stationskonfigurationen werden automatisch angezeigt, sobald Daten vorhanden sind</p>
+              </div>
+
+              <div class="empty-state" *ngIf="!loadingStationConfigs() && stationConfigs().length > 0 && filteredStationConfigs().length === 0">
+                <mat-icon>search_off</mat-icon>
+                <p>Keine Stationen gefunden</p>
+                <p class="hint">Keine Stationen entsprechen dem Suchbegriff "{{ stationSearchTerm() }}"</p>
+                <button mat-button (click)="applyStationFilter('')">
+                  <mat-icon>clear</mat-icon>
+                  Suche zurücksetzen
+                </button>
               </div>
             </div>
           </div>

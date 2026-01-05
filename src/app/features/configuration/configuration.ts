@@ -75,6 +75,10 @@ export class Configuration implements OnInit {
   dataSource = new MatTableDataSource<Kostenstelle>([]);
   loading = signal(false);
   saving = signal(false);
+
+  // Station search
+  stationSearchTerm = signal('');
+  filteredStationConfigs = signal<StationConfig[]>([]);
   
   displayedColumns: string[] = ['kostenstelle', 'stations', 'standorte', 'standortnummer', 'ik', 'paediatrie', 'actions'];
 
@@ -263,6 +267,20 @@ export class Configuration implements OnInit {
     this.dataSource.filter = filterValue;
   }
 
+  applyStationFilter(value: string) {
+    const filterValue = (value || '').trim().toLowerCase();
+    this.stationSearchTerm.set(filterValue);
+
+    if (!filterValue) {
+      this.filteredStationConfigs.set(this.stationConfigs());
+    } else {
+      const filtered = this.stationConfigs().filter(stationConfig =>
+        stationConfig.station.toLowerCase().includes(filterValue)
+      );
+      this.filteredStationConfigs.set(filtered);
+    }
+  }
+
   downloadBackup(backupName: string) {
     this.api.downloadSqlBackup(backupName).subscribe({
       next: (blob) => {
@@ -309,6 +327,7 @@ export class Configuration implements OnInit {
 
       Promise.all(configPromises).then(stationConfigs => {
         this.stationConfigs.set(stationConfigs);
+        this.applyStationFilter(this.stationSearchTerm()); // Apply initial filter
         this.loadingStationConfigs.set(false);
       }).catch(err => {
         console.error('Error loading station configs:', err);

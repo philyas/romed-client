@@ -576,7 +576,7 @@
       }
     }
 
-    .formel-regeln-tab {
+    .stationskonfiguration-tab {
       .formel-regeln-header {
         display: flex;
         justify-content: space-between;
@@ -615,6 +615,28 @@
       }
 
       .station-config-section {
+        .station-search-section {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          margin-bottom: 24px;
+          padding: 20px;
+          background: #f8f9fa;
+          border-radius: 8px;
+          border: 1px solid #e0e0e0;
+
+          .station-search-field {
+            max-width: 400px;
+          }
+
+          .search-info {
+            color: #666;
+            font-size: 14px;
+            margin: 0;
+            font-style: italic;
+          }
+        }
+
         .loading-spinner {
           display: flex;
           flex-direction: column;
