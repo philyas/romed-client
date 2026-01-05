@@ -8,6 +8,24 @@
       </div>
     </div>
 
+    <!-- Shift Selection Tabs -->
+    <div class="shift-tabs">
+      <mat-tab-group [selectedIndex]="selectedShift() === 'tag' ? 0 : 1" (selectedTabChange)="onShiftChange($event.index === 0 ? 'tag' : 'nacht')">
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon>light_mode</mat-icon>
+            <span>Tag</span>
+          </ng-template>
+        </mat-tab>
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon>nightlight</mat-icon>
+            <span>Nacht</span>
+          </ng-template>
+        </mat-tab>
+      </mat-tab-group>
+    </div>
+
   <!-- Station Selection / Creation -->
   <mat-card class="selection-card">
     <mat-card-content>

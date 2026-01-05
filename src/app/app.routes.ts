@@ -15,10 +15,6 @@ export const routes: Routes = [
     loadComponent: () => import('./features/manual-entry/manual-entry').then(m => m.ManualEntry)
   },
   {
-    path: 'manual-entry-nacht',
-    loadComponent: () => import('./features/manual-entry-nacht/manual-entry-nacht').then(m => m.ManualEntryNacht)
-  },
-  {
     path: 'configuration',
     loadComponent: () => import('./features/configuration/configuration').then(m => m.Configuration)
   },

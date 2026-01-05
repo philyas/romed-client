@@ -13,6 +13,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialogModule, MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatTabsModule } from '@angular/material/tabs';
 import { Api } from '../../core/api';
 import { Router, ActivatedRoute } from '@angular/router';
 import { RecomputeConfigDialogComponent } from './recompute-config-dialog.component';
@@ -52,7 +53,8 @@ interface GeleistetePhkStunden {
     MatSnackBarModule,
     MatDialogModule,
     MatDividerModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatTabsModule
   ],
   templateUrl: './manual-entry.html',
   styleUrl: './manual-entry.scss'
@@ -72,6 +74,7 @@ export class ManualEntry {
   selectedYear = signal<number>(new Date().getFullYear());
   selectedMonth = signal<number>(new Date().getMonth() + 1);
   selectedKategorie = signal<'PFK' | 'PHK'>('PFK');
+  selectedShift = signal<'tag' | 'nacht'>('tag');
   loading = signal<boolean>(false);
   saving = signal<boolean>(false);
   uploading = signal<boolean>(false);
@@ -228,7 +231,11 @@ export class ManualEntry {
 
 
   loadStations() {
-    this.api.getManualEntryStations().subscribe({
+    const apiCall = this.selectedShift() === 'tag'
+      ? this.api.getManualEntryStations()
+      : this.api.getManualEntryNachtStations();
+
+    apiCall.subscribe({
       next: (response) => {
         this.stations.set(response.stations);
       },
@@ -289,7 +296,7 @@ export class ManualEntry {
     // Lade Config-Snapshot parallel
     this.loadConfigSnapshot(station, jahr, monat, kategorie);
     
-    this.api.getManualEntryData(station, jahr, monat, kategorie, 'tag').subscribe({
+    this.api.getManualEntryData(station, jahr, monat, kategorie, this.selectedShift()).subscribe({
       next: (response) => {
         if (response.data.length > 0) {
           // Lade Durchschnittswerte (Tag=0)
@@ -359,7 +366,7 @@ export class ManualEntry {
 
   loadConfigSnapshot(station: string, jahr: number, monat: number, kategorie: 'PFK' | 'PHK') {
     this.loadingConfigSnapshot.set(true);
-    this.api.getConfigSnapshot(station, jahr, monat, kategorie, 'tag').subscribe({
+    this.api.getConfigSnapshot(station, jahr, monat, kategorie, this.selectedShift()).subscribe({
       next: (snapshot) => {
         this.configSnapshot.set(snapshot);
         this.loadingConfigSnapshot.set(false);
@@ -424,6 +431,35 @@ export class ManualEntry {
 
   onKategorieChange(kategorie: 'PFK' | 'PHK') {
     this.selectedKategorie.set(kategorie);
+  }
+
+  onShiftChange(shift: 'tag' | 'nacht') {
+    const previousStation = this.selectedStation();
+    this.selectedShift.set(shift);
+
+    // Load stations for the new shift first
+    this.loadStations();
+
+    // Check if the previously selected station is available in the new shift
+    // We'll check this asynchronously after stations are loaded
+    if (previousStation) {
+      // Small delay to ensure stations are loaded
+      setTimeout(() => {
+        const currentStations = this.stations();
+        if (currentStations.includes(previousStation)) {
+          // Station is available in new shift, keep it selected
+          this.selectedStation.set(previousStation);
+          // Reload data for the station in the new shift
+          this.loadDataForPeriod(previousStation, this.selectedYear(), this.selectedMonth(), this.selectedKategorie());
+        } else {
+          // Station not available, reset selection
+          this.selectedStation.set('');
+          this.dayEntries.set([]);
+        }
+      }, 100);
+    } else {
+      this.dayEntries.set([]);
+    }
   }
 
   updateEntry(index: number, field: 'stunden' | 'minuten', value: string) {

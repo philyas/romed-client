@@ -25,6 +25,81 @@
     }
   }
 
+  // Shift Tabs
+  .shift-tabs {
+    margin-bottom: 24px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+
+    ::ng-deep {
+      .mat-mdc-tab-group {
+        .mat-mdc-tab-header {
+          background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+          border-bottom: none;
+          padding: 0 8px;
+        }
+
+        .mat-mdc-tab {
+          min-width: 140px;
+          height: 48px;
+
+          .mdc-tab {
+            border-radius: 8px;
+            margin: 4px;
+            transition: all 0.3s ease;
+
+            &:hover {
+              background: rgba(0, 172, 193, 0.05);
+            }
+          }
+
+          .mat-mdc-tab-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+
+            mat-icon {
+              font-size: 20px;
+              width: 20px;
+              height: 20px;
+            }
+          }
+        }
+
+        .mdc-tab-indicator {
+          height: 3px;
+          border-radius: 2px 2px 0 0;
+
+          .mdc-tab-indicator__content {
+            border-color: #00acc1;
+            border-width: 3px;
+          }
+        }
+
+        .mdc-tab--active {
+          .mdc-tab {
+            background: rgba(0, 172, 193, 0.1);
+            box-shadow: 0 2px 4px rgba(0, 172, 193, 0.2);
+          }
+
+          .mat-mdc-tab-label {
+            color: #00acc1;
+          }
+        }
+
+        .mdc-tab__ripple {
+          border-radius: 8px;
+        }
+      }
+    }
+  }
+
   // Selection Card
   .selection-card {
     margin-bottom: 24px;
