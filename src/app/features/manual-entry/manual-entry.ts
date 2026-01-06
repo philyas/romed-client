@@ -19,6 +19,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { RecomputeConfigDialogComponent } from './recompute-config-dialog.component';
 import { UploadConfigDialogComponent } from './upload-config-dialog.component';
 import { StationConfigDialogComponent } from './station-config-dialog.component';
+import { DienstplanPreviewDialogComponent, DienstplanPreviewData } from './dienstplan-preview-dialog.component';
 
 interface DayEntry {
   tag: number;
@@ -1387,33 +1388,43 @@ export class ManualEntry {
       return;
     }
 
-    // Get station and kategorie for config dialog
-    // Use selected station if available, otherwise use first available station
-    const station = this.selectedStation() || (this.stations().length > 0 ? this.stations()[0] : '');
-    const kategorie = this.selectedKategorie();
+    // Show preview first to detect station and show configuration
+    this.uploading.set(true);
+    
+    this.api.previewDienstplan(file, this.selectedVariant()).subscribe({
+      next: (response) => {
+        this.uploading.set(false);
+        
+        if (response.success && response.preview) {
+          // Open preview dialog with detected stations and configurations
+          const dialogRef = this.dialog.open(DienstplanPreviewDialogComponent, {
+            width: '900px',
+            maxWidth: '90vw',
+            maxHeight: '90vh',
+            data: {
+              file: file,
+              variant: this.selectedVariant(),
+              preview: response.preview
+            } as DienstplanPreviewData
+          });
 
-    if (!station) {
-      this.snackBar.open('Bitte wählen Sie eine Station aus', 'Schließen', { duration: 3000 });
-      return;
-    }
-
-    // Open config dialog before upload
-    // Note: Upload can contain multiple stations/kategorien/schichten, but we use the selected one for config
-    // The config will be applied to all uploads in the file
-    const dialogRef = this.dialog.open(UploadConfigDialogComponent, {
-      width: '600px',
-      data: {
-        station: station,
-        kategorie: kategorie,
-        schicht: 'tag' as const, // Default to tag, config applies to both tag and nacht
-        schichtLabel: 'Tag'
-      }
-    });
-
-    dialogRef.afterClosed().subscribe((result: any) => {
-      if (result && result.confirmed) {
-        // Perform upload with config
-        this.performUpload(file, result.config);
+          dialogRef.afterClosed().subscribe((result: any) => {
+            if (result && result.confirmed) {
+              // The backend will automatically load the correct configuration for each station
+              // during upload, so we don't need to pass config overrides here.
+              // The preview dialog is mainly for showing the detected stations and their configurations.
+              this.performUpload(file);
+            }
+          });
+        } else {
+          this.snackBar.open('Fehler beim Laden der Vorschau', 'Schließen', { duration: 3000 });
+        }
+      },
+      error: (err) => {
+        this.uploading.set(false);
+        console.error('Error loading preview:', err);
+        const errorMessage = err.error?.error || err.message || 'Fehler beim Laden der Vorschau';
+        this.snackBar.open(errorMessage, 'Schließen', { duration: 5000 });
       }
     });
   }

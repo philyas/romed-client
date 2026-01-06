@@ -347,6 +347,57 @@ export class Api {
     }>(`${this.baseUrl}/manual-entry/upload-config`, { params });
   }
 
+  previewDienstplan(
+    file: File,
+    variant: '2026' | 'legacy' = 'legacy',
+    schicht?: 'tag' | 'nacht'
+  ): Observable<{
+    success: boolean;
+    preview: {
+      fileName: string;
+      variant: string;
+      schichtFilter: string;
+      totalEntries: number;
+      stations: Array<{
+        name: string;
+        timeRange: { start: string; end: string } | null;
+        categories: { tag: { PFK: number; PHK: number }; nacht: { PFK: number; PHK: number } };
+        config: {
+          tag: { PFK: any; PHK: any };
+          nacht: { PFK: any; PHK: any };
+        } | null;
+      }>;
+      summary: { tag: { PFK: number; PHK: number }; nacht: { PFK: number; PHK: number } };
+    };
+  }> {
+    const form = new FormData();
+    form.append('file', file);
+    form.append('variant', variant);
+    if (schicht) {
+      form.append('schicht', schicht);
+    }
+    
+    return this.http.post<{
+      success: boolean;
+      preview: {
+        fileName: string;
+        variant: string;
+        schichtFilter: string;
+        totalEntries: number;
+        stations: Array<{
+          name: string;
+          timeRange: { start: string; end: string } | null;
+          categories: { tag: { PFK: number; PHK: number }; nacht: { PFK: number; PHK: number } };
+          config: {
+            tag: { PFK: any; PHK: any };
+            nacht: { PFK: any; PHK: any };
+          } | null;
+        }>;
+        summary: { tag: { PFK: number; PHK: number }; nacht: { PFK: number; PHK: number } };
+      };
+    }>(`${this.baseUrl}/manual-entry/preview-dienstplan`, form);
+  }
+
   uploadDienstplan(
     file: File, 
     variant: '2026' | 'legacy' = 'legacy',
