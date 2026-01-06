@@ -467,7 +467,7 @@ export class Api {
     return this.http.get<{ success: boolean; data: any }>(`${this.baseUrl}/kostenstellen/${encodeURIComponent(kostenstelle)}`);
   }
 
-  saveKostenstelle(data: { kostenstelle: string; stations: string[]; standorte: string[]; standortnummer?: string | number | null; ik?: string | number | null; paediatrie?: string | null }): Observable<{ success: boolean; message: string; data: any }> {
+  saveKostenstelle(data: { kostenstelle: string; stations: string[]; standorte: string[]; standortnummer?: string | number | null; ik?: string | number | null; paediatrie?: string | null; include_in_statistics?: boolean }): Observable<{ success: boolean; message: string; data: any }> {
     return this.http.post<{ success: boolean; message: string; data: any }>(`${this.baseUrl}/kostenstellen`, data);
   }
 

@@ -11,143 +11,227 @@
       <mat-tab-group>
         <mat-tab label="Kostenstellenmapping">
           <div class="tab-content kostenstellen-tab">
-            <div class="kostenstellen-header">
-              <h3>
-                <mat-icon>account_tree</mat-icon>
-                Kostenstellenmapping
-              </h3>
-              <div class="header-actions">
-                <button 
-                  mat-raised-button 
-                  color="accent" 
-                  (click)="openCreateDialog()" 
-                  [disabled]="loading() || saving()">
+            <!-- Header Section -->
+            <div class="page-header">
+              <div class="header-content">
+                <div class="header-title">
+                  <mat-icon class="header-icon">account_tree</mat-icon>
+                  <div>
+                    <h1>Kostenstellenmapping</h1>
+                    <p class="header-subtitle">Verwalten Sie Ihre Kostenstellen und deren Zuordnungen</p>
+                  </div>
+                </div>
+                <button
+                  mat-flat-button
+                  color="primary"
+                  (click)="openCreateDialog()"
+                  [disabled]="loading() || saving()"
+                  class="create-button">
                   <mat-icon>add</mat-icon>
-                  Neue Kostenstelle
+                  <span>Neue Kostenstelle</span>
                 </button>
               </div>
             </div>
 
-            <!-- Data Table -->
-            <div class="table-section">
-              <div class="table-header">
-                <h4>
-                  <mat-icon>table_chart</mat-icon>
-                  Kostenstellen ({{ kostenstellen().length }})
-                </h4>
-                <mat-form-field appearance="outline" class="search-field">
-                  <mat-label>Suche</mat-label>
-                  <input
-                    matInput
-                    type="text"
-                    placeholder="Kostenstelle, Station, Standort ..."
-                    [value]="searchTerm()"
-                    (input)="applyFilter($event.target.value)"
-                    aria-label="Kostenstelle suchen">
-                  <button
-                    *ngIf="searchTerm()"
-                    mat-icon-button
-                    matSuffix
-                    aria-label="Suche löschen"
-                    (click)="applyFilter('')">
-                    <mat-icon>close</mat-icon>
-                  </button>
-                </mat-form-field>
+            <!-- Filters Section -->
+            <div class="filters-section">
+              <div class="filter-row">
+                <!-- Statistics Filter -->
+                <div class="filter-group">
+                  <label class="filter-label">Statistik-Filter</label>
+                  <mat-button-toggle-group
+                    [value]="statisticsFilter()"
+                    (change)="applyStatisticsFilter($event.value)"
+                    class="statistics-filter">
+                    <mat-button-toggle value="all" class="filter-toggle">
+                      <mat-icon>list</mat-icon>
+                      <span>Alle</span>
+                    </mat-button-toggle>
+                    <mat-button-toggle value="included" class="filter-toggle">
+                      <mat-icon>check_circle</mat-icon>
+                      <span>In Statistik</span>
+                    </mat-button-toggle>
+                    <mat-button-toggle value="excluded" class="filter-toggle">
+                      <mat-icon>cancel</mat-icon>
+                      <span>Ausgeschlossen</span>
+                    </mat-button-toggle>
+                  </mat-button-toggle-group>
+                </div>
+
+                <!-- Search Field -->
+                <div class="filter-group">
+                  <label class="filter-label">Suche</label>
+                  <mat-form-field appearance="outline" class="search-field">
+                    <mat-icon matPrefix class="search-icon">search</mat-icon>
+                    <input
+                      matInput
+                      type="text"
+                      placeholder="Kostenstelle, Station, Standort..."
+                      [value]="searchTerm()"
+                      (input)="applyFilter($event.target.value)"
+                      aria-label="Kostenstelle suchen">
+                    <button
+                      *ngIf="searchTerm()"
+                      mat-icon-button
+                      matSuffix
+                      aria-label="Suche löschen"
+                      (click)="applyFilter('')"
+                      class="clear-button">
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </mat-form-field>
+                </div>
+              </div>
+            </div>
+
+            <!-- Content Section -->
+            <div class="content-section">
+              <!-- Loading State -->
+              <div class="loading-state" *ngIf="loading()">
+                <mat-spinner diameter="48" class="loading-spinner"></mat-spinner>
+                <p class="loading-text">Kostenstellen werden geladen...</p>
               </div>
 
-              <div class="loading-spinner" *ngIf="loading()">
-                <mat-spinner diameter="40"></mat-spinner>
-                <p>Daten werden geladen...</p>
-              </div>
-
-              <div class="table-container" *ngIf="!loading() && kostenstellen().length > 0">
-                <table mat-table [dataSource]="dataSource" class="kostenstellen-table">
-                  <!-- Kostenstelle Column -->
-                  <ng-container matColumnDef="kostenstelle">
-                    <th mat-header-cell *matHeaderCellDef>Kostenstelle</th>
-                    <td mat-cell *matCellDef="let item">
-                      <strong>{{ item.kostenstelle }}</strong>
-                    </td>
-                  </ng-container>
-
-                  <!-- Stations Column -->
-                  <ng-container matColumnDef="stations">
-                    <th mat-header-cell *matHeaderCellDef>Stationen</th>
-                    <td mat-cell *matCellDef="let item">
-                      <mat-chip-set>
-                        <mat-chip *ngFor="let station of item.stations">{{ station }}</mat-chip>
-                        <span *ngIf="item.stations.length === 0" class="empty-text">-</span>
-                      </mat-chip-set>
-                    </td>
-                  </ng-container>
-
-                  <!-- Standorte Column -->
-                  <ng-container matColumnDef="standorte">
-                    <th mat-header-cell *matHeaderCellDef>Standorte</th>
-                    <td mat-cell *matCellDef="let item">
-                      <mat-chip-set>
-                        <mat-chip *ngFor="let standort of item.standorte">{{ standort }}</mat-chip>
-                        <span *ngIf="item.standorte.length === 0" class="empty-text">-</span>
-                      </mat-chip-set>
-                    </td>
-                  </ng-container>
-
-                  <!-- Standortnummer Column -->
-                  <ng-container matColumnDef="standortnummer">
-                    <th mat-header-cell *matHeaderCellDef>Standortnummer</th>
-                    <td mat-cell *matCellDef="let item">
-                      {{ item.standortnummer || '-' }}
-                    </td>
-                  </ng-container>
-
-                  <!-- IK Column -->
-                  <ng-container matColumnDef="ik">
-                    <th mat-header-cell *matHeaderCellDef>IK</th>
-                    <td mat-cell *matCellDef="let item">
-                      {{ item.ik || '-' }}
-                    </td>
-                  </ng-container>
-
-                  <!-- Pädiatrie Column -->
-                  <ng-container matColumnDef="paediatrie">
-                    <th mat-header-cell *matHeaderCellDef>Pädiatrie</th>
-                    <td mat-cell *matCellDef="let item">
-                      {{ item.paediatrie || '-' }}
-                    </td>
-                  </ng-container>
-
-                  <!-- Actions Column -->
-                  <ng-container matColumnDef="actions">
-                    <th mat-header-cell *matHeaderCellDef>Aktionen</th>
-                    <td mat-cell *matCellDef="let item">
-                      <button 
-                        mat-icon-button 
-                        color="primary" 
-                        (click)="openEditDialog(item)"
-                        [disabled]="saving()"
-                        matTooltip="Bearbeiten">
-                        <mat-icon>edit</mat-icon>
-                      </button>
-                      <button 
-                        mat-icon-button 
-                        color="warn" 
-                        (click)="deleteKostenstelle(item.kostenstelle)"
-                        [disabled]="saving()"
-                        matTooltip="Löschen">
-                        <mat-icon>delete</mat-icon>
-                      </button>
-                    </td>
-                  </ng-container>
-
-                  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-                  <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-                </table>
-              </div>
-
+              <!-- Empty State -->
               <div class="empty-state" *ngIf="!loading() && kostenstellen().length === 0">
-                <mat-icon>info</mat-icon>
-                <p>Keine Kostenstellen vorhanden</p>
-                <p class="hint">Erstellen Sie eine neue Kostenstelle über den Button oben</p>
+                <div class="empty-state-content">
+                  <mat-icon class="empty-icon">account_tree</mat-icon>
+                  <h3>Keine Kostenstellen vorhanden</h3>
+                  <p>Erstellen Sie Ihre erste Kostenstelle, um mit der Zuordnung zu beginnen.</p>
+                  <button
+                    mat-flat-button
+                    color="primary"
+                    (click)="openCreateDialog()"
+                    class="empty-action-button">
+                    <mat-icon>add</mat-icon>
+                    <span>Erste Kostenstelle erstellen</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Kostenstellen Grid -->
+              <div class="kostenstellen-grid" *ngIf="!loading() && kostenstellen().length > 0">
+                <div class="grid-header">
+                  <h2 class="section-title">
+                    <mat-icon>business</mat-icon>
+                    <span>Kostenstellen ({{ kostenstellen().length }})</span>
+                  </h2>
+                </div>
+
+                <div class="kostenstellen-cards">
+                  <div
+                    class="kostenstelle-card"
+                    *ngFor="let item of dataSource.filteredData; trackBy: trackByKostenstelle">
+
+                    <!-- Card Header -->
+                    <div class="card-header">
+                      <div class="card-title-section">
+                        <div class="kostenstelle-name">
+                          <mat-icon class="name-icon">account_balance</mat-icon>
+                          <h3>{{ item.kostenstelle }}</h3>
+                        </div>
+                        <div class="card-badges">
+                          <mat-chip
+                            class="status-chip"
+                            [class.included]="item.include_in_statistics ?? true"
+                            [class.excluded]="!(item.include_in_statistics ?? true)">
+                            <mat-icon>{{ (item.include_in_statistics ?? true) ? 'check_circle' : 'cancel' }}</mat-icon>
+                            <span>{{ (item.include_in_statistics ?? true) ? 'In Statistik' : 'Ausgeschlossen' }}</span>
+                          </mat-chip>
+                        </div>
+                      </div>
+                      <div class="card-actions">
+                        <mat-slide-toggle
+                          [checked]="item.include_in_statistics ?? true"
+                          (change)="toggleIncludeInStatistics(item, $event.checked)"
+                          [disabled]="saving()"
+                          class="statistics-toggle"
+                          matTooltip="Kostenstelle in Statistiken berücksichtigen">
+                        </mat-slide-toggle>
+                        <button
+                          mat-icon-button
+                          (click)="openEditDialog(item)"
+                          [disabled]="saving()"
+                          matTooltip="Bearbeiten"
+                          class="action-button edit-button">
+                          <mat-icon>edit</mat-icon>
+                        </button>
+                        <button
+                          mat-icon-button
+                          color="warn"
+                          (click)="deleteKostenstelle(item.kostenstelle)"
+                          [disabled]="saving()"
+                          matTooltip="Löschen"
+                          class="action-button delete-button">
+                          <mat-icon>delete</mat-icon>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Card Content -->
+                    <div class="card-content">
+                      <!-- Stations Section -->
+                      <div class="info-section">
+                        <div class="section-label">
+                          <mat-icon>local_hospital</mat-icon>
+                          <span>Stationen</span>
+                        </div>
+                        <div class="section-value">
+                          <mat-chip-set class="chips-container" *ngIf="item.stations.length > 0">
+                            <mat-chip
+                              *ngFor="let station of item.stations"
+                              class="station-chip">
+                              {{ station }}
+                            </mat-chip>
+                          </mat-chip-set>
+                          <span class="empty-value" *ngIf="item.stations.length === 0">
+                            <mat-icon>info</mat-icon>
+                            <span>Keine Stationen zugeordnet</span>
+                          </span>
+                        </div>
+                      </div>
+
+                      <!-- Standorte Section -->
+                      <div class="info-section">
+                        <div class="section-label">
+                          <mat-icon>location_on</mat-icon>
+                          <span>Standorte</span>
+                        </div>
+                        <div class="section-value">
+                          <mat-chip-set class="chips-container" *ngIf="item.standorte.length > 0">
+                            <mat-chip
+                              *ngFor="let standort of item.standorte"
+                              class="location-chip">
+                              {{ standort }}
+                            </mat-chip>
+                          </mat-chip-set>
+                          <span class="empty-value" *ngIf="item.standorte.length === 0">
+                            <mat-icon>info</mat-icon>
+                            <span>Keine Standorte zugeordnet</span>
+                          </span>
+                        </div>
+                      </div>
+
+                      <!-- Additional Details -->
+                      <div class="additional-details">
+                        <div class="detail-row">
+                          <div class="detail-item">
+                            <span class="detail-label">Standortnummer</span>
+                            <span class="detail-value">{{ item.standortnummer || '–' }}</span>
+                          </div>
+                          <div class="detail-item">
+                            <span class="detail-label">IK</span>
+                            <span class="detail-value">{{ item.ik || '–' }}</span>
+                          </div>
+                          <div class="detail-item">
+                            <span class="detail-label">Pädiatrie</span>
+                            <span class="detail-value">{{ item.paediatrie || '–' }}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

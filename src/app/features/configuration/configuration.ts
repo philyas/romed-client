@@ -13,6 +13,8 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { Api } from '../../core/api';
@@ -26,6 +28,7 @@ interface Kostenstelle {
   standortnummer?: string | number | null;
   ik?: string | number | null;
   paediatrie?: string | null;
+  include_in_statistics?: boolean;
 }
 
 interface StationConfigValues {
@@ -60,6 +63,8 @@ interface StationConfig {
     MatChipsModule,
     MatProgressSpinnerModule,
     MatTooltipModule,
+    MatSlideToggleModule,
+    MatButtonToggleModule,
     FormsModule
   ],
   templateUrl: './configuration.html',
@@ -76,11 +81,14 @@ export class Configuration implements OnInit {
   loading = signal(false);
   saving = signal(false);
 
+  // Filter for statistics inclusion
+  statisticsFilter = signal<'all' | 'included' | 'excluded'>('all');
+
   // Station search
   stationSearchTerm = signal('');
   filteredStationConfigs = signal<StationConfig[]>([]);
   
-  displayedColumns: string[] = ['kostenstelle', 'stations', 'standorte', 'standortnummer', 'ik', 'paediatrie', 'actions'];
+  displayedColumns: string[] = ['kostenstelle', 'stations', 'standorte', 'standortnummer', 'ik', 'paediatrie', 'include_in_statistics', 'actions'];
 
   stationOptions = signal<string[]>([]);
 
@@ -97,7 +105,21 @@ export class Configuration implements OnInit {
   ngOnInit() {
     this.dataSource.filterPredicate = (data, filter) => {
       if (!filter) return true;
+
+      // Apply text search
       const term = filter.trim().toLowerCase();
+      const matchesSearch = !term ||
+        data.kostenstelle.toLowerCase().includes(term) ||
+        data.stations.some(station => station.toLowerCase().includes(term)) ||
+        data.standorte.some(standort => standort.toLowerCase().includes(term));
+
+      // Apply statistics filter
+      const statsFilter = this.statisticsFilter();
+      const matchesStats = statsFilter === 'all' ||
+        (statsFilter === 'included' && (data.include_in_statistics ?? true)) ||
+        (statsFilter === 'excluded' && !(data.include_in_statistics ?? true));
+
+      return matchesSearch && matchesStats;
       const fields = [
         data.kostenstelle,
         ...(data.stations || []),
@@ -203,6 +225,35 @@ export class Configuration implements OnInit {
     });
   }
 
+  toggleIncludeInStatistics(item: Kostenstelle, include: boolean) {
+    this.saving.set(true);
+    const updateData = {
+      kostenstelle: item.kostenstelle,
+      stations: item.stations,
+      standorte: item.standorte,
+      standortnummer: item.standortnummer,
+      ik: item.ik,
+      paediatrie: item.paediatrie,
+      include_in_statistics: include
+    };
+
+    this.api.saveKostenstelle(updateData).subscribe({
+      next: () => {
+        this.snackBar.open(`Kostenstelle ${include ? 'wird nun' : 'wird nicht mehr'} in Statistiken berücksichtigt`, 'Schließen', { duration: 2000 });
+        this.loadKostenstellen();
+        this.saving.set(false);
+      },
+      error: (err) => {
+        console.error('Error updating kostenstelle:', err);
+        const errorMessage = err.error?.error || err.message || 'Fehler beim Aktualisieren';
+        this.snackBar.open(errorMessage, 'Schließen', { duration: 3000 });
+        this.saving.set(false);
+        // Revert the toggle on error
+        this.loadKostenstellen();
+      }
+    });
+  }
+
   async loadStationOptions() {
     try {
       const [day, night] = await Promise.all([
@@ -264,7 +315,17 @@ export class Configuration implements OnInit {
   applyFilter(value: string) {
     const filterValue = (value || '').trim().toLowerCase();
     this.searchTerm.set(filterValue);
-    this.dataSource.filter = filterValue;
+    this.updateCombinedFilter();
+  }
+
+  applyStatisticsFilter(filterValue: 'all' | 'included' | 'excluded') {
+    this.statisticsFilter.set(filterValue);
+    this.updateCombinedFilter();
+  }
+
+  private updateCombinedFilter() {
+    // Trigger filter update by setting filter to current search term
+    this.dataSource.filter = this.searchTerm();
   }
 
   applyStationFilter(value: string) {
@@ -424,6 +485,10 @@ export class Configuration implements OnInit {
 
   trackByStation(index: number, item: StationConfig): string {
     return item.station;
+  }
+
+  trackByKostenstelle(index: number, item: Kostenstelle): string {
+    return item.kostenstelle;
   }
 
 }
