@@ -45,6 +45,7 @@ interface KostenstellenMappingItem {
   standortnummer?: number | string | null;
   ik?: number | string | null;
   paediatrie?: string | null;
+  include_in_statistics?: boolean;
 }
 
 @Component({
@@ -325,15 +326,34 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
   });
 
   availableKostenstellen = computed(() => {
-    const kostenstellen = new Set<string>();
+    // Get all kostenstellen from data first
+    const kostenstellenFromData = new Set<string>();
     this.allData().forEach(row => {
       const kst = row.Kostenstelle || row.KSt || '';
       if (kst && kst !== '') {
-        kostenstellen.add(kst);
+        kostenstellenFromData.add(kst);
       }
     });
+
+    const mapping = this.kostenstellenMapping();
+    const hasMapping = Object.keys(mapping).length > 0;
+
+    let kostenstellenToUse: string[];
+
+    if (hasMapping) {
+      // Filter out kostenstellen that are excluded from statistics
+      kostenstellenToUse = Array.from(kostenstellenFromData).filter(kst => {
+        const mappingEntry = mapping[kst];
+        // Include only if explicitly set to true or undefined (backward compatibility)
+        return mappingEntry?.include_in_statistics !== false;
+      });
+    } else {
+      // If mapping is not loaded yet, show all kostenstellen
+      kostenstellenToUse = Array.from(kostenstellenFromData);
+    }
+
     // Sort by Kostenstellen (numeric or alphabetical)
-    return Array.from(kostenstellen).sort((a, b) => {
+    return kostenstellenToUse.sort((a, b) => {
       // Try numeric sort first, fallback to alphabetical
       const numA = parseInt(a);
       const numB = parseInt(b);
@@ -728,7 +748,8 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
           standorte: Array.isArray(item.standorte) ? item.standorte : [],
           standortnummer: item.standortnummer ?? null,
           ik: item.ik ?? null,
-          paediatrie: item.paediatrie ?? null
+          paediatrie: item.paediatrie ?? null,
+          include_in_statistics: item.include_in_statistics ?? true
         };
       });
       this.kostenstellenMapping.set(map);
