@@ -106,18 +106,21 @@ export class Configuration implements OnInit {
     this.dataSource.filterPredicate = (data, filter) => {
       if (!filter) return true;
 
+      // Parse combined filter: "searchTerm|statisticsFilter"
+      const [searchTerm, statsFilter] = filter.split('|');
+
       // Apply text search
-      const term = filter.trim().toLowerCase();
+      const term = (searchTerm || '').trim().toLowerCase();
       const matchesSearch = !term ||
         data.kostenstelle.toLowerCase().includes(term) ||
         data.stations.some(station => station.toLowerCase().includes(term)) ||
         data.standorte.some(standort => standort.toLowerCase().includes(term));
 
       // Apply statistics filter
-      const statsFilter = this.statisticsFilter();
-      const matchesStats = statsFilter === 'all' ||
-        (statsFilter === 'included' && (data.include_in_statistics ?? true)) ||
-        (statsFilter === 'excluded' && !(data.include_in_statistics ?? true));
+      const statsFilterValue = statsFilter || 'all';
+      const matchesStats = statsFilterValue === 'all' ||
+        (statsFilterValue === 'included' && (data.include_in_statistics ?? true)) ||
+        (statsFilterValue === 'excluded' && !(data.include_in_statistics ?? true));
 
       return matchesSearch && matchesStats;
       const fields = [
@@ -324,8 +327,8 @@ export class Configuration implements OnInit {
   }
 
   private updateCombinedFilter() {
-    // Trigger filter update by setting filter to current search term
-    this.dataSource.filter = this.searchTerm();
+    // Trigger filter update by setting filter to combined search term and statistics filter
+    this.dataSource.filter = this.searchTerm() + '|' + this.statisticsFilter();
   }
 
   applyStationFilter(value: string) {
