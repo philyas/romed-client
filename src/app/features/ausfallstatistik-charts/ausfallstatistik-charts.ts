@@ -762,14 +762,27 @@ export class AusfallstatistikCharts implements OnInit, OnChanges {
   // Filter data by selected year and kostenstelle for charts
   private getFilteredData(): AusfallstatistikData[] {
     let filtered = this.allData().filter(row => row.Jahr === this.selectedYearSignal());
-    
+
     // Filter by kostenstelle if not "all"
     const selectedKST = this.selectedKostenstelle();
+    const mapping = this.kostenstellenMapping();
+
     if (selectedKST !== 'all') {
+      // Filter by specific kostenstelle
       filtered = filtered.filter(row => {
         const kst = row.Kostenstelle || row.KSt || '';
         return kst === selectedKST;
       });
+    } else {
+      // Filter out excluded kostenstellen when showing "all"
+      const hasMapping = Object.keys(mapping).length > 0;
+      if (hasMapping) {
+        filtered = filtered.filter(row => {
+          const kst = row.Kostenstelle || row.KSt || '';
+          const mappingEntry = mapping[kst];
+          return mappingEntry?.include_in_statistics !== false;
+        });
+      }
     }
     
     // Sort by Kostenstelle
