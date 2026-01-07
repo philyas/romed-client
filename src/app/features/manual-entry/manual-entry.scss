@@ -7,12 +7,12 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 32px;
-    gap: 16px;
+    margin-bottom: 16px;
+    gap: 12px;
 
     h2 {
-      margin: 0 0 8px 0;
-      font-size: 28px;
+      margin: 0 0 4px 0;
+      font-size: 20px;
       font-weight: 600;
       color: #0066cc;
     }
@@ -20,17 +20,17 @@
     .subtitle {
       margin: 0;
       color: #666;
-      font-size: 16px;
+      font-size: 13px;
       line-height: 1.5;
     }
   }
 
   // Shift Tabs
   .shift-tabs {
-    margin-bottom: 24px;
+    margin-bottom: 16px;
     background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
     overflow: hidden;
 
     ::ng-deep {
@@ -38,16 +38,16 @@
         .mat-mdc-tab-header {
           background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
           border-bottom: none;
-          padding: 0 8px;
+          padding: 0 6px;
         }
 
         .mat-mdc-tab {
-          min-width: 140px;
-          height: 48px;
+          min-width: 120px;
+          height: 40px;
 
           .mdc-tab {
-            border-radius: 8px;
-            margin: 4px;
+            border-radius: 6px;
+            margin: 3px;
             transition: all 0.3s ease;
 
             &:hover {
@@ -59,15 +59,15 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            font-size: 15px;
+            gap: 6px;
+            font-size: 13px;
             font-weight: 600;
             letter-spacing: 0.5px;
 
             mat-icon {
-              font-size: 20px;
-              width: 20px;
-              height: 20px;
+              font-size: 18px;
+              width: 18px;
+              height: 18px;
             }
           }
         }
@@ -102,17 +102,17 @@
 
   // Selection Card
   .selection-card {
-    margin-bottom: 24px;
+    margin-bottom: 16px;
 
     mat-card-content {
-      padding: 24px;
+      padding: 16px;
     }
 
     .selection-row {
       display: flex;
-      gap: 16px;
+      gap: 12px;
       align-items: center;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
 
       &:last-child {
         margin-bottom: 0;
@@ -142,37 +142,38 @@
       mat-chip {
         display: inline-flex;
         align-items: center;
-        gap: 8px;
-        height: 36px;
-        line-height: 36px;
+        gap: 6px;
+        height: 28px;
+        line-height: 28px;
 
         mat-icon {
-          font-size: 18px;
-          width: 18px;
-          height: 18px;
+          font-size: 16px;
+          width: 16px;
+          height: 16px;
         }
       }
     }
 
     mat-button-toggle-group {
-      border-radius: 8px;
+      border-radius: 6px;
       overflow: hidden;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 
       mat-button-toggle {
-        min-width: 120px;
-        height: 48px;
+        min-width: 100px;
+        height: 40px;
         border: none;
         background: #f5f5f5;
         color: #666;
         font-weight: 500;
+        font-size: 13px;
         transition: all 0.3s ease;
 
         mat-icon {
-          margin-right: 8px;
-          font-size: 20px;
-          width: 20px;
-          height: 20px;
+          margin-right: 6px;
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
         }
 
         &:hover {
@@ -204,23 +205,23 @@
     .kategorie-selection {
       display: flex;
       align-items: center;
-      gap: 16px;
-      padding: 16px;
+      gap: 12px;
+      padding: 12px;
       background: #f8f9fa;
-      border-radius: 8px;
+      border-radius: 6px;
       border: 2px solid #0066cc;
-      margin-top: 16px;
+      margin-top: 12px;
 
       .kategorie-label {
         font-weight: 600;
         color: #333;
-        font-size: 16px;
+        font-size: 14px;
         white-space: nowrap;
       }
 
       .kategorie-buttons {
         display: flex;
-        gap: 12px;
+        gap: 8px;
         flex: 1;
 
         .kategorie-btn {
@@ -228,26 +229,26 @@
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 8px;
-          padding: 16px 24px;
-          font-size: 15px;
+          gap: 6px;
+          padding: 10px 16px;
+          font-size: 13px;
           font-weight: 600;
           transition: all 0.3s ease;
-          border-radius: 8px;
-          min-height: 56px;
+          border-radius: 6px;
+          min-height: 44px;
 
           &:not(.active) {
             background: #f5f5f5;
             color: #666;
             border: 2px solid #e0e0e0;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 
             &:hover {
               border-color: #00acc1;
               color: #00acc1;
               background: #f0f8ff;
-              transform: translateY(-2px);
-              box-shadow: 0 4px 12px rgba(0, 172, 193, 0.2);
+              transform: translateY(-1px);
+              box-shadow: 0 2px 8px rgba(0, 172, 193, 0.2);
             }
           }
 
@@ -255,8 +256,8 @@
             background: linear-gradient(135deg, #00acc1 0%, #0097a7 100%);
             color: white;
             border: 2px solid #00acc1;
-            transform: translateY(-3px);
-            box-shadow: 0 6px 16px rgba(0, 172, 193, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 172, 193, 0.4);
             font-weight: 700;
 
             mat-icon {
@@ -265,106 +266,114 @@
           }
 
           mat-icon {
-            font-size: 22px;
-            width: 22px;
-            height: 22px;
+            font-size: 18px;
+            width: 18px;
+            height: 18px;
           }
         }
       }
     }
 
     .upload-section {
-      margin-top: 24px;
-      padding: 20px;
+      margin-top: 16px;
+      padding: 12px;
       background: linear-gradient(135deg, #f0f7ff 0%, #e3f2fd 100%);
-      border-radius: 8px;
+      border-radius: 6px;
       border: 2px dashed #0066cc;
 
       .upload-header {
         display: flex;
         align-items: center;
-        gap: 12px;
-        margin-bottom: 12px;
+        gap: 8px;
+        margin-bottom: 8px;
 
         mat-icon {
           color: #0066cc;
-          font-size: 28px;
-          width: 28px;
-          height: 28px;
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
         }
 
         h3 {
           margin: 0;
-          font-size: 18px;
+          font-size: 15px;
           font-weight: 600;
           color: #0066cc;
         }
       }
 
       .upload-description {
-        margin: 0 0 16px 0;
+        margin: 0 0 12px 0;
         color: #666;
-        font-size: 14px;
+        font-size: 12px;
         line-height: 1.5;
       }
 
       .upload-controls {
         display: flex;
-        gap: 12px;
+        gap: 8px;
         align-items: center;
         flex-wrap: wrap;
 
         button {
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 6px;
+          font-size: 13px;
+          padding: 8px 16px;
         }
       }
 
       .selected-file {
-        margin-top: 16px;
-        padding: 12px 16px;
+        margin-top: 12px;
+        padding: 10px 12px;
         background: white;
-        border-radius: 8px;
+        border-radius: 6px;
         border: 2px solid #0066cc;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 8px;
 
         mat-icon {
           color: #0066cc;
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
         }
 
         .file-size {
           margin-left: auto;
           color: #666;
-          font-size: 12px;
+          font-size: 11px;
         }
       }
     }
 
     // Config Snapshot Styles
     .config-snapshot-info {
-      margin-top: 16px;
-      padding: 16px;
+      margin-top: 12px;
+      padding: 12px;
       background-color: #f5f5f5;
-      border-radius: 8px;
+      border-radius: 6px;
       border-left: 4px solid #0066cc;
 
       .config-snapshot-header {
         display: flex;
         align-items: center;
-        gap: 12px;
-        margin-bottom: 12px;
+        gap: 8px;
+        margin-bottom: 8px;
         flex-wrap: wrap;
 
         mat-icon {
           color: #0066cc;
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
         }
 
         .config-snapshot-title {
           font-weight: 600;
-          font-size: 16px;
+          font-size: 14px;
           color: #333;
           flex: 1;
         }
@@ -403,53 +412,55 @@
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 8px 12px;
+          padding: 6px 10px;
           background-color: white;
           border-radius: 4px;
 
           .config-label {
             font-weight: 500;
             color: #666;
+            font-size: 12px;
           }
 
           .config-value {
             font-weight: 600;
             color: #0066cc;
+            font-size: 12px;
           }
         }
 
         .config-timestamp {
           display: flex;
           align-items: center;
-          gap: 8px;
-          padding: 8px 12px;
-          font-size: 12px;
+          gap: 6px;
+          padding: 6px 10px;
+          font-size: 11px;
           color: #666;
           background-color: white;
           border-radius: 4px;
 
           mat-icon {
-            font-size: 16px;
-            width: 16px;
-            height: 16px;
+            font-size: 14px;
+            width: 14px;
+            height: 14px;
           }
         }
 
         .config-message {
           display: flex;
           align-items: center;
-          gap: 8px;
-          padding: 8px 12px;
-          font-size: 12px;
+          gap: 6px;
+          padding: 6px 10px;
+          font-size: 11px;
           color: #666;
           background-color: #fff3cd;
           border-radius: 4px;
           border-left: 3px solid #ffc107;
 
           mat-icon {
-            font-size: 16px;
-            width: 16px;
-            height: 16px;
+            font-size: 14px;
+            width: 14px;
+            height: 14px;
             color: #ffc107;
           }
         }
@@ -459,40 +470,40 @@
 
   // Statistics Card
   .stats-card {
-    margin-bottom: 24px;
+    margin-bottom: 16px;
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     border: 2px solid #0066cc;
 
     mat-card-content {
-      padding: 16px;
+      padding: 12px;
     }
 
     .stats-row {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 8px;
     }
 
     .stat-item {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       flex: 1;
-      padding: 12px;
+      padding: 10px;
       background: white;
-      border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      border-radius: 6px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
       transition: transform 0.2s ease, box-shadow 0.2s ease;
 
       &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
       }
 
       mat-icon {
-        font-size: 32px;
-        width: 32px;
-        height: 32px;
+        font-size: 24px;
+        width: 24px;
+        height: 24px;
         color: #0066cc;
         flex-shrink: 0;
       }
@@ -514,7 +525,7 @@
       }
 
       .stat-value {
-        font-size: 16px;
+        font-size: 14px;
         font-weight: 700;
         color: #333;
         margin-top: 2px;
@@ -522,7 +533,7 @@
 
         &.highlight {
           color: #2e7d32;
-          font-size: 18px;
+          font-size: 16px;
         }
       }
 
@@ -694,13 +705,13 @@
 
   // Data Entry Card
   .data-entry-card {
-    margin-bottom: 24px;
+    margin-bottom: 16px;
 
     mat-card-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      padding: 24px;
+      padding: 16px;
       background: #f8f9fa;
       border-bottom: 2px solid #e9ecef;
 
@@ -711,34 +722,39 @@
       mat-card-title {
         display: flex;
         align-items: center;
-        gap: 12px;
-        font-size: 20px;
+        gap: 8px;
+        font-size: 16px;
         font-weight: 600;
-        margin: 0 0 12px 0;
+        margin: 0 0 8px 0;
 
         mat-icon {
           color: #0066cc;
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
         }
       }
 
       .header-actions {
         display: flex;
-        gap: 12px;
+        gap: 8px;
         flex-wrap: wrap;
         align-items: center;
 
         button {
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 6px;
           white-space: nowrap;
           flex-shrink: 0;
+          font-size: 13px;
+          padding: 8px 16px;
         }
       }
     }
 
     mat-card-content {
-      padding: 24px;
+      padding: 16px;
       position: relative;
     }
 
@@ -747,12 +763,12 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 48px;
-      gap: 16px;
+      padding: 32px;
+      gap: 12px;
 
       p {
         color: #666;
-        font-size: 16px;
+        font-size: 13px;
       }
     }
 
@@ -766,7 +782,7 @@
     .entry-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 14px;
+      font-size: 12px;
 
       thead {
         background: linear-gradient(135deg, #0066cc 0%, #004c99 100%);
@@ -774,10 +790,10 @@
 
         .group-header-row {
           th {
-            padding: 12px 8px;
+            padding: 8px 6px;
             text-align: center;
             font-weight: 700;
-            font-size: 14px;
+            font-size: 12px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 
             &.base-columns-header {
@@ -795,9 +811,9 @@
                 gap: 8px;
 
                 mat-icon {
-                  font-size: 20px;
-                  width: 20px;
-                  height: 20px;
+                  font-size: 16px;
+                  width: 16px;
+                  height: 16px;
                 }
               }
             }
@@ -810,13 +826,13 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                gap: 8px;
+                gap: 6px;
                 color: #fff;
 
                 mat-icon {
-                  font-size: 20px;
-                  width: 20px;
-                  height: 20px;
+                  font-size: 16px;
+                  width: 16px;
+                  height: 16px;
                   color: #fff;
                 }
               }
@@ -825,10 +841,10 @@
         }
 
         th {
-          padding: 10px 8px;
+          padding: 8px 6px;
           text-align: center;
           font-weight: 600;
-          font-size: 12px;
+          font-size: 11px;
           text-transform: uppercase;
           letter-spacing: 0.5px;
           white-space: nowrap;
@@ -967,7 +983,7 @@
           }
 
           td {
-            padding: 12px;
+            padding: 8px 6px;
             border-bottom: 1px solid #e9ecef;
             vertical-align: middle;
           }
@@ -977,29 +993,30 @@
       .day-cell {
         font-weight: 600;
         color: #0066cc;
-        width: 80px;
+        width: 70px;
+        font-size: 12px;
 
         .small-icon {
-          font-size: 18px;
-          width: 18px;
-          height: 18px;
+          font-size: 16px;
+          width: 16px;
+          height: 16px;
           vertical-align: middle;
-          margin-right: 8px;
+          margin-right: 6px;
         }
       }
 
       .input-cell {
-        width: 50px;
-        min-width: 50px;
-        padding: 4px;
+        width: 45px;
+        min-width: 45px;
+        padding: 3px;
 
         .table-input {
           width: 100%;
-          min-width: 42px;
-          padding: 6px 3px;
+          min-width: 38px;
+          padding: 5px 2px;
           border: 2px solid #e0e0e0;
           border-radius: 4px;
-          font-size: 13px;
+          font-size: 12px;
           font-weight: 600;
           text-align: center;
           transition: all 0.2s ease;
@@ -1085,7 +1102,7 @@
         text-align: center;
         font-family: 'Courier New', monospace;
         color: #666;
-        font-size: 13px;
+        font-size: 11px;
         background: rgba(0, 102, 204, 0.02);
         border-left: 1px solid #e0e0e0;
 
@@ -1133,7 +1150,7 @@
           .geleistete-phk-value {
             color: #e65100;
             font-weight: 700;
-            font-size: 14px;
+            font-size: 12px;
           }
         }
 
@@ -1146,7 +1163,7 @@
           .tatsaechlich-value {
             color: #1b5e20;
             font-weight: 700;
-            font-size: 14px;
+            font-size: 12px;
           }
         }
       }
@@ -1164,45 +1181,45 @@
 
     .auto-save-indicator {
       position: absolute;
-      bottom: 16px;
-      right: 24px;
+      bottom: 12px;
+      right: 16px;
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
+      gap: 6px;
+      padding: 6px 12px;
       background: rgba(0, 102, 204, 0.1);
-      border-radius: 20px;
+      border-radius: 16px;
       color: #0066cc;
-      font-size: 14px;
+      font-size: 12px;
       font-weight: 500;
     }
   }
 
   // Empty State
   .empty-state {
-    padding: 64px 32px;
+    padding: 32px 20px;
     text-align: center;
     background: #f8f9fa;
-    border-radius: 12px;
+    border-radius: 8px;
     border: 2px dashed #ccc;
 
     mat-icon {
-      font-size: 96px;
-      width: 96px;
-      height: 96px;
+      font-size: 64px;
+      width: 64px;
+      height: 64px;
       color: #ccc;
-      margin-bottom: 24px;
+      margin-bottom: 16px;
     }
 
     h3 {
-      font-size: 24px;
+      font-size: 18px;
       font-weight: 600;
       color: #333;
-      margin: 0 0 12px 0;
+      margin: 0 0 8px 0;
     }
 
     p {
-      font-size: 16px;
+      font-size: 13px;
       color: #666;
       max-width: 500px;
       line-height: 1.6;
@@ -1299,3 +1316,4 @@
     }
   }
 }
+
