@@ -55,61 +55,7 @@ export class StationSelector implements OnInit, OnChanges {
   private extractAvailableStations() {
     const stations = new Set<string>();
     
-    // Add dummy stations for testing/demonstration
-    const dummyStations = [
-      'BABBELEG',
-      'BABCH1',
-      'BABCH2', 
-      'BABIE',
-      'N1',
-      'BABIN3',
-      'BABCIA',
-      '112',
-      '113',
-      '211',
-      '221',
-      '156',
-      '157',
-      '182',
-      '189',
-      '195',
-      '42W',
-      '43O',
-      '44O',
-      '5E1',
-      '511',
-      '521',
-      '531',
-      '61N',
-      '62N',
-      '62S',
-      '761',
-      '711',
-      '721',
-      '731',
-      '741',
-      '751',
-      'PRNB1',
-      'PRNC1',
-      'PRNM1',
-      'PR',
-      'PRNGHZS3',
-      'PRNGHZS4',
-      'PRNINT',
-      'WA',
-      'WAS031',
-      'WAS041',
-      'WAS042',
-      'W',
-      'WAS051',
-      'WAS052',
-      'ZNAS'
-    ];
-
-    // Add dummy stations
-    dummyStations.forEach(station => stations.add(station));
-    
-    // Also extract stations from actual upload data
+    // Extract stations from actual upload data
     this.uploads.forEach(upload => {
       // Extract stations from different schema types
       upload.files.forEach(file => {
