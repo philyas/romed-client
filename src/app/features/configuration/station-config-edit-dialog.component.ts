@@ -9,6 +9,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { firstValueFrom } from 'rxjs';
 import { Api } from '../../core/api';
 
@@ -24,6 +25,9 @@ interface StationConfigValues {
   schicht_stunden: number;
   phk_anteil_base: number | null;
   pp_ratio_base: number;
+  pausen_aktiviert: boolean;
+  pausen_stunden: number;
+  pausen_minuten: number;
 }
 
 @Component({
@@ -40,6 +44,7 @@ interface StationConfigValues {
     MatInputModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
+    MatSlideToggleModule,
   ],
   template: `
     <h2 mat-dialog-title>
@@ -72,6 +77,26 @@ interface StationConfigValues {
                 <input matInput type="number" step="0.1" min="0.1"
                        [(ngModel)]="editedConfigs.tag_pfk.pp_ratio_base">
               </mat-form-field>
+
+              <div class="pausen-section">
+                <mat-slide-toggle [(ngModel)]="editedConfigs.tag_pfk.pausen_aktiviert">
+                  Pausenzeiten aktivieren
+                </mat-slide-toggle>
+                <div class="pausen-fields" *ngIf="editedConfigs.tag_pfk.pausen_aktiviert">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Pausen Stunden</mat-label>
+                    <input matInput type="number" step="1" min="0"
+                           [(ngModel)]="editedConfigs.tag_pfk.pausen_stunden">
+                    <span matSuffix>h</span>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Pausen Minuten</mat-label>
+                    <input matInput type="number" step="1" min="0" max="59"
+                           [(ngModel)]="editedConfigs.tag_pfk.pausen_minuten">
+                    <span matSuffix>min</span>
+                  </mat-form-field>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -97,6 +122,26 @@ interface StationConfigValues {
                 <input matInput type="number" step="0.1" min="0.1"
                        [(ngModel)]="editedConfigs.nacht_pfk.pp_ratio_base">
               </mat-form-field>
+
+              <div class="pausen-section">
+                <mat-slide-toggle [(ngModel)]="editedConfigs.nacht_pfk.pausen_aktiviert">
+                  Pausenzeiten aktivieren
+                </mat-slide-toggle>
+                <div class="pausen-fields" *ngIf="editedConfigs.nacht_pfk.pausen_aktiviert">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Pausen Stunden</mat-label>
+                    <input matInput type="number" step="1" min="0"
+                           [(ngModel)]="editedConfigs.nacht_pfk.pausen_stunden">
+                    <span matSuffix>h</span>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Pausen Minuten</mat-label>
+                    <input matInput type="number" step="1" min="0" max="59"
+                           [(ngModel)]="editedConfigs.nacht_pfk.pausen_minuten">
+                    <span matSuffix>min</span>
+                  </mat-form-field>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -116,6 +161,26 @@ interface StationConfigValues {
                 <input matInput type="number" step="0.1" min="0.1"
                        [(ngModel)]="editedConfigs.tag_phk.pp_ratio_base">
               </mat-form-field>
+
+              <div class="pausen-section">
+                <mat-slide-toggle [(ngModel)]="editedConfigs.tag_phk.pausen_aktiviert">
+                  Pausenzeiten aktivieren
+                </mat-slide-toggle>
+                <div class="pausen-fields" *ngIf="editedConfigs.tag_phk.pausen_aktiviert">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Pausen Stunden</mat-label>
+                    <input matInput type="number" step="1" min="0"
+                           [(ngModel)]="editedConfigs.tag_phk.pausen_stunden">
+                    <span matSuffix>h</span>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Pausen Minuten</mat-label>
+                    <input matInput type="number" step="1" min="0" max="59"
+                           [(ngModel)]="editedConfigs.tag_phk.pausen_minuten">
+                    <span matSuffix>min</span>
+                  </mat-form-field>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -135,6 +200,26 @@ interface StationConfigValues {
                 <input matInput type="number" step="0.1" min="0.1"
                        [(ngModel)]="editedConfigs.nacht_phk.pp_ratio_base">
               </mat-form-field>
+
+              <div class="pausen-section">
+                <mat-slide-toggle [(ngModel)]="editedConfigs.nacht_phk.pausen_aktiviert">
+                  Pausenzeiten aktivieren
+                </mat-slide-toggle>
+                <div class="pausen-fields" *ngIf="editedConfigs.nacht_phk.pausen_aktiviert">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Pausen Stunden</mat-label>
+                    <input matInput type="number" step="1" min="0"
+                           [(ngModel)]="editedConfigs.nacht_phk.pausen_stunden">
+                    <span matSuffix>h</span>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Pausen Minuten</mat-label>
+                    <input matInput type="number" step="1" min="0" max="59"
+                           [(ngModel)]="editedConfigs.nacht_phk.pausen_minuten">
+                    <span matSuffix>min</span>
+                  </mat-form-field>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -202,6 +287,19 @@ interface StationConfigValues {
       margin-top: 16px;
     }
 
+    .pausen-section {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #e0e0e0;
+    }
+
+    .pausen-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
     .loading-container {
       display: flex;
       flex-direction: column;
@@ -260,7 +358,10 @@ export class StationConfigEditDialogComponent {
     const defaults = {
       schicht_stunden: schicht === 'nacht' ? 8 : 16,
       phk_anteil_base: kategorie === 'PFK' ? 10 : null,
-      pp_ratio_base: schicht === 'nacht' ? 20 : 10
+      pp_ratio_base: schicht === 'nacht' ? 20 : 10,
+      pausen_aktiviert: false,
+      pausen_stunden: 0,
+      pausen_minuten: 0
     };
 
     return defaults;
@@ -270,7 +371,10 @@ export class StationConfigEditDialogComponent {
     return Object.values(this.editedConfigs).every(config =>
       config.schicht_stunden > 0 &&
       config.pp_ratio_base > 0 &&
-      (config.phk_anteil_base === null || config.phk_anteil_base > 0)
+      (config.phk_anteil_base === null || config.phk_anteil_base > 0) &&
+      config.pausen_stunden >= 0 &&
+      config.pausen_minuten >= 0 &&
+      config.pausen_minuten <= 59
     );
   }
 
@@ -311,7 +415,10 @@ export class StationConfigEditDialogComponent {
     const configData = {
       schicht_stunden: config.schicht_stunden,
       phk_anteil_base: config.phk_anteil_base,
-      pp_ratio_base: config.pp_ratio_base
+      pp_ratio_base: config.pp_ratio_base,
+      pausen_aktiviert: config.pausen_aktiviert,
+      pausen_stunden: config.pausen_stunden,
+      pausen_minuten: config.pausen_minuten
     };
 
     if (schicht === 'nacht') {

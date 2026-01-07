@@ -476,7 +476,7 @@
           <thead>
             <!-- Gruppen-Header für Soll/Ist-Arbeitszeit -->
             <tr class="group-header-row">
-              <th colspan="5" class="base-columns-header"></th>
+              <th colspan="8" class="base-columns-header"></th>
               <th colspan="3" class="soll-arbeitszeit-header">
                 <div class="group-header-label">
                   <mat-icon>schedule</mat-icon>
@@ -493,9 +493,9 @@
             <!-- Spalten-Header -->
             <tr>
               <th>Tag</th>
-              <th>Stunden</th>
-              <th>Minuten</th>
-              <th>Gesamt</th>
+              <th colspan="2" class="sub-header">Normale Zeit</th>
+              <th colspan="2" class="sub-header">Pausenzeit</th>
+              <th>Gesamtzeit</th>
               <th class="action-column">Reset</th>
               <th class="phk-column soll-column">
                 <div class="header-with-info">
@@ -521,6 +521,16 @@
                   </button>
                 </div>
               </th>
+            </tr>
+            <!-- Unter-Header für Stunden/Minuten -->
+            <tr class="sub-header-row">
+              <th></th>
+              <th>Std</th>
+              <th>Min</th>
+              <th>Std</th>
+              <th>Min</th>
+              <th></th>
+              <th></th>
               <th *ngIf="selectedKategorie() === 'PFK'" class="phk-column">
                 <div class="header-with-info">
                   <span>PpUG erfüllt</span>
@@ -609,6 +619,7 @@
                 <mat-icon class="small-icon">event</mat-icon>
                 <strong>{{ entry.tag }}</strong>
               </td>
+              <!-- Normale Zeit -->
               <td class="input-cell">
                 <input 
                   type="number" 
@@ -628,9 +639,34 @@
                   placeholder="0"
                   class="table-input">
               </td>
+              
+              <!-- Pausenzeit (immer sichtbar) -->
+              <td class="input-cell">
+                <input 
+                  type="number" 
+                  min="0" 
+                  [value]="entry.pausen_stunden || 0"
+                  (input)="updateEntry(i, 'pausen_stunden', $any($event.target).value)"
+                  placeholder="0"
+                  class="table-input pause-input"
+                  [disabled]="!stationConfig()?.pausen_aktiviert">
+              </td>
+              <td class="input-cell">
+                <input 
+                  type="number" 
+                  min="0" 
+                  max="59" 
+                  [value]="entry.pausen_minuten || 0"
+                  (input)="updateEntry(i, 'pausen_minuten', $any($event.target).value)"
+                  placeholder="0"
+                  class="table-input pause-input"
+                  [disabled]="!stationConfig()?.pausen_aktiviert">
+              </td>
+              
+              <!-- Gesamtzeit (berechnet) -->
               <td class="total-cell">
                 <span class="total-badge">
-                  {{ entry.stunden }}:{{ entry.minuten.toString().padStart(2, '0') }}h
+                  {{ getGesamtzeit(entry).stunden }}:{{ getGesamtzeit(entry).minuten.toString().padStart(2, '0') }}h
                 </span>
               </td>
               <td class="action-cell">
@@ -639,7 +675,7 @@
                   color="warn" 
                   (click)="resetSingleDay(i)"
                   matTooltip="Tag zurücksetzen"
-                  *ngIf="entry.stunden > 0 || entry.minuten > 0">
+                  *ngIf="getGesamtzeit(entry).stunden > 0 || getGesamtzeit(entry).minuten > 0">
                   <mat-icon>refresh</mat-icon>
                 </button>
               </td>

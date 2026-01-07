@@ -272,12 +272,13 @@ export class Api {
     return this.http.get<ManualEntryDataResponse>(`${this.baseUrl}/manual-entry/data`, { params });
   }
 
-  saveManualEntry(station: string, jahr: number, monat: number, kategorie: string, entries: any[]): Observable<{ success: boolean; uploadId: string; message: string }> {
+  saveManualEntry(station: string, jahr: number, monat: number, kategorie: string, schicht: 'tag' | 'nacht', entries: any[]): Observable<{ success: boolean; uploadId: string; message: string }> {
     return this.http.post<{ success: boolean; uploadId: string; message: string }>(`${this.baseUrl}/manual-entry/save`, {
       station,
       jahr,
       monat,
       kategorie,
+      schicht,
       entries
     });
   }
@@ -659,6 +660,9 @@ export class Api {
     schicht_stunden: number;
     phk_anteil_base: number | null;
     pp_ratio_base: number;
+    pausen_aktiviert?: boolean;
+    pausen_stunden?: number;
+    pausen_minuten?: number;
     fromSnapshot: boolean;
     snapshotMonth?: number;
     snapshotYear?: number;
@@ -675,6 +679,9 @@ export class Api {
       schicht_stunden: number;
       phk_anteil_base: number | null;
       pp_ratio_base: number;
+      pausen_aktiviert?: boolean;
+      pausen_stunden?: number;
+      pausen_minuten?: number;
       fromSnapshot: boolean;
       snapshotMonth?: number;
       snapshotYear?: number;
@@ -686,7 +693,14 @@ export class Api {
     station: string,
     kategorie: string,
     schicht: 'tag' | 'nacht',
-    config: { schicht_stunden: number; phk_anteil_base: number | null; pp_ratio_base: number }
+    config: { 
+      schicht_stunden: number; 
+      phk_anteil_base: number | null; 
+      pp_ratio_base: number;
+      pausen_aktiviert?: boolean;
+      pausen_stunden?: number;
+      pausen_minuten?: number;
+    }
   ): Observable<{ success: boolean; message: string }> {
     return this.http.put<{ success: boolean; message: string }>(
       `${this.baseUrl}/manual-entry/station-config`,
@@ -706,6 +720,9 @@ export class Api {
     schicht_stunden: number;
     phk_anteil_base: number | null;
     pp_ratio_base: number;
+    pausen_aktiviert?: boolean;
+    pausen_stunden?: number;
+    pausen_minuten?: number;
     fromSnapshot: boolean;
     snapshotMonth?: number;
     snapshotYear?: number;
@@ -722,6 +739,9 @@ export class Api {
       schicht_stunden: number;
       phk_anteil_base: number | null;
       pp_ratio_base: number;
+      pausen_aktiviert?: boolean;
+      pausen_stunden?: number;
+      pausen_minuten?: number;
       fromSnapshot: boolean;
       snapshotMonth?: number;
       snapshotYear?: number;

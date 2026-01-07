@@ -26,6 +26,8 @@ interface DayEntry {
   tag: number;
   stunden: number;
   minuten: number;
+  pausen_stunden?: number;
+  pausen_minuten?: number;
   pfkNormal?: number;
   gesamtPfkPhk?: number;
   phkEnd?: number;
@@ -140,6 +142,13 @@ export class ManualEntry {
   // Config Snapshot (gespeicherte Konfiguration zum Zeitpunkt der Speicherung)
   configSnapshot = signal<import('../../core/api').ConfigSnapshot | null>(null);
   loadingConfigSnapshot = signal<boolean>(false);
+  
+  // Station Config (für Pausenzeiten)
+  stationConfig = signal<{
+    pausen_aktiviert: boolean;
+    pausen_stunden: number;
+    pausen_minuten: number;
+  } | null>(null);
   
   // Available categories
   kategorien = [
@@ -294,8 +303,18 @@ export class ManualEntry {
   initializeEmptyEntries() {
     const days = this.daysInMonth();
     const entries: DayEntry[] = [];
+    const pausenConfig = this.stationConfig();
+    
     for (let i = 1; i <= days; i++) {
-      entries.push({ tag: i, stunden: 0, minuten: 0 });
+      const pausenStunden = pausenConfig && pausenConfig.pausen_aktiviert ? pausenConfig.pausen_stunden : 0;
+      const pausenMinuten = pausenConfig && pausenConfig.pausen_aktiviert ? pausenConfig.pausen_minuten : 0;
+      entries.push({ 
+        tag: i, 
+        stunden: 0, 
+        minuten: 0,
+        pausen_stunden: pausenStunden,
+        pausen_minuten: pausenMinuten
+      });
     }
     this.dayEntries.set(entries);
   }
@@ -341,6 +360,13 @@ export class ManualEntry {
     // Lade Config-Snapshot parallel
     this.loadConfigSnapshot(station, jahr, monat, kategorie);
     
+    // Lade Stationskonfiguration für Pausenzeiten (muss vor dem Laden der Daten geladen werden)
+    this.loadStationConfigForPausenzeiten(station, kategorie).then(() => {
+      this.loadManualEntryData(station, jahr, monat, kategorie);
+    });
+  }
+
+  loadManualEntryData(station: string, jahr: number, monat: number, kategorie: 'PFK' | 'PHK') {
     this.api.getManualEntryData(station, jahr, monat, kategorie, this.selectedShift()).subscribe({
       next: (response) => {
         if (response.data.length > 0) {
@@ -371,20 +397,59 @@ export class ManualEntry {
           const days = this.daysInMonth();
           const entries: DayEntry[] = [];
           
+          // Get station config for pausenzeiten
+          const pausenConfig = this.stationConfig();
+          
           for (let i = 1; i <= days; i++) {
             const existing = dataEntries.find(d => d.Tag === i);
             if (existing) {
+              const gesamtStunden = existing.Stunden || 0;
+              const gesamtMinuten = existing.Minuten || 0;
+              
+              // Wenn Pausenzeiten aktiviert sind, teile Gesamtzeit auf
+              let normaleStunden = gesamtStunden;
+              let normaleMinuten = gesamtMinuten;
+              let pausenStunden = 0;
+              let pausenMinuten = 0;
+              
+              if (pausenConfig && pausenConfig.pausen_aktiviert) {
+                // Gesamtzeit in Minuten
+                const gesamtTotalMinutes = (gesamtStunden * 60) + gesamtMinuten;
+                // Pausenzeit in Minuten
+                const pausenTotalMinutes = (pausenConfig.pausen_stunden * 60) + pausenConfig.pausen_minuten;
+                
+                // Normale Zeit = Gesamtzeit - Pausenzeit
+                const normaleTotalMinutes = Math.max(0, gesamtTotalMinutes - pausenTotalMinutes);
+                normaleStunden = Math.floor(normaleTotalMinutes / 60);
+                normaleMinuten = normaleTotalMinutes % 60;
+                
+                // Pausenzeit (kann vom Benutzer überschrieben werden)
+                pausenStunden = pausenConfig.pausen_stunden;
+                pausenMinuten = pausenConfig.pausen_minuten;
+              }
+              
               entries.push({
                 tag: i,
-                stunden: existing.Stunden || 0,
-                minuten: existing.Minuten || 0,
+                stunden: normaleStunden,
+                minuten: normaleMinuten,
+                pausen_stunden: pausenStunden,
+                pausen_minuten: pausenMinuten,
                 pfkNormal: existing.PFK_Normal,
                 gesamtPfkPhk: existing.Gesamt_PFK_PHK,
                 phkEnd: existing.PHK_End,
                 phkAnrechenbar: existing.PHK_Anrechenbar_Stunden
               });
             } else {
-              entries.push({ tag: i, stunden: 0, minuten: 0 });
+              // Initialize with default pausenzeiten if enabled
+              const pausenStunden = pausenConfig && pausenConfig.pausen_aktiviert ? pausenConfig.pausen_stunden : 0;
+              const pausenMinuten = pausenConfig && pausenConfig.pausen_aktiviert ? pausenConfig.pausen_minuten : 0;
+              entries.push({ 
+                tag: i, 
+                stunden: 0, 
+                minuten: 0,
+                pausen_stunden: pausenStunden,
+                pausen_minuten: pausenMinuten
+              });
             }
           }
           
@@ -406,6 +471,34 @@ export class ManualEntry {
         this.phkTageswerte.set(null);
         this.loading.set(false);
       }
+    });
+  }
+
+  loadStationConfigForPausenzeiten(station: string, kategorie: 'PFK' | 'PHK'): Promise<void> {
+    return new Promise((resolve) => {
+      const apiCall = this.selectedShift() === 'tag'
+        ? this.api.getStationConfig(station, kategorie, 'tag')
+        : this.api.getStationConfigNacht(station, kategorie);
+      
+      apiCall.subscribe({
+        next: (config) => {
+          this.stationConfig.set({
+            pausen_aktiviert: config.pausen_aktiviert || false,
+            pausen_stunden: config.pausen_stunden || 0,
+            pausen_minuten: config.pausen_minuten || 0
+          });
+          resolve();
+        },
+        error: (err) => {
+          console.error('Error loading station config for pausenzeiten:', err);
+          this.stationConfig.set({
+            pausen_aktiviert: false,
+            pausen_stunden: 0,
+            pausen_minuten: 0
+          });
+          resolve(); // Resolve auch bei Fehler, damit die Daten trotzdem geladen werden
+        }
+      });
     });
   }
 
@@ -546,12 +639,14 @@ export class ManualEntry {
     }
   }
 
-  updateEntry(index: number, field: 'stunden' | 'minuten', value: string) {
+  updateEntry(index: number, field: 'stunden' | 'minuten' | 'pausen_stunden' | 'pausen_minuten', value: string) {
     const numValue = parseInt(value) || 0;
     
     // Validate
     if (field === 'stunden' && numValue < 0) return;
     if (field === 'minuten' && (numValue < 0 || numValue >= 60)) return;
+    if (field === 'pausen_stunden' && numValue < 0) return;
+    if (field === 'pausen_minuten' && (numValue < 0 || numValue >= 60)) return;
     
     this.dayEntries.update(entries => {
       const newEntries = [...entries];
@@ -561,6 +656,17 @@ export class ManualEntry {
       };
       return newEntries;
     });
+  }
+  
+  // Berechne Gesamtzeit für einen Eintrag
+  getGesamtzeit(entry: DayEntry): { stunden: number; minuten: number } {
+    const normaleTotalMinutes = (entry.stunden * 60) + entry.minuten;
+    const pausenTotalMinutes = ((entry.pausen_stunden || 0) * 60) + (entry.pausen_minuten || 0);
+    const gesamtTotalMinutes = normaleTotalMinutes + pausenTotalMinutes;
+    return {
+      stunden: Math.floor(gesamtTotalMinutes / 60),
+      minuten: gesamtTotalMinutes % 60
+    };
   }
 
   saveData() {
@@ -573,15 +679,21 @@ export class ManualEntry {
     const jahr = this.selectedYear();
     const monat = this.selectedMonth();
     const kategorie = this.selectedKategorie();
-    const entries = this.dayEntries().map(entry => ({
-      tag: entry.tag,
-      stunden: entry.stunden,
-      minuten: entry.minuten
-    }));
+    const schicht = this.selectedShift();
+    
+    // Berechne Gesamtzeit für jeden Eintrag (normale Zeit + Pausenzeit)
+    const entries = this.dayEntries().map(entry => {
+      const gesamtzeit = this.getGesamtzeit(entry);
+      return {
+        tag: entry.tag,
+        stunden: gesamtzeit.stunden,
+        minuten: gesamtzeit.minuten
+      };
+    });
 
     this.saving.set(true);
 
-    this.api.saveManualEntry(station, jahr, monat, kategorie, entries).subscribe({
+    this.api.saveManualEntry(station, jahr, monat, kategorie, schicht, entries).subscribe({
       next: (response) => {
         this.saving.set(false);
         this.snackBar.open('Daten erfolgreich gespeichert', 'Schließen', { duration: 2000 });
@@ -597,7 +709,10 @@ export class ManualEntry {
   }
 
   hasData(): boolean {
-    return this.dayEntries().some(entry => entry.stunden > 0 || entry.minuten > 0);
+    return this.dayEntries().some(entry => {
+      const gesamtzeit = this.getGesamtzeit(entry);
+      return gesamtzeit.stunden > 0 || gesamtzeit.minuten > 0;
+    });
   }
 
   recomputeData() {
@@ -738,7 +853,8 @@ export class ManualEntry {
     let totalMinutes = 0;
     
     entries.forEach(entry => {
-      totalMinutes += (entry.stunden * 60) + entry.minuten;
+      const gesamtzeit = this.getGesamtzeit(entry);
+      totalMinutes += (gesamtzeit.stunden * 60) + gesamtzeit.minuten;
     });
     
     const hours = Math.floor(totalMinutes / 60);
@@ -753,7 +869,8 @@ export class ManualEntry {
     let daysWithData = 0;
     
     entries.forEach(entry => {
-      const dayMinutes = (entry.stunden * 60) + entry.minuten;
+      const gesamtzeit = this.getGesamtzeit(entry);
+      const dayMinutes = (gesamtzeit.stunden * 60) + gesamtzeit.minuten;
       if (dayMinutes > 0) {
         totalMinutes += dayMinutes;
         daysWithData++;
@@ -921,7 +1038,8 @@ export class ManualEntry {
     let daysWithData = 0;
     
     entries.forEach(entry => {
-      const dayMinutes = (entry.stunden * 60) + entry.minuten;
+      const gesamtzeit = this.getGesamtzeit(entry);
+      const dayMinutes = (gesamtzeit.stunden * 60) + gesamtzeit.minuten;
       if (dayMinutes > 0) {
         totalMinutes += dayMinutes;
         daysWithData++;
@@ -1336,7 +1454,9 @@ export class ManualEntry {
 
   getGesamteAnrechbareAZForTag(entry: DayEntry): string {
     // Arbeitszeitstunden (in Dezimal umrechnen)
-    const arbeitszeitstundenDezimal = entry.stunden + (entry.minuten / 60);
+    // Verwende Gesamtzeit (normale Zeit + Pausenzeit)
+    const gesamtzeit = this.getGesamtzeit(entry);
+    const arbeitszeitstundenDezimal = gesamtzeit.stunden + (gesamtzeit.minuten / 60);
     
     // Tatsächlich anrechnbar für diesen Tag
     const phkTageswerte = this.phkTageswerte();
@@ -1368,7 +1488,9 @@ export class ManualEntry {
 
   getExamPflegeForTag(entry: DayEntry): string {
     // Arbeitszeitstunden (in Dezimal umrechnen)
-    const arbeitszeitstundenDezimal = entry.stunden + (entry.minuten / 60);
+    // Verwende Gesamtzeit (normale Zeit + Pausenzeit)
+    const gesamtzeit = this.getGesamtzeit(entry);
+    const arbeitszeitstundenDezimal = gesamtzeit.stunden + (gesamtzeit.minuten / 60);
     
     // Tatsächlich anrechnbar für diesen Tag
     const phkTageswerte = this.phkTageswerte();

@@ -35,6 +35,9 @@ interface StationConfigValues {
   schicht_stunden: number;
   phk_anteil_base: number | null;
   pp_ratio_base: number;
+  pausen_aktiviert?: boolean;
+  pausen_stunden?: number;
+  pausen_minuten?: number;
 }
 
 interface StationConfig {
@@ -420,7 +423,10 @@ export class Configuration implements OnInit {
       config.tag_pfk = {
         schicht_stunden: tagPfk.schicht_stunden,
         phk_anteil_base: tagPfk.phk_anteil_base,
-        pp_ratio_base: tagPfk.pp_ratio_base
+        pp_ratio_base: tagPfk.pp_ratio_base,
+        pausen_aktiviert: tagPfk.pausen_aktiviert || false,
+        pausen_stunden: tagPfk.pausen_stunden || 0,
+        pausen_minuten: tagPfk.pausen_minuten || 0
       };
     } catch (err) {
       // Config doesn't exist, keep null
@@ -432,7 +438,10 @@ export class Configuration implements OnInit {
       config.nacht_pfk = {
         schicht_stunden: nachtPfk.schicht_stunden,
         phk_anteil_base: nachtPfk.phk_anteil_base,
-        pp_ratio_base: nachtPfk.pp_ratio_base
+        pp_ratio_base: nachtPfk.pp_ratio_base,
+        pausen_aktiviert: nachtPfk.pausen_aktiviert || false,
+        pausen_stunden: nachtPfk.pausen_stunden || 0,
+        pausen_minuten: nachtPfk.pausen_minuten || 0
       };
     } catch (err) {
       // Config doesn't exist, keep null
@@ -444,7 +453,10 @@ export class Configuration implements OnInit {
       config.tag_phk = {
         schicht_stunden: tagPhk.schicht_stunden,
         phk_anteil_base: null, // PHK doesn't have this
-        pp_ratio_base: tagPhk.pp_ratio_base
+        pp_ratio_base: tagPhk.pp_ratio_base,
+        pausen_aktiviert: tagPhk.pausen_aktiviert || false,
+        pausen_stunden: tagPhk.pausen_stunden || 0,
+        pausen_minuten: tagPhk.pausen_minuten || 0
       };
     } catch (err) {
       // Config doesn't exist, keep null
@@ -456,7 +468,10 @@ export class Configuration implements OnInit {
       config.nacht_phk = {
         schicht_stunden: nachtPhk.schicht_stunden,
         phk_anteil_base: null, // PHK doesn't have this
-        pp_ratio_base: nachtPhk.pp_ratio_base
+        pp_ratio_base: nachtPhk.pp_ratio_base,
+        pausen_aktiviert: nachtPhk.pausen_aktiviert || false,
+        pausen_stunden: nachtPhk.pausen_stunden || 0,
+        pausen_minuten: nachtPhk.pausen_minuten || 0
       };
     } catch (err) {
       // Config doesn't exist, keep null
