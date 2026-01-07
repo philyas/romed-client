@@ -1,12 +1,13 @@
 import { Component, inject, signal, computed, effect, ViewChild, ElementRef, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormControl } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -43,12 +44,14 @@ interface GeleistetePhkStunden {
   imports: [
     CommonModule,
     FormsModule,
+    ReactiveFormsModule,
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
     MatIconModule,
     MatSelectModule,
+    MatAutocompleteModule,
     MatChipsModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
@@ -72,6 +75,22 @@ export class ManualEntry {
   // State
   stations = signal<string[]>([]);
   selectedStation = signal<string>('');
+  stationControl = new FormControl<string>('');
+  stationSearchValue = signal<string>('');
+  
+  // Filtered stations for autocomplete
+  filteredStations = computed(() => {
+    const searchValue = this.stationSearchValue().toLowerCase();
+    const allStations = this.stations();
+    
+    if (!searchValue) {
+      return allStations;
+    }
+    
+    return allStations.filter(station => 
+      station.toLowerCase().includes(searchValue)
+    );
+  });
   selectedYear = signal<number>(new Date().getFullYear());
   selectedMonth = signal<number>(new Date().getMonth() + 1);
   selectedKategorie = signal<'PFK' | 'PHK'>('PFK');
@@ -178,6 +197,20 @@ export class ManualEntry {
       }
     });
     
+    // Sync stationControl with selectedStation
+    effect(() => {
+      const station = this.selectedStation();
+      if (station !== this.stationControl.value) {
+        this.stationControl.setValue(station, { emitEvent: false });
+        this.stationSearchValue.set(station);
+      }
+    });
+    
+    // Listen to FormControl changes and update search signal
+    this.stationControl.valueChanges.subscribe(value => {
+      this.stationSearchValue.set(value || '');
+    });
+    
     // Auto-load data when station, year, month, or kategorie changes
     effect(() => {
       const station = this.selectedStation();
@@ -239,6 +272,17 @@ export class ManualEntry {
     apiCall.subscribe({
       next: (response) => {
         this.stations.set(response.stations);
+        // Sync stationControl with selectedStation if it's still valid
+        const currentStation = this.selectedStation();
+        if (currentStation && response.stations.includes(currentStation)) {
+          this.stationControl.setValue(currentStation, { emitEvent: false });
+          this.stationSearchValue.set(currentStation);
+        } else if (currentStation && !response.stations.includes(currentStation)) {
+          // Station not available in new shift, clear it
+          this.selectedStation.set('');
+          this.stationControl.setValue('', { emitEvent: false });
+          this.stationSearchValue.set('');
+        }
       },
       error: (err) => {
         console.error('Error loading stations:', err);
@@ -416,10 +460,43 @@ export class ManualEntry {
     });
   }
 
-  onStationChange(station: string) {
-    this.selectedStation.set(station);
+  onStationChange(station: string | null) {
+    if (station) {
+      this.selectedStation.set(station);
+      this.stationControl.setValue(station, { emitEvent: false });
+      this.stationSearchValue.set(station);
+    } else {
+      this.selectedStation.set('');
+      this.stationControl.setValue('', { emitEvent: false });
+      this.stationSearchValue.set('');
+    }
     // MiTa-Durchschnitt wird jetzt aus täglichen Werten berechnet (in loadDataForPeriod)
     // Kein separater API-Call mehr nötig
+  }
+  
+  onStationInputBlur() {
+    // If the input value doesn't match any station, clear the selection
+    const inputValue = this.stationControl.value;
+    const currentStations = this.stations();
+    
+    if (inputValue && !currentStations.includes(inputValue)) {
+      // Invalid input, clear it
+      this.selectedStation.set('');
+      this.stationControl.setValue('', { emitEvent: false });
+      this.stationSearchValue.set('');
+    } else if (inputValue && currentStations.includes(inputValue)) {
+      // Valid input, ensure it's selected
+      this.selectedStation.set(inputValue);
+      this.stationSearchValue.set(inputValue);
+    } else if (!inputValue) {
+      // Empty input, clear selection
+      this.selectedStation.set('');
+      this.stationSearchValue.set('');
+    }
+  }
+  
+  displayStation(station: string | null): string {
+    return station || '';
   }
 
   onYearChange(year: number) {
@@ -450,15 +527,21 @@ export class ManualEntry {
         if (currentStations.includes(previousStation)) {
           // Station is available in new shift, keep it selected
           this.selectedStation.set(previousStation);
+          this.stationControl.setValue(previousStation, { emitEvent: false });
+          this.stationSearchValue.set(previousStation);
           // Reload data for the station in the new shift
           this.loadDataForPeriod(previousStation, this.selectedYear(), this.selectedMonth(), this.selectedKategorie());
         } else {
           // Station not available, reset selection
           this.selectedStation.set('');
+          this.stationControl.setValue('', { emitEvent: false });
+          this.stationSearchValue.set('');
           this.dayEntries.set([]);
         }
       }, 100);
     } else {
+      this.stationControl.setValue('', { emitEvent: false });
+      this.stationSearchValue.set('');
       this.dayEntries.set([]);
     }
   }

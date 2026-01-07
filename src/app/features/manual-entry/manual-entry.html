@@ -30,17 +30,26 @@
   <mat-card class="selection-card">
     <mat-card-content>
       <div class="selection-row">
-        <!-- Station Dropdown -->
+        <!-- Station Dropdown with Search -->
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Station auswählen</mat-label>
-          <mat-select [value]="selectedStation()" (selectionChange)="onStationChange($event.value)">
-            <mat-option value="">-- Bitte wählen --</mat-option>
-            <mat-option *ngFor="let station of stations()" [value]="station">
+          <input 
+            type="text"
+            matInput
+            [formControl]="stationControl"
+            [matAutocomplete]="stationAuto"
+            (blur)="onStationInputBlur()"
+            placeholder="Station suchen oder auswählen">
+          <mat-autocomplete 
+            #stationAuto="matAutocomplete"
+            [displayWith]="displayStation"
+            (optionSelected)="onStationChange($event.option.value)">
+            <mat-option *ngFor="let station of filteredStations()" [value]="station">
               {{ station }}
             </mat-option>
-          </mat-select>
+          </mat-autocomplete>
           <mat-icon matSuffix>business</mat-icon>
-          <mat-hint>Stationen aus MiNa/MiTa-Bestände</mat-hint>
+          <mat-hint>Stationen aus MiNa/MiTa-Bestände - Tippen Sie zum Suchen</mat-hint>
         </mat-form-field>
         
         <!-- Button zum Löschen aller Daten für diese Station -->
