@@ -242,7 +242,7 @@ nav {
 
 // Main content area with medical styling
 .main-content {
-  padding: 32px 24px;
+  padding: 16px 20px;
   max-width: 1400px;
   margin: 0 auto;
   background: transparent;
@@ -316,9 +316,9 @@ mat-card {
 // Professional Medical Upload Section
 .upload {
   background: $pure-white;
-  padding: 40px;
-  border-radius: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   border: 2px solid $light-gray;
   position: relative;
   overflow: hidden;
@@ -329,15 +329,15 @@ mat-card {
     top: 0;
     left: 0;
     right: 0;
-    height: 6px;
+    height: 4px;
     background: linear-gradient(90deg, $primary-teal, $secondary-teal, $medical-green);
   }
 
   h2 {
     color: $primary-teal;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     font-weight: 700;
-    font-size: 28px;
+    font-size: 20px;
     text-align: center;
     letter-spacing: -0.5px;
   }
@@ -345,17 +345,17 @@ mat-card {
   .upload-subtitle {
     text-align: center;
     color: $text-secondary;
-    font-size: 16px;
-    margin-bottom: 32px;
+    font-size: 13px;
+    margin-bottom: 16px;
     line-height: 1.5;
   }
 
   mat-form-field {
     width: 100%;
-    margin-bottom: 24px;
+    margin-bottom: 16px;
 
     ::ng-deep .mat-mdc-form-field-outline {
-      border-radius: 12px;
+      border-radius: 8px;
     }
 
     ::ng-deep .mat-mdc-select-arrow {
@@ -364,10 +364,10 @@ mat-card {
   }
 
   .file-upload-section {
-    margin: 32px 0;
-    padding: 32px;
+    margin: 16px 0;
+    padding: 16px;
     background: linear-gradient(135deg, $very-light-teal 0%, $pure-white 100%);
-    border-radius: 16px;
+    border-radius: 8px;
     border: 2px dashed $secondary-teal;
     text-align: center;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -376,14 +376,14 @@ mat-card {
 
     &::before {
       content: '';
-      width: 64px;
-      height: 64px;
+      width: 48px;
+      height: 48px;
       background: $primary-teal;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto 16px;
+      margin: 0 auto 12px;
       opacity: 0.7;
       transition: all 0.3s ease;
     }
@@ -394,20 +394,20 @@ mat-card {
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 32px;
-      height: 32px;
+      width: 24px;
+      height: 24px;
       background-image: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z' fill='white'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
       background-position: center;
-      background-size: 24px;
+      background-size: 18px;
       transition: all 0.3s ease;
     }
 
     &:hover, &.drag-over {
       border-color: $primary-teal;
       background: linear-gradient(135deg, $light-teal 0%, $very-light-teal 100%);
-      transform: translateY(-4px) scale(1.02);
-      box-shadow: 0 12px 32px rgba(0, 172, 193, 0.25);
+      transform: translateY(-2px) scale(1.01);
+      box-shadow: 0 8px 24px rgba(0, 172, 193, 0.25);
 
       &::before {
         transform: scale(1.1);
@@ -438,30 +438,31 @@ mat-card {
 
   .upload-placeholder {
     .upload-icon {
-      font-size: 48px;
-      margin-bottom: 16px;
+      font-size: 32px;
+      margin-bottom: 12px;
       opacity: 0.8;
     }
 
     h3 {
       color: $text-secondary;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       font-weight: 600;
+      font-size: 16px;
       transition: color 0.3s ease;
     }
 
     p {
       color: $text-muted;
-      margin-bottom: 8px;
-      font-size: 14px;
+      margin-bottom: 4px;
+      font-size: 13px;
       transition: color 0.3s ease;
     }
 
     .file-types {
-      font-size: 12px;
+      font-size: 11px;
       color: $text-muted;
       font-style: italic;
-      margin-top: 16px;
+      margin-top: 8px;
     }
   }
 
@@ -828,15 +829,15 @@ pre {
     }
 
     .upload {
-      padding: 24px 16px !important;
-      border-radius: 16px !important;
+      padding: 16px 12px !important;
+      border-radius: 12px !important;
 
       h2 {
-        font-size: 24px !important;
+        font-size: 18px !important;
       }
 
       .upload-subtitle {
-        font-size: 14px !important;
+        font-size: 12px !important;
       }
     }
 

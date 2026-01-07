@@ -7,21 +7,28 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 24px;
-  gap: 16px;
+  margin-bottom: 16px;
+  gap: 12px;
+
+  h2 {
+    font-size: 20px;
+    margin-bottom: 8px;
+  }
 
   .archive-button {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     white-space: nowrap;
+    font-size: 13px;
+    padding: 8px 16px;
   }
 }
 
 .upload-subtitle {
   color: #666;
-  margin-bottom: 32px;
-  font-size: 16px;
+  margin-bottom: 16px;
+  font-size: 13px;
   line-height: 1.5;
 }
 
@@ -29,7 +36,7 @@
 .schema-selector-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   
   mat-form-field {
     flex: 1;
@@ -50,16 +57,16 @@
     }
     
     mat-icon {
-      font-size: 28px;
-      width: 28px;
-      height: 28px;
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
     }
   }
 }
 
 .file-upload-section {
-  margin: 24px 0;
-  padding: 24px;
+  margin: 16px 0;
+  padding: 16px;
   background: #f8f9fa;
   border-radius: 8px;
   border: 2px dashed #e0e0e0;
@@ -70,41 +77,72 @@
     border-color: #0066cc;
     background: #e3f2fd;
   }
+
+  .upload-placeholder {
+    h3 {
+      font-size: 16px;
+      margin: 8px 0;
+    }
+
+    p {
+      font-size: 13px;
+      margin: 4px 0;
+    }
+
+    .file-types {
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    .upload-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+  }
 }
 
 .upload-actions {
-  margin-top: 20px;
+  margin-top: 12px;
   display: flex;
-  gap: 12px;
+  gap: 8px;
   justify-content: center;
   flex-wrap: wrap;
 
   .upload-spinner {
-    margin-right: 8px;
+    margin-right: 6px;
   }
 
   button {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    font-size: 13px;
+    padding: 8px 16px;
   }
 }
 
 .file-list {
-  margin-top: 24px;
+  margin-top: 16px;
 
   h3 {
     color: #0066cc;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     font-weight: 600;
+    font-size: 16px;
   }
 }
 
 .file-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   width: 100%;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
 }
 
 .file-info {
@@ -124,19 +162,20 @@
   }
   
   mat-icon {
-    font-size: 20px;
-    width: 20px;
-    height: 20px;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
   }
 }
 
 .file-name {
   font-weight: 500;
   color: #333;
+  font-size: 13px;
 }
 
 .file-size {
-  font-size: 12px;
+  font-size: 11px;
   color: #666;
 }
 
@@ -148,29 +187,29 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: 12px;
   z-index: 5;
-  border-radius: 12px;
+  border-radius: 8px;
   backdrop-filter: blur(3px);
   pointer-events: all;
-  padding: 24px 18px;
+  padding: 16px 12px;
 
   p {
     margin: 0;
     color: #0093b8;
     font-weight: 600;
-    font-size: 17px;
+    font-size: 14px;
   }
 
   .loading-subtext {
-    font-size: 14px;
+    font-size: 12px;
     color: #4a6370;
     letter-spacing: 0.2px;
   }
 
   .loading-bar {
-    width: min(360px, 90%);
-    border-radius: 6px;
+    width: min(300px, 90%);
+    border-radius: 4px;
     overflow: hidden;
     animation: fade-in 300ms ease-out;
   }
@@ -196,8 +235,8 @@
 
 
 .response-section {
-  margin-top: 32px;
-  padding: 24px;
+  margin-top: 16px;
+  padding: 16px;
   background: #f8f9fa;
   border-radius: 8px;
   border-left: 4px solid #0066cc;
@@ -209,8 +248,9 @@
 
   h3 {
     color: #0066cc;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     font-weight: 600;
+    font-size: 16px;
   }
 
   &.debug h3 {
