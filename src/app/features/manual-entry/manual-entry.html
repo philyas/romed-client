@@ -220,7 +220,7 @@
   </mat-card>
 
   <!-- Statistics Card -->
-  <mat-card class="stats-card" *ngIf="selectedStation() && !loading()">
+  <mat-card class="stats-card" *ngIf="selectedStation() && !loading() && !isShifting()" [class.content-fade]="isShifting()">
     <mat-card-content>
       <div class="stats-row">
         <div class="stat-item">
@@ -416,7 +416,7 @@
   </mat-card>
 
   <!-- Data Entry Table -->
-  <mat-card class="data-entry-card" *ngIf="selectedStation()">
+  <mat-card class="data-entry-card" *ngIf="selectedStation()" [class.content-fade]="isShifting()">
     <mat-card-header>
       <div class="header-title-section">
         <mat-card-title>
@@ -447,12 +447,12 @@
     </mat-card-header>
 
     <mat-card-content>
-      <div class="loading-spinner" *ngIf="loading()">
+      <div class="loading-spinner" *ngIf="loading() || isShifting()">
         <mat-spinner></mat-spinner>
-        <p>Daten werden geladen...</p>
+        <p>{{ isShifting() ? 'Wechsle Schicht...' : 'Daten werden geladen...' }}</p>
       </div>
 
-      <div class="entry-table-container" *ngIf="!loading()">
+      <div class="entry-table-container" *ngIf="!loading() && !isShifting()">
         <table class="entry-table">
           <thead>
             <!-- Gruppen-Header für Soll/Ist-Arbeitszeit -->
@@ -720,11 +720,13 @@
   <div class="shift-indicator" 
        [class.shift-tag]="selectedShift() === 'tag'" 
        [class.shift-nacht]="selectedShift() === 'nacht'"
+       [class.shifting]="isShifting()"
        (click)="toggleShift()"
        matTooltip="Zwischen Tag und Nacht wechseln">
     <div class="shift-indicator-icon">
-      <mat-icon *ngIf="selectedShift() === 'tag'" class="tag-icon">light_mode</mat-icon>
-      <mat-icon *ngIf="selectedShift() === 'nacht'" class="nacht-icon">nightlight</mat-icon>
+      <mat-spinner *ngIf="isShifting()" diameter="24" class="shift-spinner"></mat-spinner>
+      <mat-icon *ngIf="!isShifting() && selectedShift() === 'tag'" class="tag-icon">light_mode</mat-icon>
+      <mat-icon *ngIf="!isShifting() && selectedShift() === 'nacht'" class="nacht-icon">nightlight</mat-icon>
     </div>
     <div class="shift-indicator-label">
       {{ selectedShift() === 'tag' ? 'Tag' : 'Nacht' }}

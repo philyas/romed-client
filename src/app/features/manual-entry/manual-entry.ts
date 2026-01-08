@@ -105,6 +105,7 @@ export class ManualEntry {
   selectedMonth = signal<number>(new Date().getMonth() + 1);
   selectedKategorie = signal<'PFK' | 'PHK'>('PFK');
   selectedShift = signal<'tag' | 'nacht'>('tag');
+  isShifting = signal<boolean>(false);
   loading = signal<boolean>(false);
   saving = signal<boolean>(false);
   uploading = signal<boolean>(false);
@@ -454,6 +455,12 @@ export class ManualEntry {
           this.phkTageswerte.set(null);
         }
         this.loading.set(false);
+        // Reset shifting state after data is loaded
+        if (this.isShifting()) {
+          setTimeout(() => {
+            this.isShifting.set(false);
+          }, 200);
+        }
       },
       error: (err) => {
         console.error('Error loading data:', err);
@@ -462,6 +469,12 @@ export class ManualEntry {
         this.geleistetePhkStunden.set(null);
         this.phkTageswerte.set(null);
         this.loading.set(false);
+        // Reset shifting state even on error
+        if (this.isShifting()) {
+          setTimeout(() => {
+            this.isShifting.set(false);
+          }, 200);
+        }
       }
     });
   }
@@ -618,12 +631,19 @@ export class ManualEntry {
 
   toggleShift() {
     const newShift = this.selectedShift() === 'tag' ? 'nacht' : 'tag';
-    this.onShiftChange(newShift);
+    this.isShifting.set(true);
+    // Small delay to show the transition animation
+    setTimeout(() => {
+      this.onShiftChange(newShift);
+      // isShifting will be reset in loadManualEntryData when data is loaded
+    }, 150);
   }
 
   onShiftChange(shift: 'tag' | 'nacht') {
     const previousStation = this.selectedStation();
     this.selectedShift.set(shift);
+    // Set loading to show transition
+    this.loading.set(true);
 
     // Load stations for the new shift first
     this.loadStations();
@@ -647,6 +667,11 @@ export class ManualEntry {
           this.stationSearchTerm.set('');
           this.isEditingStation.set(false);
           this.dayEntries.set([]);
+          this.loading.set(false);
+          // Reset shifting state when done
+          setTimeout(() => {
+            this.isShifting.set(false);
+          }, 200);
         }
       }, 100);
     } else {
@@ -654,6 +679,11 @@ export class ManualEntry {
       this.stationSearchTerm.set('');
       this.isEditingStation.set(false);
       this.dayEntries.set([]);
+      this.loading.set(false);
+      // Reset shifting state when done
+      setTimeout(() => {
+        this.isShifting.set(false);
+      }, 200);
     }
   }
 

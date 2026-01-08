@@ -507,6 +507,7 @@
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     border: 2px solid #0066cc;
     flex-shrink: 0;
+    transition: opacity 0.3s ease, filter 0.3s ease;
 
     mat-card-content {
       padding: 10px;
@@ -737,6 +738,14 @@
     }
   }
 
+  // Content fade animation during shift transition
+  .content-fade {
+    opacity: 0.3 !important;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    filter: blur(2px);
+  }
+
   // Data Entry Card
   .data-entry-card {
     margin-bottom: 12px;
@@ -746,6 +755,7 @@
     opacity: 1 !important;
     height: auto !important;
     min-height: auto !important;
+    transition: opacity 0.3s ease, filter 0.3s ease;
 
     mat-card-header {
       display: flex;
@@ -1314,12 +1324,23 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     transition: all 0.4s ease;
     animation: pulse 2s ease-in-out infinite;
+    position: relative;
 
     mat-icon {
       font-size: 32px;
       width: 32px;
       height: 32px;
-      transition: all 0.4s ease;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      opacity: 1;
+    }
+
+    .shift-spinner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      opacity: 1;
+      transition: opacity 0.3s ease;
     }
 
     .tag-icon {
@@ -1330,6 +1351,37 @@
     .nacht-icon {
       color: #3f51b5;
       animation: float 3s ease-in-out infinite;
+    }
+  }
+
+  // Shifting state - smooth fade transition
+  &.shifting {
+    .shift-indicator-icon {
+      animation: none; // Disable pulse during transition
+      
+      mat-icon {
+        opacity: 0;
+        transform: scale(0.8) rotate(90deg);
+      }
+
+      .shift-spinner {
+        opacity: 1;
+        animation: fadeInSpin 0.3s ease;
+      }
+    }
+
+    .shift-indicator-label {
+      opacity: 0.7;
+      transition: opacity 0.3s ease;
+    }
+  }
+
+  // Fade in animation for new icon after transition
+  &:not(.shifting) {
+    .shift-indicator-icon {
+      mat-icon {
+        animation: fadeInIcon 0.4s ease;
+      }
     }
   }
 
@@ -1396,6 +1448,28 @@
   }
   50% {
     transform: translateY(-8px);
+  }
+}
+
+@keyframes fadeInSpin {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes fadeInIcon {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) rotate(-90deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
   }
 }
 
