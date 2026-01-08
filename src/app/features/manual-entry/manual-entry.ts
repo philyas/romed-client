@@ -324,22 +324,26 @@ export class ManualEntry {
         });
         this.dailyMinaMita.set(dailyMap);
         
-        // Berechne MiTa-Durchschnitt aus täglichen Werten
-        let mitaSum = 0;
-        let mitaCount = 0;
+        // Berechne Durchschnitt je nach Schicht: Tag = MiTa, Nacht = MiNa
+        const schicht = this.selectedShift();
+        let sum = 0;
+        let count = 0;
         dailyMap.forEach((dayData) => {
-          if (dayData && dayData.mita !== null && !isNaN(dayData.mita)) {
-            mitaSum += dayData.mita;
-            mitaCount++;
+          const value = schicht === 'tag' ? dayData.mita : dayData.mina;
+          if (value !== null && !isNaN(value)) {
+            sum += value;
+            count++;
           }
         });
         
-        if (mitaCount > 0) {
-          const mitaDurchschnitt = Math.round((mitaSum / mitaCount) * 100) / 100;
-          this.belegteBettenKonstante.set(mitaDurchschnitt);
-          console.log(`✅ MiTa-Durchschnitt aus täglichen Werten für ${station}: ${mitaDurchschnitt} (${mitaCount} Tage)`);
+        if (count > 0) {
+          const durchschnitt = Math.round((sum / count) * 100) / 100;
+          this.belegteBettenKonstante.set(durchschnitt);
+          const wertName = schicht === 'tag' ? 'MiTa' : 'MiNa';
+          console.log(`✅ ${wertName}-Durchschnitt aus täglichen Werten für ${station}: ${durchschnitt} (${count} Tage)`);
         } else {
-          console.log(`⚠️ Keine MiTa-Werte für ${station} gefunden. Kein Fallback.`);
+          const wertName = schicht === 'tag' ? 'MiTa' : 'MiNa';
+          console.log(`⚠️ Keine ${wertName}-Werte für ${station} gefunden. Kein Fallback.`);
           this.belegteBettenKonstante.set(null);
         }
       },
@@ -781,10 +785,11 @@ export class ManualEntry {
       return;
     }
 
-    // Get current configuration values for Tag
-    const schichtStunden = this.schichtStundenTag();
-    const ppRatioBase = this.ppRatioTagBase();
-    const phkAnteilBase = this.phkAnteilTagBase();
+    // Get current configuration values for current shift
+    const schicht = this.selectedShift();
+    const schichtStunden = schicht === 'tag' ? this.schichtStundenTag() : this.schichtStundenNacht();
+    const ppRatioBase = schicht === 'tag' ? this.ppRatioTagBase() : this.ppRatioNachtBase();
+    const phkAnteilBase = schicht === 'tag' ? this.phkAnteilTagBase() : this.phkAnteilNachtBase();
 
     // Open dialog with configuration
     const dialogRef = this.dialog.open(RecomputeConfigDialogComponent, {
@@ -794,11 +799,11 @@ export class ManualEntry {
         jahr: jahr,
         monat: monat,
         kategorie: kategorie,
-        schicht: 'tag' as const,
+        schicht: schicht as 'tag' | 'nacht',
         schicht_stunden: schichtStunden,
         phk_anteil_base: phkAnteilBase,
         pp_ratio_base: ppRatioBase,
-        schichtLabel: 'Tag'
+        schichtLabel: schicht === 'tag' ? 'Tag' : 'Nacht'
       }
     });
 
@@ -1183,8 +1188,9 @@ export class ManualEntry {
     const avgTatsaechlichAnrechenbar = tatsaechlichAnrechenbar;
     const gesamtAnrechenbar = avgHoursPfk + avgTatsaechlichAnrechenbar;
     
-    const schichtStunden = this.schichtStundenTag();
-    // Exam. Pflege = Gesamt Anrechenbar / Schichtstunden (aus Config, Standard: 16 Stunden, 6-22 Uhr)
+    const schicht = this.selectedShift();
+    const schichtStunden = schicht === 'tag' ? this.schichtStundenTag() : this.schichtStundenNacht();
+    // Exam. Pflege = Gesamt Anrechenbar / Schichtstunden (Tag: 16h, Nacht: 8h)
     const examPflege = gesamtAnrechenbar / schichtStunden;
     
     return examPflege;
@@ -1210,17 +1216,20 @@ export class ManualEntry {
 
   getDurchschnittPpugNachPfk(): string | null {
     const dailyMap = this.dailyMinaMita();
-    const ppRatioBase = this.ppRatioTagBase();
+    const schicht = this.selectedShift();
+    const ppRatioBase = schicht === 'tag' ? this.ppRatioTagBase() : this.ppRatioNachtBase();
     
     if (ppRatioBase === 0) return null;
     
     let sum = 0;
     let count = 0;
     
-    // Berechne PpUG nach PFK für alle Tage mit MiTa-Daten
+    // Berechne PpUG nach PFK für alle Tage mit MiTa/MiNa-Daten
     dailyMap.forEach((dayData, tag) => {
-      if (dayData && dayData.mita !== null) {
-        const ppugNachPfk = dayData.mita / ppRatioBase;
+      // Tag = MiTa, Nacht = MiNa
+      const value = schicht === 'tag' ? dayData.mita : dayData.mina;
+      if (value !== null && !isNaN(value)) {
+        const ppugNachPfk = value / ppRatioBase;
         sum += ppugNachPfk;
         count++;
       }
@@ -1281,22 +1290,24 @@ export class ManualEntry {
       return null;
     }
     
-    // Für Tag-Schicht: durchschnitt MiTa - durchschnitt PFK Normal
+    const schicht = this.selectedShift();
+    // Tag = MiTa, Nacht = MiNa
     const dailyMap = this.dailyMinaMita();
     let sum = 0;
     let count = 0;
     
-    // Berechne Durchschnitt von MiTa für alle Tage mit Daten
+    // Berechne Durchschnitt von MiTa/MiNa für alle Tage mit Daten
     dailyMap.forEach((dayData, tag) => {
-      if (dayData && dayData.mita !== null) {
-        sum += dayData.mita;
+      const value = schicht === 'tag' ? dayData.mita : dayData.mina;
+      if (value !== null && !isNaN(value)) {
+        sum += value;
         count++;
       }
     });
     
     if (count === 0) return null;
     
-    const durchschnittMita = sum / count;
+    const durchschnittMi = sum / count;
     
     const durchschnittPfkNormalStr = this.getDurchschnittPfkNormal();
     if (durchschnittPfkNormalStr === null) {
@@ -1308,9 +1319,9 @@ export class ManualEntry {
       return null;
     }
     
-    // P:P = durchschnitt MiTa : durchschnitt PFK Normal
+    // P:P = durchschnitt MiTa/MiNa : durchschnitt PFK Normal
     if (durchschnittPfkNormal === 0) return null;
-    const ppRatio = durchschnittMita / durchschnittPfkNormal;
+    const ppRatio = durchschnittMi / durchschnittPfkNormal;
     return ppRatio;
   }
 
@@ -1322,7 +1333,8 @@ export class ManualEntry {
   getDurchschnittTatsaechlichAnrechenbar(): string | null {
     const entries = this.dayEntries();
     const phkTageswerte = this.phkTageswerte();
-    const schichtStunden = this.schichtStundenTag();
+    const schicht = this.selectedShift();
+    const schichtStunden = schicht === 'tag' ? this.schichtStundenTag() : this.schichtStundenNacht();
     
     if (schichtStunden === 0) return null;
     
@@ -1412,8 +1424,14 @@ export class ManualEntry {
   getMitaForTag(tag: number): string {
     const dailyMap = this.dailyMinaMita();
     const dayData = dailyMap.get(tag);
-    if (dayData && dayData.mita !== null) {
-      return dayData.mita.toFixed(1);
+    if (!dayData) return '-';
+    
+    // Tag = MiTa, Nacht = MiNa
+    const schicht = this.selectedShift();
+    const value = schicht === 'tag' ? dayData.mita : dayData.mina;
+    
+    if (value !== null && !isNaN(value)) {
+      return value.toFixed(1);
     }
     return '-';
   }
@@ -1421,10 +1439,16 @@ export class ManualEntry {
   getPpugNachPfkForTag(tag: number): string {
     const dailyMap = this.dailyMinaMita();
     const dayData = dailyMap.get(tag);
-    if (dayData && dayData.mita !== null) {
-      // PpUG nach PFK = MiTa / pp_ratio_tag_base
-      const ppRatioBase = this.ppRatioTagBase();
-      const result = dayData.mita / ppRatioBase;
+    if (!dayData) return '-';
+    
+    const schicht = this.selectedShift();
+    // Tag = MiTa, Nacht = MiNa
+    const value = schicht === 'tag' ? dayData.mita : dayData.mina;
+    const ppRatioBase = schicht === 'tag' ? this.ppRatioTagBase() : this.ppRatioNachtBase();
+    
+    if (value !== null && !isNaN(value) && ppRatioBase > 0) {
+      // PpUG nach PFK = MiTa/MiNa / pp_ratio_base
+      const result = value / ppRatioBase;
       return result.toFixed(2);
     }
     return '-';
@@ -1433,12 +1457,18 @@ export class ManualEntry {
   getPpugNachPfkInStundenForTag(tag: number): string {
     const dailyMap = this.dailyMinaMita();
     const dayData = dailyMap.get(tag);
-    if (dayData && dayData.mita !== null) {
-      // PpUG nach PFK in Std. = (MiTa / pp_ratio_tag_base) × Schichtstunden Tag
-      // = MiTa × Schichtstunden Tag / pp_ratio_tag_base
-      const ppRatioBase = this.ppRatioTagBase();
-      const schichtStunden = this.schichtStundenTag();
-      const result = (dayData.mita * schichtStunden) / ppRatioBase;
+    if (!dayData) return '-';
+    
+    const schicht = this.selectedShift();
+    // Tag = MiTa, Nacht = MiNa
+    const value = schicht === 'tag' ? dayData.mita : dayData.mina;
+    const ppRatioBase = schicht === 'tag' ? this.ppRatioTagBase() : this.ppRatioNachtBase();
+    const schichtStunden = schicht === 'tag' ? this.schichtStundenTag() : this.schichtStundenNacht();
+    
+    if (value !== null && !isNaN(value) && ppRatioBase > 0) {
+      // PpUG nach PFK in Std. = (MiTa/MiNa / pp_ratio_base) × Schichtstunden
+      // = MiTa/MiNa × Schichtstunden / pp_ratio_base
+      const result = (value * schichtStunden) / ppRatioBase;
       return result.toFixed(2);
     }
     return '-';
@@ -1452,13 +1482,21 @@ export class ManualEntry {
     const dailyMap = this.dailyMinaMita();
     const dayData = dailyMap.get(entry.tag);
     
-    if (!dayData || dayData.mita === null) {
+    if (!dayData) {
+      return '-';
+    }
+    
+    const schicht = this.selectedShift();
+    // Tag = MiTa, Nacht = MiNa
+    const value = schicht === 'tag' ? dayData.mita : dayData.mina;
+    const ppRatioBase = schicht === 'tag' ? this.ppRatioTagBase() : this.ppRatioNachtBase();
+    
+    if (value === null || isNaN(value) || ppRatioBase === 0) {
       return '-';
     }
     
     // Berechne PpUG nach PFK
-    const ppRatioBase = this.ppRatioTagBase();
-    const ppugNachPfk = dayData.mita / ppRatioBase;
+    const ppugNachPfk = value / ppRatioBase;
     
     // PFK Normal aus entry
     const pfkNormal = entry.pfkNormal;
@@ -1597,12 +1635,20 @@ export class ManualEntry {
     const dailyMap = this.dailyMinaMita();
     const dayData = dailyMap.get(entry.tag);
     
-    if (!dayData || dayData.mita === null) {
+    if (!dayData) {
       return '-';
     }
     
-    const ppRatioBase = this.ppRatioTagBase();
-    const ppugNachPfk = dayData.mita / ppRatioBase;
+    const schicht = this.selectedShift();
+    // Tag = MiTa, Nacht = MiNa
+    const value = schicht === 'tag' ? dayData.mita : dayData.mina;
+    
+    if (value === null || isNaN(value)) {
+      return '-';
+    }
+    
+    const ppRatioBase = schicht === 'tag' ? this.ppRatioTagBase() : this.ppRatioNachtBase();
+    const ppugNachPfk = value / ppRatioBase;
     
     // Prüfe: Exam. Pflege >= PpUG nach PFK
     return examPflege >= ppugNachPfk ? 'Ja' : 'Nein';
@@ -1730,10 +1776,11 @@ export class ManualEntry {
   }
 
   openStatInfoModal(statType: string) {
-    const schichtStunden = this.schichtStundenTag();
-    const phkAnteilBase = 10;
+    const schicht = this.selectedShift();
+    const schichtStunden = schicht === 'tag' ? this.schichtStundenTag() : this.schichtStundenNacht();
+    const phkAnteilBase = schicht === 'tag' ? (this.phkAnteilTagBase() || 10) : (this.phkAnteilNachtBase() || 10);
     const phkAnteil = 1 - (phkAnteilBase / 100);
-    const ppRatioBase = this.ppRatioTagBase();
+    const ppRatioBase = schicht === 'tag' ? this.ppRatioTagBase() : this.ppRatioNachtBase();
     const entries = this.dayEntries();
     const dailyMap = this.dailyMinaMita();
     const belegteBetten = this.belegteBettenKonstante();
@@ -1883,14 +1930,15 @@ export class ManualEntry {
       case 'patientenProPflegekraft':
         const examPflegeForPatienten = this.getExamPflege();
         const patienten = this.getPatientenProPflegekraft();
+        const bestandName = schicht === 'tag' ? 'MiTa Bestände (MiTa)' : 'MiNa Bestände (MiNa)';
         modalData = {
           title: 'Patienten/Pflegekraft',
           steps: [
             {
               name: 'Patienten/Pflegekraft',
-              formula: `Patienten/Pflegekraft = Exam. Pflege / MiTa Bestände (MiTa)-Durchschnitt`,
+              formula: `Patienten/Pflegekraft = Exam. Pflege / ${bestandName}-Durchschnitt`,
               description: `Berechnet das Verhältnis von Patienten zu Pflegekräften`,
-              example: `Wenn Exam. Pflege = ${examPflegeForPatienten ? examPflegeForPatienten.toFixed(4) : 'N/A'} und MiTa Bestände (MiTa) = ${belegteBetten ? belegteBetten.toFixed(2) : 'N/A'} → ${patienten || 'N/A'}`
+              example: `Wenn Exam. Pflege = ${examPflegeForPatienten ? examPflegeForPatienten.toFixed(4) : 'N/A'} und ${bestandName} = ${belegteBetten ? belegteBetten.toFixed(2) : 'N/A'} → ${patienten || 'N/A'}`
             },
             {
               name: 'Exam. Pflege',
@@ -1899,13 +1947,13 @@ export class ManualEntry {
               example: `Berechnet aus Gesamt Anrechenbar`
             },
             {
-              name: 'MiTa Bestände (MiTa)-Durchschnitt',
-              formula: `MiTa Bestände (MiTa) = Durchschnittliche Tagesbelegung`,
+              name: `${bestandName}-Durchschnitt`,
+              formula: `${bestandName} = Durchschnittliche Tagesbelegung`,
               description: `Die mittlere Tagesbelegung aus MiNa/MiTa-Beständen`,
               example: `Wird täglich aus den Bestandsdaten ermittelt`
             }
           ],
-          dataSource: 'Exam. Pflege (berechnet) und MiTa Bestände (MiTa) (aus MiNa/MiTa-Beständen)'
+          dataSource: `Exam. Pflege (berechnet) und ${bestandName} (aus MiNa/MiTa-Beständen)`
         };
         break;
 
@@ -1949,6 +1997,7 @@ export class ManualEntry {
 
       case 'deltaSollIst':
         const delta = this.getDeltaSollIstPflegfachkraft();
+        const bestandNameDelta = schicht === 'tag' ? 'MiTa Bestände (MiTa)' : 'MiNa Bestände (MiNa)';
         modalData = {
           title: 'Delta Soll-Ist Pflegfachkraft',
           steps: [
@@ -1966,32 +2015,33 @@ export class ManualEntry {
             },
             {
               name: '⌀ PpUG nach PFK',
-              formula: `⌀ PpUG nach PFK = Durchschnitt von (MiTa Bestände (MiTa) / Pp-Ratio)`,
+              formula: `⌀ PpUG nach PFK = Durchschnitt von (${bestandNameDelta} / Pp-Ratio)`,
               description: `Durchschnittlicher benötigter Pflegekraft-Bedarf`,
-              example: `Berechnet aus täglichen MiTa Bestände (MiTa)-Werten`
+              example: `Berechnet aus täglichen ${bestandNameDelta}-Werten`
             }
           ],
           constants: [
-            { name: 'Pp-Ratio Basiswert (Tag)', value: `${ppRatioBase}`, unit: 'Zahl' }
+            { name: `Pp-Ratio Basiswert (${schicht === 'tag' ? 'Tag' : 'Nacht'})`, value: `${ppRatioBase}`, unit: 'Zahl' }
           ],
-          dataSource: 'Ergibt PFK (PFK Normal) (eingegeben) und MiTa Bestände (MiTa) (aus Beständen)'
+          dataSource: `Ergibt PFK (PFK Normal) (eingegeben) und ${bestandNameDelta} (aus Beständen)`
         };
         break;
 
       case 'ppRatio':
         const ppRatio = this.getPPRatio();
+        const bestandName7 = schicht === 'tag' ? 'MiTa Bestände (MiTa)' : 'MiNa Bestände (MiNa)';
         modalData = {
           title: 'P:P (Patienten zu Pflegekraft)',
           steps: [
             {
               name: 'P:P',
-              formula: `P:P = ⌀ MiTa Bestände (MiTa) / ⌀ Ergibt PFK (PFK Normal)`,
+              formula: `P:P = ⌀ ${bestandName7} / ⌀ Ergibt PFK (PFK Normal)`,
               description: `Verhältnis von durchschnittlicher Tagesbelegung zu durchschnittlicher PFK-Anzahl`,
-              example: `Wenn ⌀ MiTa Bestände (MiTa) = 20.0 und ⌀ Ergibt PFK (PFK Normal) = 5.0 → P:P = ${ppRatio ? ppRatio.toFixed(2) : 'N/A'}`
+              example: `Wenn ⌀ ${bestandName7} = 20.0 und ⌀ Ergibt PFK (PFK Normal) = 5.0 → P:P = ${ppRatio ? ppRatio.toFixed(2) : 'N/A'}`
             },
             {
-              name: '⌀ MiTa Bestände (MiTa)',
-              formula: `⌀ MiTa Bestände (MiTa) = Durchschnitt der täglichen MiTa Bestände (MiTa)-Werte`,
+              name: `⌀ ${bestandName7}`,
+              formula: `⌀ ${bestandName7} = Durchschnitt der täglichen ${bestandName7}-Werte`,
               description: `Durchschnittliche Tagesbelegung`,
               example: `Berechnet aus täglichen MiNa/MiTa-Beständen`
             },
@@ -2002,18 +2052,19 @@ export class ManualEntry {
               example: `Berechnet aus eingegebenen PFK-Stunden`
             }
           ],
-          dataSource: 'MiTa Bestände (MiTa) (aus Beständen) und Ergibt PFK (PFK Normal) (eingegeben)'
+          dataSource: `${bestandName7} (aus Beständen) und Ergibt PFK (PFK Normal) (eingegeben)`
         };
         break;
 
       case 'mitaDurchschnitt':
+        const bestandName8 = schicht === 'tag' ? 'MiTa Bestände (MiTa)' : 'MiNa Bestände (MiNa)';
         modalData = {
-          title: 'MiTa Bestände (MiTa)-Ø Station',
+          title: `${bestandName8}-Ø Station`,
           steps: [
             {
-              name: 'MiTa Bestände (MiTa)-Durchschnitt',
-              formula: `MiTa Bestände (MiTa)-Ø = Durchschnitt der täglichen MiTa Bestände (MiTa)-Werte`,
-              description: `Die mittlere Tagesbelegung (MiTa Bestände (MiTa)) wird aus den MiNa/MiTa-Beständen für jeden Tag des Monats geladen und dann gemittelt`,
+              name: `${bestandName8}-Durchschnitt`,
+              formula: `${bestandName8}-Ø = Durchschnitt der täglichen ${bestandName8}-Werte`,
+              description: `Die mittlere Tagesbelegung (${bestandName8}) wird aus den MiNa/MiTa-Beständen für jeden Tag des Monats geladen und dann gemittelt`,
               example: `Wird täglich aus den Bestandsdaten ermittelt und dann gemittelt`
             }
           ],
@@ -2226,13 +2277,14 @@ export class ManualEntry {
         break;
 
       case 'mita':
+        const bestandName2 = schicht === 'tag' ? 'MiTa Bestände (MiTa)' : 'MiNa Bestände (MiNa)';
         modalData = {
-          title: 'MiTa Bestände (MiTa) (Mittlere Tagesbelegung)',
+          title: `${bestandName2} (Mittlere Tagesbelegung)`,
           steps: [
             {
-              name: 'MiTa Bestände (MiTa)',
-              formula: `MiTa Bestände (MiTa) = Durchschnittliche Tagesbelegung`,
-              description: `Die mittlere Tagesbelegung (MiTa Bestände (MiTa)) wird aus den MiNa/MiTa-Beständen für den jeweiligen Tag geladen`,
+              name: bestandName2,
+              formula: `${bestandName2} = Durchschnittliche Tagesbelegung`,
+              description: `Die mittlere Tagesbelegung (${bestandName2}) wird aus den MiNa/MiTa-Beständen für den jeweiligen Tag geladen`,
               example: `Wird täglich aus den Bestandsdaten ermittelt`
             }
           ],
@@ -2241,46 +2293,49 @@ export class ManualEntry {
         break;
 
       case 'ppugNachPfk':
-        const ppRatioBase = this.ppRatioTagBase();
+        const bestandName3 = schicht === 'tag' ? 'MiTa Bestände (MiTa)' : 'MiNa Bestände (MiNa)';
+        const ppRatioBasePpug = schicht === 'tag' ? this.ppRatioTagBase() : this.ppRatioNachtBase();
         modalData = {
           title: 'PpUG nach PFK',
           steps: [
             {
               name: 'PpUG nach PFK',
-              formula: `PpUG nach PFK = MiTa Bestände (MiTa) / Pp-Ratio Basiswert`,
+              formula: `PpUG nach PFK = ${bestandName3} / Pp-Ratio Basiswert`,
               description: `Berechnet die benötigte Pflegekraft-Anzahl basierend auf der Tagesbelegung`,
-              example: `Wenn MiTa Bestände (MiTa) = 20.0 und Pp-Ratio Basis = ${ppRatioBase}, dann: 20.0 / ${ppRatioBase} = ${(20.0 / ppRatioBase).toFixed(2)}`
+              example: `Wenn ${bestandName3} = 20.0 und Pp-Ratio Basis = ${ppRatioBasePpug}, dann: 20.0 / ${ppRatioBasePpug} = ${(20.0 / ppRatioBasePpug).toFixed(2)}`
             }
           ],
           constants: [
-            { name: 'Pp-Ratio Basiswert (Tag)', value: `${ppRatioBase}`, unit: 'Zahl' }
+            { name: `Pp-Ratio Basiswert (${schicht === 'tag' ? 'Tag' : 'Nacht'})`, value: `${ppRatioBasePpug}`, unit: 'Zahl' }
           ],
-          dataSource: 'MiTa Bestände (MiTa) (aus MiNa/MiTa-Beständen)'
+          dataSource: `${bestandName3} (aus MiNa/MiTa-Beständen)`
         };
         break;
 
       case 'ppugInStunden':
-        const ppRatioBase2 = this.ppRatioTagBase();
+        const bestandName4 = schicht === 'tag' ? 'MiTa Bestände (MiTa)' : 'MiNa Bestände (MiNa)';
+        const ppRatioBaseStunden = schicht === 'tag' ? this.ppRatioTagBase() : this.ppRatioNachtBase();
         modalData = {
           title: 'PpUG nach PFK in Stunden',
           steps: [
             {
               name: 'PpUG nach PFK in Stunden',
-              formula: `PpUG nach PFK in Std. = (MiTa Bestände (MiTa) × Schichtstunden) / Pp-Ratio Basiswert`,
+              formula: `PpUG nach PFK in Std. = (${bestandName4} × Schichtstunden) / Pp-Ratio Basiswert`,
               description: `Umrechnung der benötigten Pflegekraft-Anzahl in Arbeitsstunden`,
-              example: `Wenn MiTa Bestände (MiTa) = 20.0, Schichtstunden = ${schichtStunden}, Pp-Ratio = ${ppRatioBase2}: (20.0 × ${schichtStunden}) / ${ppRatioBase2} = ${((20.0 * schichtStunden) / ppRatioBase2).toFixed(2)} Stunden`
+              example: `Wenn ${bestandName4} = 20.0, Schichtstunden = ${schichtStunden}, Pp-Ratio = ${ppRatioBaseStunden}: (20.0 × ${schichtStunden}) / ${ppRatioBaseStunden} = ${((20.0 * schichtStunden) / ppRatioBaseStunden).toFixed(2)} Stunden`
             }
           ],
           constants: [
-            { name: 'Pp-Ratio Basiswert (Tag)', value: `${ppRatioBase2}`, unit: 'Zahl' },
-            { name: 'Schichtstunden (Tag)', value: `${schichtStunden}`, unit: 'Stunden' }
+            { name: `Pp-Ratio Basiswert (${schicht === 'tag' ? 'Tag' : 'Nacht'})`, value: `${ppRatioBaseStunden}`, unit: 'Zahl' },
+            { name: `Schichtstunden (${schicht === 'tag' ? 'Tag' : 'Nacht'})`, value: `${schichtStunden}`, unit: 'Stunden' }
           ],
-          dataSource: 'MiTa Bestände (MiTa) (aus MiNa/MiTa-Beständen)'
+          dataSource: `${bestandName4} (aus MiNa/MiTa-Beständen)`
         };
         break;
 
       case 'ppugErfuellt':
-        const ppRatioBase3 = this.ppRatioTagBase();
+        const bestandName5 = schicht === 'tag' ? 'MiTa Bestände (MiTa)' : 'MiNa Bestände (MiNa)';
+        const ppRatioBaseErfuellt = schicht === 'tag' ? this.ppRatioTagBase() : this.ppRatioNachtBase();
         modalData = {
           title: 'PpUG erfüllt',
           steps: [
@@ -2292,15 +2347,15 @@ export class ManualEntry {
             },
             {
               name: 'PpUG nach PFK',
-              formula: `PpUG nach PFK = MiTa Bestände (MiTa) / Pp-Ratio Basiswert`,
+              formula: `PpUG nach PFK = ${bestandName5} / Pp-Ratio Basiswert`,
               description: `Berechnet den benötigten Pflegekraft-Bedarf`,
-              example: `MiTa Bestände (MiTa) / ${ppRatioBase3}`
+              example: `${bestandName5} / ${ppRatioBaseErfuellt}`
             }
           ],
           constants: [
-            { name: 'Pp-Ratio Basiswert (Tag)', value: `${ppRatioBase3}`, unit: 'Zahl' }
+            { name: `Pp-Ratio Basiswert (${schicht === 'tag' ? 'Tag' : 'Nacht'})`, value: `${ppRatioBaseErfuellt}`, unit: 'Zahl' }
           ],
-          dataSource: 'Ergibt PFK (PFK Normal) (aus eingegebenen Stunden) und MiTa Bestände (MiTa) (aus Beständen)'
+          dataSource: `Ergibt PFK (PFK Normal) (aus eingegebenen Stunden) und ${bestandName5} (aus Beständen)`
         };
         break;
 
@@ -2350,7 +2405,8 @@ export class ManualEntry {
         break;
 
       case 'ppugErfuelltV2':
-        const ppRatioBase4 = this.ppRatioTagBase();
+        const bestandName6 = schicht === 'tag' ? 'MiTa Bestände (MiTa)' : 'MiNa Bestände (MiNa)';
+        const ppRatioBaseV2 = schicht === 'tag' ? this.ppRatioTagBase() : this.ppRatioNachtBase();
         modalData = {
           title: 'PpUG erfüllt (Version 2)',
           steps: [
@@ -2368,15 +2424,15 @@ export class ManualEntry {
             },
             {
               name: 'PpUG nach PFK',
-              formula: `PpUG nach PFK = MiTa Bestände (MiTa) / Pp-Ratio Basiswert`,
+              formula: `PpUG nach PFK = ${bestandName6} / Pp-Ratio Basiswert`,
               description: `Benötigter Pflegekraft-Bedarf`,
-              example: `MiTa Bestände (MiTa) / ${ppRatioBase4}`
+              example: `${bestandName6} / ${ppRatioBaseV2}`
             }
           ],
           constants: [
-            { name: 'Pp-Ratio Basiswert (Tag)', value: `${ppRatioBase4}`, unit: 'Zahl' }
+            { name: `Pp-Ratio Basiswert (${schicht === 'tag' ? 'Tag' : 'Nacht'})`, value: `${ppRatioBaseV2}`, unit: 'Zahl' }
           ],
-          dataSource: 'Exam. Pflege (berechnet) und MiTa Bestände (MiTa) (aus Beständen)'
+          dataSource: `Exam. Pflege (berechnet) und ${bestandName6} (aus Beständen)`
         };
         break;
     }
