@@ -1,18 +1,38 @@
 /* Manual Entry Component Styles */
+.main-content {
+  // Kompaktes Layout - passt initial in Viewport ohne Scrollen
+  display: block;
+  width: 100%;
+  
+  // Wenn keine Station ausgewählt, kein Scrollen
+  &:not(.has-station-selected) {
+    overflow-y: hidden;
+    max-height: 100vh;
+  }
+  
+  // Wenn Station ausgewählt, erlaube Scrollen
+  &.has-station-selected {
+    overflow-y: auto;
+  }
+}
+
 .manual-entry {
   position: relative;
+  display: flex;
+  flex-direction: column;
 
   // Header Section
   .header-row {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     gap: 12px;
+    flex-shrink: 0;
 
     h2 {
-      margin: 0 0 4px 0;
-      font-size: 20px;
+      margin: 0 0 2px 0;
+      font-size: 18px;
       font-weight: 600;
       color: #0066cc;
     }
@@ -20,18 +40,19 @@
     .subtitle {
       margin: 0;
       color: #666;
-      font-size: 13px;
-      line-height: 1.5;
+      font-size: 12px;
+      line-height: 1.4;
     }
   }
 
   // Shift Tabs
   .shift-tabs {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     background: white;
     border-radius: 8px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
     overflow: hidden;
+    flex-shrink: 0;
 
     ::ng-deep {
       .mat-mdc-tab-group {
@@ -43,7 +64,7 @@
 
         .mat-mdc-tab {
           min-width: 120px;
-          height: 40px;
+          height: 36px;
 
           .mdc-tab {
             border-radius: 6px;
@@ -102,17 +123,18 @@
 
   // Selection Card
   .selection-card {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
+    flex-shrink: 0;
 
     mat-card-content {
-      padding: 16px;
+      padding: 12px;
     }
 
     .selection-row {
       display: flex;
       gap: 12px;
       align-items: center;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
 
       &:last-child {
         margin-bottom: 0;
@@ -196,6 +218,17 @@
 
     mat-form-field {
       flex: 1;
+      
+      // Kompaktere Formularfelder
+      ::ng-deep {
+        .mat-mdc-form-field-subscript-wrapper {
+          margin-top: 0;
+        }
+        
+        .mat-mdc-text-field-wrapper {
+          padding-bottom: 0;
+        }
+      }
 
       &.full-width {
         flex: 2;
@@ -206,11 +239,11 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 12px;
+      padding: 8px;
       background: #f8f9fa;
       border-radius: 6px;
       border: 2px solid #0066cc;
-      margin-top: 12px;
+      margin-top: 8px;
 
       .kategorie-label {
         font-weight: 600;
@@ -230,12 +263,12 @@
           align-items: center;
           justify-content: center;
           gap: 6px;
-          padding: 10px 16px;
+          padding: 8px 12px;
           font-size: 13px;
           font-weight: 600;
           transition: all 0.3s ease;
           border-radius: 6px;
-          min-height: 44px;
+          min-height: 38px;
 
           &:not(.active) {
             background: #f5f5f5;
@@ -275,8 +308,8 @@
     }
 
     .upload-section {
-      margin-top: 16px;
-      padding: 12px;
+      margin-top: 8px;
+      padding: 10px;
       background: linear-gradient(135deg, #f0f7ff 0%, #e3f2fd 100%);
       border-radius: 6px;
       border: 2px dashed #0066cc;
@@ -284,29 +317,29 @@
       .upload-header {
         display: flex;
         align-items: center;
-        gap: 8px;
-        margin-bottom: 8px;
+        gap: 6px;
+        margin-bottom: 6px;
 
         mat-icon {
           color: #0066cc;
-          font-size: 20px;
-          width: 20px;
-          height: 20px;
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
         }
 
         h3 {
           margin: 0;
-          font-size: 15px;
+          font-size: 14px;
           font-weight: 600;
           color: #0066cc;
         }
       }
 
       .upload-description {
-        margin: 0 0 12px 0;
+        margin: 0 0 8px 0;
         color: #666;
-        font-size: 12px;
-        line-height: 1.5;
+        font-size: 11px;
+        line-height: 1.4;
       }
 
       .upload-controls {
@@ -325,8 +358,8 @@
       }
 
       .selected-file {
-        margin-top: 12px;
-        padding: 10px 12px;
+        margin-top: 8px;
+        padding: 8px 10px;
         background: white;
         border-radius: 6px;
         border: 2px solid #0066cc;
@@ -349,10 +382,10 @@
       }
     }
 
-    // Config Snapshot Styles
+      // Config Snapshot Styles
     .config-snapshot-info {
-      margin-top: 12px;
-      padding: 12px;
+      margin-top: 8px;
+      padding: 8px;
       background-color: #f5f5f5;
       border-radius: 6px;
       border-left: 4px solid #0066cc;
@@ -360,8 +393,8 @@
       .config-snapshot-header {
         display: flex;
         align-items: center;
-        gap: 8px;
-        margin-bottom: 8px;
+        gap: 6px;
+        margin-bottom: 6px;
         flex-wrap: wrap;
 
         mat-icon {
@@ -398,8 +431,8 @@
       .config-loading {
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding: 12px;
+        gap: 8px;
+        padding: 8px;
         color: #666;
       }
 
@@ -412,7 +445,7 @@
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 6px 10px;
+          padding: 4px 8px;
           background-color: white;
           border-radius: 4px;
 
@@ -433,7 +466,7 @@
           display: flex;
           align-items: center;
           gap: 6px;
-          padding: 6px 10px;
+          padding: 4px 8px;
           font-size: 11px;
           color: #666;
           background-color: white;
@@ -450,7 +483,7 @@
           display: flex;
           align-items: center;
           gap: 6px;
-          padding: 6px 10px;
+          padding: 4px 8px;
           font-size: 11px;
           color: #666;
           background-color: #fff3cd;
@@ -470,12 +503,13 @@
 
   // Statistics Card
   .stats-card {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     border: 2px solid #0066cc;
+    flex-shrink: 0;
 
     mat-card-content {
-      padding: 12px;
+      padding: 10px;
     }
 
     .stats-row {
@@ -487,9 +521,9 @@
     .stat-item {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       flex: 1;
-      padding: 10px;
+      padding: 8px;
       background: white;
       border-radius: 6px;
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
@@ -705,15 +739,22 @@
 
   // Data Entry Card
   .data-entry-card {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
+    display: block !important;
+    width: 100%;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: auto !important;
+    min-height: auto !important;
 
     mat-card-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      padding: 16px;
+      padding: 12px;
       background: #f8f9fa;
       border-bottom: 2px solid #e9ecef;
+      flex-shrink: 0;
 
       .header-title-section {
         flex: 1;
@@ -754,7 +795,7 @@
     }
 
     mat-card-content {
-      padding: 16px;
+      padding: 12px;
       position: relative;
     }
 
@@ -774,15 +815,23 @@
 
     .entry-table-container {
       overflow-x: auto;
+      overflow-y: auto;
       background: white;
       border-radius: 8px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      display: block !important; // Sicherstellen, dass Container sichtbar ist
+      min-height: 400px; // Mindesthöhe für die Tabelle
+      visibility: visible !important;
+      opacity: 1 !important;
     }
 
     .entry-table {
       width: 100%;
       border-collapse: collapse;
       font-size: 12px;
+      display: table !important;
+      visibility: visible !important;
 
       thead {
         background: linear-gradient(135deg, #0066cc 0%, #004c99 100%);
@@ -1197,11 +1246,12 @@
 
   // Empty State
   .empty-state {
-    padding: 32px 20px;
+    padding: 24px 20px;
     text-align: center;
     background: #f8f9fa;
     border-radius: 8px;
     border: 2px dashed #ccc;
+    flex-shrink: 0;
 
     mat-icon {
       font-size: 64px;
