@@ -814,7 +814,7 @@ export class ManualEntry {
           jahr, 
           monat, 
           kategorie as 'PFK' | 'PHK', 
-          'tag',
+          schicht,
           result.config
         );
       }
