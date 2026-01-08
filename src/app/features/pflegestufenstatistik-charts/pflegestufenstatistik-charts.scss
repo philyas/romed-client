@@ -1,74 +1,23 @@
+@import '../shared/chart-styles';
+
 .pflegestufenstatistik-charts {
-  padding: 20px 0;
+  padding: 0;
 
   .charts-header {
-    margin-bottom: 32px;
+    @include chart-header-base;
+    margin-bottom: 1.5rem;
     
     .header-top {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
+      margin-bottom: 0.5rem;
       flex-wrap: wrap;
-      gap: 16px;
-
-      h3 {
-        margin: 0;
-        font-size: 28px;
-        font-weight: 600;
-        color: #1a237e;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-
-        mat-icon {
-          font-size: 32px;
-          width: 32px;
-          height: 32px;
-          color: #2196f3;
-        }
-      }
+      gap: 1rem;
 
       .selectors {
-        display: flex;
-        gap: 16px;
-        align-items: center;
-      flex-wrap: nowrap;
-
-        .selector {
-        min-width: 180px;
-        flex: 0 0 220px;
-
-          mat-label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-
-            mat-icon {
-              font-size: 18px;
-              width: 18px;
-              height: 18px;
-            }
-          }
-        }
-
-        .comparison-button {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        flex: 0 0 auto;
-
-          mat-icon {
-            margin: 0;
-          }
-        }
+        @include chart-selectors-base;
       }
-    }
-
-    p {
-      margin: 0;
-      color: #666;
-      font-size: 14px;
     }
   }
 
@@ -110,9 +59,7 @@
 
   .charts-container {
     .charts-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 24px;
+      @include chart-grid-base;
 
       .full-width {
         grid-column: 1 / -1;
@@ -125,7 +72,7 @@
     background-color: transparent;
     perspective: 1000px;
     cursor: pointer;
-    min-height: 650px;
+    min-height: 600px;
     height: 100%;
     position: relative;
     transition: transform 0.2s ease;
@@ -150,7 +97,7 @@
       position: relative;
       width: 100%;
       height: 100%;
-      min-height: 650px;
+      min-height: 600px;
       text-align: center;
       transition: transform 0.6s;
       transform-style: preserve-3d;
@@ -161,7 +108,7 @@
       position: absolute;
       width: 100%;
       height: 100%;
-      min-height: 650px;
+      min-height: 600px;
       backface-visibility: hidden;
       border-radius: 12px;
       top: 0;
@@ -178,11 +125,15 @@
 
     .metric-card {
       height: 100%;
-      min-height: 650px;
+      min-height: 600px;
       border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.06);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       overflow: visible;
+
+      &:hover {
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1), 0 6px 12px rgba(0, 0, 0, 0.08);
+      }
 
       .flip-hint-text {
         margin-left: auto;
@@ -202,7 +153,7 @@
       }
 
       .metric-header {
-          padding: 20px 24px;
+          padding: 12px 16px;
           border-radius: 12px 12px 0 0;
 
           &.pflegebedarf-header {
@@ -226,64 +177,41 @@
           }
 
           mat-card-title {
-            font-size: 20px;
+            font-size: 1.125rem;
             font-weight: 600;
             color: white;
             margin-bottom: 4px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 0.5rem;
             width: 100%;
 
             mat-icon {
-              font-size: 24px;
-              width: 24px;
-              height: 24px;
+              font-size: 1.125rem;
+              width: 1.125rem;
+              height: 1.125rem;
             }
           }
 
           mat-card-subtitle {
             color: rgba(255, 255, 255, 0.9);
-            font-size: 14px;
+            font-size: 0.875rem;
             margin: 0;
           }
         }
       }
 
       .chart-content {
-        padding: 24px;
+        padding: 16px;
 
         .chart-container {
           position: relative;
-          height: 400px;
-          margin-bottom: 20px;
+          height: 320px;
+          min-height: 320px;
+          margin-bottom: 1rem;
 
           .chart-loading-overlay {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 14px;
-            background: rgba(255, 255, 255, 0.92);
-            border-radius: 12px;
-            z-index: 3;
-            pointer-events: none;
-
-            .loading-bar {
-              width: min(260px, 70%);
-              height: 5px;
-              border-radius: 999px;
-              background: linear-gradient(90deg, rgba(33,150,243,0.2) 0%, rgba(33,150,243,0.85) 50%, rgba(33,150,243,0.2) 100%);
-              animation: pflege-chart-loading 1.2s ease-in-out infinite;
-            }
-
-            p {
-              margin: 0;
-              color: #1976d2;
-              font-weight: 600;
-            }
+            @include chart-loading-overlay;
           }
         }
 
@@ -507,11 +435,6 @@
       }
     }
 
-@keyframes pflege-chart-loading {
-  0% { transform: translateX(-12%); opacity: 0.4; }
-  50% { transform: translateX(0%); opacity: 1; }
-  100% { transform: translateX(12%); opacity: 0.4; }
-}
 @keyframes flipHint {
   0%, 100% { transform: rotateY(0deg); }
   50% { transform: rotateY(180deg); }
@@ -550,10 +473,23 @@
     }
 
     .flip-card {
+      min-height: 500px;
+
+      .metric-card {
+        min-height: 500px;
+      }
+
+      .flip-card-inner,
+      .flip-card-front,
+      .flip-card-back {
+        min-height: 500px;
+      }
+
       .metric-card {
         .chart-content {
           .chart-container {
-            height: 300px;
+            height: 280px;
+            min-height: 280px;
           }
         }
       }

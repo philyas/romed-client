@@ -348,7 +348,7 @@ interface StationChartData {
   `,
   styles: [`
     .mitternachtsstatistik-charts {
-      padding: 8px;
+      padding: 0;
     }
 
     .charts-header {

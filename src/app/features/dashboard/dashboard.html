@@ -18,14 +18,6 @@
         </a>
       </div>
 
-      <!-- Reset Button -->
-      <div class="reset-section" *ngIf="(data()?.uploads?.length || 0) > 0 || (mitternachtsstatistikData()?.uploads?.length || 0) > 0">
-        <button mat-raised-button color="warn" (click)="openResetDialog()" class="reset-button">
-          <mat-icon>delete_forever</mat-icon>
-          Alle Daten zurücksetzen
-        </button>
-      </div>
-
       <!-- Mitternachtsstatistik Charts Section -->
       <section 
         id="mitternachtsstatistik"
@@ -34,15 +26,6 @@
         *ngIf="mitternachtsstatistikData() && mitternachtsstatistikData()!.uploads.length > 0">
         <div class="schema-header">
           <h2 class="schema-title">Mitternachtsstatistik</h2>
-          <button 
-            mat-stroked-button 
-            color="warn" 
-            (click)="openDeleteSchemaDialog('mitternachtsstatistik', 'Mitternachtsstatistik')"
-            class="delete-schema-button"
-            matTooltip="Alle Daten für dieses Schema zurücksetzen">
-            <mat-icon>delete</mat-icon>
-            <span>Daten zurücksetzen</span>
-          </button>
         </div>
         <app-mitternachtsstatistik-charts 
           [mitternachtsstatistikData]="mitternachtsstatistikData()">
@@ -64,15 +47,6 @@
         *ngIf="hasMinaMitaData()">
         <div class="schema-header">
           <h2 class="schema-title">CO PPUGV MiNa/MiTa-Bestände</h2>
-          <button 
-            mat-stroked-button 
-            color="warn" 
-            (click)="openDeleteSchemaDialog('ppugv_bestaende', 'CO PPUGV MiNa/MiTa-Bestände')"
-            class="delete-schema-button"
-            matTooltip="Alle Daten für dieses Schema zurücksetzen">
-            <mat-icon>delete</mat-icon>
-            <span>Daten zurücksetzen</span>
-          </button>
         </div>
         <app-mina-mita-charts 
           [uploads]="data()?.uploads || []">
@@ -87,31 +61,14 @@
         *ngIf="hasCOData()">
         <div class="schema-header">
           <h2 class="schema-title">CO Entlass-/Aufnahmezeiten</h2>
-          <div class="schema-actions">
-            <mat-form-field appearance="outline" class="year-select-field" *ngIf="coAvailableYears().length > 0">
-              <mat-label>Jahr</mat-label>
-              <mat-select [value]="coSelectedYear() || coAvailableYears()[0]" (selectionChange)="onCoYearChange($event.value)">
-                <mat-option *ngFor="let year of coAvailableYears()" [value]="year">
-                  {{ year }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
-            <button 
-              mat-stroked-button 
-              color="warn" 
-              (click)="openDeleteSchemaDialog('co_entlass_aufnahmezeiten', 'CO Entlass-/Aufnahmezeiten')"
-              class="delete-schema-button"
-              matTooltip="Alle Daten für dieses Schema zurücksetzen">
-              <mat-icon>delete</mat-icon>
-              <span>Daten zurücksetzen</span>
-            </button>
-          </div>
         </div>
         <app-co-charts 
           [uploads]="coUploads()"
           [statistics]="statistics()"
           [schemaId]="'co_entlass_aufnahmezeiten'"
-          [selectedYear]="coSelectedYear() ?? globalSelectedYear()">
+          [selectedYear]="coSelectedYear() ?? globalSelectedYear()"
+          [availableYears]="coAvailableYears()"
+          (yearChange)="onCoYearChange($event)">
         </app-co-charts>
       </section>
 
@@ -123,15 +80,6 @@
         *ngIf="hasPflegestufenData()">
         <div class="schema-header">
           <h2 class="schema-title">Pflegestufenstatistik</h2>
-          <button 
-            mat-stroked-button 
-            color="warn" 
-            (click)="openDeleteSchemaDialog('pflegestufenstatistik', 'Pflegestufenstatistik')"
-            class="delete-schema-button"
-            matTooltip="Alle Daten für dieses Schema zurücksetzen">
-            <mat-icon>delete</mat-icon>
-            <span>Daten zurücksetzen</span>
-          </button>
         </div>
         <app-pflegestufenstatistik-charts 
           [uploads]="data()?.uploads || []">
@@ -146,15 +94,6 @@
         *ngIf="hasSaldenData()">
         <div class="schema-header">
           <h2 class="schema-title">Salden Zeitkonten u Urlaub</h2>
-          <button 
-            mat-stroked-button 
-            color="warn" 
-            (click)="openDeleteSchemaDialog('salden_zeitkonten', 'Salden Zeitkonten u Urlaub')"
-            class="delete-schema-button"
-            matTooltip="Alle Daten für dieses Schema zurücksetzen">
-            <mat-icon>delete</mat-icon>
-            <span>Daten zurücksetzen</span>
-          </button>
         </div>
         <app-salden-zeitkonten-charts 
           [uploads]="data()?.uploads || []">
@@ -169,15 +108,6 @@
         *ngIf="hasMitteilungenBettenData()">
         <div class="schema-header">
           <h2 class="schema-title">Aufgestellte Betten</h2>
-          <button 
-            mat-stroked-button 
-            color="warn" 
-            (click)="openDeleteSchemaDialog('mitteilungen_betten', 'Aufgestellte Betten')"
-            class="delete-schema-button"
-            matTooltip="Alle Daten für dieses Schema zurücksetzen">
-            <mat-icon>delete</mat-icon>
-            <span>Daten zurücksetzen</span>
-          </button>
         </div>
         <app-mitteilungen-betten-charts 
           [data]="data()"
@@ -193,15 +123,6 @@
         *ngIf="hasAusfallstatistikData()">
         <div class="schema-header">
           <h2 class="schema-title">Ausfallstatistik</h2>
-          <button 
-            mat-stroked-button 
-            color="warn" 
-            (click)="openDeleteSchemaDialog('ausfallstatistik', 'Ausfallstatistik')"
-            class="delete-schema-button"
-            matTooltip="Alle Daten für dieses Schema zurücksetzen">
-            <mat-icon>delete</mat-icon>
-            <span>Daten zurücksetzen</span>
-          </button>
         </div>
         <app-ausfallstatistik-charts 
           [uploads]="data()?.uploads || []"

@@ -116,7 +116,7 @@ import { SearchableSelectComponent } from '../shared/searchable-select/searchabl
     </div>
   `,
   styles: [`
-    .pp-chart { padding: 8px; }
+    .pp-chart { padding: 0; }
     .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 12px; flex-wrap: wrap; }
     .selectors-container { display: flex; gap: 12px; align-items: center; flex-wrap: nowrap; }
     .station-selector, .year-selector { width: 220px; flex: 0 0 220px; }

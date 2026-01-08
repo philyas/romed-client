@@ -1,68 +1,67 @@
+@import '../shared/chart-styles';
+
 .co-charts {
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
-  margin-bottom: 32px;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  margin-bottom: 0;
 
   .charts-header {
-    margin-bottom: 24px;
+    @include chart-header-base;
+    margin-bottom: 1.5rem;
 
     .header-top {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 8px;
+      margin-bottom: 0.5rem;
       flex-wrap: wrap;
-      gap: 16px;
-
-      h3 {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        color: #1976d2;
-        margin: 0;
-        font-size: 1.5rem;
-        font-weight: 600;
-
-        mat-icon {
-          color: #1976d2;
-        }
-      }
+      gap: 1rem;
 
       .header-actions {
         display: flex;
+        gap: 0.75rem;
         align-items: center;
-        gap: 12px;
-      flex-wrap: nowrap;
+        flex-wrap: wrap;
 
-        .location-selector {
-        min-width: 200px;
-        flex: 0 0 220px;
-
-          mat-icon {
-            margin-right: 8px;
-          }
+        .year-selector,
+        .location-selector,
+        .station-selector {
+          min-width: 140px;
+          max-width: 140px;
+          width: 140px;
+          flex: 0 0 140px;
         }
 
         .comparison-button {
           display: flex;
           align-items: center;
-          gap: 8px;
-        flex: 0 0 auto;
+          gap: 0.5rem;
+          white-space: nowrap;
+          flex: 0 0 auto;
+        }
 
-          mat-icon {
-            margin: 0;
+        @media (max-width: 768px) {
+          flex-direction: column;
+          align-items: stretch;
+          width: 100%;
+
+          .year-selector,
+          .location-selector,
+          .station-selector {
+            width: 100%;
+            min-width: 100%;
+            max-width: 100%;
+            flex: 1 1 auto;
+          }
+
+          .comparison-button {
+            width: 100%;
+            justify-content: center;
           }
         }
       }
-    }
-
-    p {
-      color: #666;
-      margin: 0;
-      font-size: 0.95rem;
     }
   }
 
@@ -115,7 +114,7 @@
     background-color: transparent;
     perspective: 1000px;
     cursor: pointer;
-    min-height: 750px;
+    min-height: 600px;
     height: 100%;
     position: relative;
     transition: transform 0.2s ease;
@@ -145,7 +144,7 @@
       position: relative;
       width: 100%;
       height: 100%;
-      min-height: 750px;
+      min-height: 600px;
       text-align: center;
       transition: transform 0.6s;
       transform-style: preserve-3d;
@@ -156,7 +155,7 @@
       position: absolute;
       width: 100%;
       height: 100%;
-      min-height: 750px;
+      min-height: 600px;
       backface-visibility: hidden;
       border-radius: 12px;
       top: 0;
@@ -173,17 +172,22 @@
 
     .metric-card {
       height: 100%;
-      min-height: 750px;
+      min-height: 600px;
       border-radius: 12px !important;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
-      border: 1px solid #e0e0e0 !important;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.06) !important;
+      border: 1px solid rgba(0, 0, 0, 0.08) !important;
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+      &:hover {
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1), 0 6px 12px rgba(0, 0, 0, 0.08) !important;
+      }
 
       .metric-header {
-        padding: 16px 20px;
-        border-bottom: 1px solid #e0e0e0;
+        padding: 12px 16px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
         position: relative;
 
         &.entlassungen-header {
@@ -255,7 +259,7 @@
       }
 
       .chart-content {
-        padding: 20px 20px 32px;
+        padding: 16px;
         flex: 1;
         display: flex;
         flex-direction: column;
@@ -328,36 +332,12 @@
         .chart-container {
           flex: 1;
           position: relative;
-          min-height: 400px;
-          height: 100%;
+          min-height: 320px;
+          height: 320px;
 
-          .chart-loading-overlay {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 16px;
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 8px;
-            z-index: 3;
-            pointer-events: none;
-
-            .loading-bar {
-              width: min(260px, 70%);
-              height: 6px;
-              border-radius: 999px;
-              background: linear-gradient(90deg, rgba(255,107,107,0.15) 0%, rgba(255,142,142,0.85) 50%, rgba(255,107,107,0.15) 100%);
-              animation: co-chart-loading 1.2s ease-in-out infinite;
+            .chart-loading-overlay {
+              @include chart-loading-overlay;
             }
-
-            p {
-              margin: 0;
-              color: #ff6b6b;
-              font-weight: 600;
-            }
-          }
         }
 
         .chart-info {
@@ -476,11 +456,6 @@
     50% { transform: rotateY(15deg); }
   }
 
-  @keyframes co-chart-loading {
-    0% { transform: translateX(-15%); opacity: 0.4; }
-    50% { transform: translateX(0%); opacity: 1; }
-    100% { transform: translateX(15%); opacity: 0.4; }
-  }
 
   // Responsive design
   @media (max-width: 768px) {
@@ -510,10 +485,23 @@
     }
 
     .flip-card {
+      min-height: 500px;
+
+      .metric-card {
+        min-height: 500px;
+      }
+
+      .flip-card-inner,
+      .flip-card-front,
+      .flip-card-back {
+        min-height: 500px;
+      }
+
       .metric-card {
         .chart-content {
           .chart-container {
-            min-height: 250px;
+            min-height: 280px;
+            height: 280px;
           }
         }
       }

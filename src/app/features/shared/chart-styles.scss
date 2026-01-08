@@ -1,0 +1,359 @@
+/* Shared Chart Styles - Modern, Compact, and Uniform */
+
+// Color Palette - Modern & Consistent
+$chart-primary: #1976d2;
+$chart-primary-light: #42a5f5;
+$chart-primary-dark: #1565c0;
+$chart-secondary: #0093b8;
+$chart-accent: #00acc1;
+$chart-success: #4caf50;
+$chart-warning: #ff9800;
+$chart-error: #f44336;
+$chart-info: #2196f3;
+
+// Neutral Colors
+$chart-bg: #ffffff;
+$chart-border: rgba(0, 0, 0, 0.08);
+$chart-text-primary: rgba(0, 0, 0, 0.87);
+$chart-text-secondary: rgba(0, 0, 0, 0.6);
+$chart-text-hint: rgba(0, 0, 0, 0.38);
+$chart-surface: #f8f9fa;
+
+// Spacing - Compact
+$chart-spacing-xs: 0.5rem;    // 8px
+$chart-spacing-sm: 0.75rem;   // 12px
+$chart-spacing-md: 1rem;      // 16px
+$chart-spacing-lg: 1.5rem;    // 24px
+$chart-spacing-xl: 2rem;      // 32px
+
+// Typography - Modern & Compact
+$chart-font-xs: 0.75rem;      // 12px
+$chart-font-sm: 0.875rem;     // 14px
+$chart-font-md: 1rem;         // 16px
+$chart-font-lg: 1.125rem;     // 18px
+$chart-font-xl: 1.25rem;      // 20px
+$chart-font-2xl: 1.5rem;      // 24px
+
+$chart-font-weight-normal: 400;
+$chart-font-weight-medium: 500;
+$chart-font-weight-semibold: 600;
+$chart-font-weight-bold: 700;
+
+// Border Radius - Modern
+$chart-radius-sm: 6px;
+$chart-radius-md: 8px;
+$chart-radius-lg: 12px;
+$chart-radius-xl: 16px;
+$chart-radius-pill: 24px;
+
+// Shadows - Subtle & Modern
+$chart-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+$chart-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.06);
+$chart-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.08), 0 4px 6px rgba(0, 0, 0, 0.06);
+$chart-shadow-hover: 0 12px 24px rgba(0, 0, 0, 0.1), 0 6px 12px rgba(0, 0, 0, 0.08);
+
+// Chart Heights - Compact
+$chart-height-compact: 280px;
+$chart-height-standard: 320px;
+$chart-height-tall: 400px;
+$chart-height-full: 500px;
+
+// Shared Chart Container Mixins
+@mixin chart-container-base {
+  background: $chart-bg;
+  border-radius: $chart-radius-lg;
+  border: 1px solid $chart-border;
+  box-shadow: $chart-shadow-md;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  
+  &:hover {
+    box-shadow: $chart-shadow-hover;
+    transform: translateY(-2px);
+  }
+}
+
+@mixin chart-card-base {
+  @include chart-container-base;
+  padding: $chart-spacing-md;
+}
+
+// Chart Header Styles Mixin
+@mixin chart-header-base {
+  margin-bottom: $chart-spacing-md;
+  padding-bottom: $chart-spacing-sm;
+  border-bottom: 2px solid $chart-border;
+
+  h3 {
+    margin: 0;
+    font-size: $chart-font-xl;
+    font-weight: $chart-font-weight-semibold;
+    color: $chart-text-primary;
+    display: flex;
+    align-items: center;
+    gap: $chart-spacing-sm;
+
+    mat-icon {
+      font-size: $chart-font-xl;
+      width: $chart-font-xl;
+      height: $chart-font-xl;
+      color: $chart-primary;
+    }
+  }
+
+  p {
+    margin: $chart-spacing-xs 0 0 0;
+    color: $chart-text-secondary;
+    font-size: $chart-font-sm;
+    line-height: 1.5;
+  }
+}
+
+// Chart Card Styles Mixin
+@mixin chart-card-base-styles {
+  @include chart-card-base;
+  
+  .chart-header {
+    mat-card-title {
+      display: flex;
+      align-items: center;
+      gap: $chart-spacing-sm;
+      font-size: $chart-font-lg;
+      font-weight: $chart-font-weight-semibold;
+      color: $chart-text-primary;
+      margin-bottom: $chart-spacing-xs;
+
+      mat-icon {
+        font-size: $chart-font-lg;
+        width: $chart-font-lg;
+        height: $chart-font-lg;
+        color: $chart-primary;
+      }
+    }
+
+    mat-card-subtitle {
+      font-size: $chart-font-sm;
+      color: $chart-text-secondary;
+      margin: 0;
+      line-height: 1.4;
+    }
+  }
+
+  .chart-content {
+    padding: $chart-spacing-md;
+
+    .chart-container {
+      position: relative;
+      height: $chart-height-compact;
+      min-height: $chart-height-compact;
+      margin-bottom: $chart-spacing-md;
+
+      canvas {
+        max-height: 100%;
+      }
+    }
+
+    .chart-toggle {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: $chart-spacing-md;
+
+      mat-button-toggle-group {
+        border-radius: $chart-radius-pill;
+        overflow: hidden;
+        
+        mat-button-toggle {
+          display: flex;
+          align-items: center;
+          gap: $chart-spacing-xs;
+          padding: $chart-spacing-xs $chart-spacing-md;
+          font-size: $chart-font-sm;
+          border: none;
+          min-height: 32px;
+
+          mat-icon {
+            font-size: $chart-font-sm;
+            width: $chart-font-sm;
+            height: $chart-font-sm;
+          }
+
+          &.mat-button-toggle-checked {
+            background-color: $chart-primary;
+            color: white;
+            
+            mat-icon {
+              color: white;
+            }
+          }
+        }
+      }
+    }
+
+    .chart-summary,
+    .chart-legend {
+      margin-top: $chart-spacing-md;
+
+      mat-chip-set {
+        display: flex;
+        flex-wrap: wrap;
+        gap: $chart-spacing-xs;
+
+        mat-chip {
+          font-size: $chart-font-xs;
+          font-weight: $chart-font-weight-medium;
+          padding: 4px 12px;
+          height: 24px;
+          border-radius: $chart-radius-pill;
+
+          mat-icon {
+            font-size: $chart-font-xs;
+            width: $chart-font-xs;
+            height: $chart-font-xs;
+            margin-right: 4px;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Chart Grid Mixin
+@mixin chart-grid-base {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+  gap: $chart-spacing-lg;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: $chart-spacing-md;
+  }
+
+  .chart-card {
+    &.full-width {
+      grid-column: 1 / -1;
+    }
+  }
+}
+
+// Selectors & Controls Mixin
+@mixin chart-selectors-base {
+  display: flex;
+  gap: $chart-spacing-md;
+  align-items: center;
+  flex-wrap: wrap;
+
+  .selector {
+    min-width: 180px;
+    flex: 0 0 200px;
+
+    @media (max-width: 768px) {
+      width: 100%;
+      flex: 1 1 auto;
+      min-width: 100%;
+    }
+  }
+
+  .comparison-button {
+    display: flex;
+    align-items: center;
+    gap: $chart-spacing-xs;
+    white-space: nowrap;
+    flex: 0 0 auto;
+
+    @media (max-width: 768px) {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+// Loading Overlay Mixin
+@mixin chart-loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: $chart-spacing-sm;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: $chart-radius-md;
+  z-index: 10;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+
+  .loading-bar {
+    width: min(240px, 70%);
+    height: 4px;
+    border-radius: $chart-radius-pill;
+    background: linear-gradient(
+      90deg,
+      rgba(25, 118, 210, 0.2) 0%,
+      rgba(25, 118, 210, 0.85) 50%,
+      rgba(25, 118, 210, 0.2) 100%
+    );
+    animation: chart-loading 1.2s ease-in-out infinite;
+  }
+
+  p {
+    margin: 0;
+    color: $chart-primary;
+    font-weight: $chart-font-weight-semibold;
+    font-size: $chart-font-sm;
+  }
+}
+
+@keyframes chart-loading {
+  0% {
+    transform: translateX(-15%);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translateX(0%);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(15%);
+    opacity: 0.4;
+  }
+}
+
+// Section Wrapper Mixin
+@mixin chart-section-wrapper {
+  padding: $chart-spacing-lg;
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: $chart-radius-lg;
+  box-shadow: $chart-shadow-sm;
+  margin-bottom: $chart-spacing-xl;
+  transition: all 0.3s ease;
+
+  &.highlighted {
+    box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.2), $chart-shadow-lg;
+  }
+}
+
+// Utility Classes
+.chart-spacing-compact {
+  padding: $chart-spacing-md;
+}
+
+.chart-height-compact {
+  height: $chart-height-compact;
+  min-height: $chart-height-compact;
+}
+
+.chart-height-standard {
+  height: $chart-height-standard;
+  min-height: $chart-height-standard;
+}
+
+.chart-height-tall {
+  height: $chart-height-tall;
+  min-height: $chart-height-tall;
+}
+

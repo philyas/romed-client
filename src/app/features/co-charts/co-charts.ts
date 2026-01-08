@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnChanges, signal, computed, inject, SimpleChanges, effect } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, signal, computed, inject, SimpleChanges, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -62,6 +62,16 @@ interface COChartData {
             Aufnahmen und Entlassungen - {{ selectedYear }}
           </h3>
           <div class="header-actions">
+            <app-searchable-select
+              class="year-selector"
+              label="Jahr"
+              icon="calendar_today"
+              [options]="availableYearOptions()"
+              [value]="selectedYear.toString()"
+              [clearable]="false"
+              (valueChange)="onYearChange($event)"
+            ></app-searchable-select>
+
             <app-searchable-select
               class="location-selector"
               label="Standort"
@@ -313,6 +323,8 @@ export class COCharts implements OnInit, OnChanges {
   @Input() statistics: SchemaStatistics[] = [];
   @Input() schemaId: string = '';
   @Input() selectedYear: number = new Date().getFullYear();
+  @Input() availableYears: number[] = [];
+  @Output() yearChange = new EventEmitter<number>();
 
   chartData = signal<COChartData | null>(null);
   selectedStandort = signal<string>('AIB');
@@ -474,6 +486,20 @@ export class COCharts implements OnInit, OnChanges {
     // Update the chart data
     data.monthlyData = monthlyData;
     this.chartData.set(data);
+  }
+
+  availableYearOptions(): string[] {
+    if (!this.availableYears || this.availableYears.length === 0) {
+      return [this.selectedYear.toString()];
+    }
+    return this.availableYears.map(year => year.toString()).sort((a, b) => parseInt(b) - parseInt(a));
+  }
+
+  onYearChange(year: string) {
+    const parsedYear = parseInt(year);
+    if (!isNaN(parsedYear) && parsedYear !== this.selectedYear) {
+      this.yearChange.emit(parsedYear);
+    }
   }
 
   onStandortChange(standort: string) {

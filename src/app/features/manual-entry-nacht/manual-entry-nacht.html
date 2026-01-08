@@ -51,18 +51,6 @@
           <mat-icon matSuffix>business</mat-icon>
           <mat-hint>Stationen aus MiNa/MiTa-Bestände</mat-hint>
         </mat-form-field>
-        
-        <!-- Button zum Löschen aller Daten für diese Station -->
-        <button 
-          mat-raised-button 
-          color="warn" 
-          (click)="clearAllMonthsForStation()" 
-          [disabled]="!selectedStation() || saving()"
-          class="delete-all-station-btn">
-          <mat-icon>delete_forever</mat-icon>
-          <span *ngIf="!saving()">Alle Monate zurücksetzen</span>
-          <span *ngIf="saving()">Löscht...</span>
-        </button>
       </div>
 
       <!-- Year and Month Selection -->
@@ -436,15 +424,6 @@
       </div>
       
       <div class="header-actions">
-        <button mat-button color="warn" (click)="clearAllEntries()" [disabled]="saving()">
-          <mat-icon>delete_sweep</mat-icon>
-          <span *ngIf="!saving()">Alle {{ selectedKategorie() }} zurücksetzen</span>
-          <span *ngIf="saving()">Löscht...</span>
-        </button>
-        <button mat-button color="warn" (click)="clearAllStationData()" [disabled]="saving()">
-          <mat-icon>delete_forever</mat-icon>
-          {{ saving() ? 'Löscht...' : 'Alle Stunden (PFK + PHK) löschen' }}
-        </button>
         <button mat-raised-button color="accent" (click)="exportPpugMeldung()" [disabled]="saving()">
           <mat-icon>download</mat-icon>
           {{ saving() ? 'Exportiert...' : 'PPUG Meldung' }}
@@ -476,7 +455,7 @@
           <thead>
             <!-- Gruppen-Header für Soll/Ist-Arbeitszeit -->
             <tr class="group-header-row">
-              <th colspan="5" class="base-columns-header"></th>
+              <th colspan="4" class="base-columns-header"></th>
               <th colspan="3" class="soll-arbeitszeit-header">
                 <div class="group-header-label">
                   <mat-icon>schedule</mat-icon>
@@ -496,7 +475,6 @@
               <th>Stunden</th>
               <th>Minuten</th>
               <th>Gesamt</th>
-              <th class="action-column">Reset</th>
               <th class="phk-column soll-column">
                 <div class="header-with-info">
                   <span>MiNa Bestände</span>
@@ -632,16 +610,6 @@
                 <span class="total-badge">
                   {{ entry.stunden }}:{{ entry.minuten.toString().padStart(2, '0') }}h
                 </span>
-              </td>
-              <td class="action-cell">
-                <button 
-                  mat-icon-button 
-                  color="warn" 
-                  (click)="resetSingleDay(i)"
-                  matTooltip="Tag zurücksetzen"
-                  *ngIf="entry.stunden > 0 || entry.minuten > 0">
-                  <mat-icon>refresh</mat-icon>
-                </button>
               </td>
               <td class="phk-value-cell soll-cell">
                 <span class="mina-value">{{ getMinaForTag(entry.tag) }}</span>

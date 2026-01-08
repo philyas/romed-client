@@ -1,19 +1,26 @@
 /* Dashboard component specific styles */
+.main-content {
+  min-height: 100vh;
+  background: #e5e7eb;
+  background: linear-gradient(135deg, #e8eaed 0%, #d1d5db 100%);
+  width: 100%;
+}
+
 .dashboard {
   padding: 24px;
   position: relative;
   min-height: 400px;
+  min-height: 100vh;
 }
 
 /* Reset Section */
 .reset-section {
   margin-bottom: 16px;
   padding: 8px;
-  background: rgba(255, 255, 255, 0.95);
+  background: #ffffff;
   border-radius: 12px;
   border: 1px solid #ef5350;
-  box-shadow: 0 4px 12px rgba(239, 83, 80, 0.15);
-  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(239, 83, 80, 0.25), 0 2px 4px rgba(0, 0, 0, 0.1);
   max-width: fit-content;
   margin-left: auto;
   margin-right: 0;
@@ -105,10 +112,12 @@
 .no-data {
   text-align: center;
   padding: 64px 24px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e0e0e0;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  max-width: 95vw;
+  margin: 0 auto;
 
   .no-data-icon {
     font-size: 64px;
@@ -337,20 +346,20 @@
 
 /* Mitternachtsstatistik Section */
 .mitternachtsstatistik-charts-section {
-  max-width: 90vw;
-  margin: 0 auto 32px;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
-  padding: 16px;
+  max-width: 95vw;
+  margin: 0 auto 24px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 24px;
   position: relative;
   z-index: 100;
-  transition: all 0.5s ease;
+  transition: all 0.3s ease;
   scroll-margin-top: 20px;
 
   &.highlighted {
-    box-shadow: 0 0 0 4px rgba(25, 118, 210, 0.3), 0 8px 24px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 0 0 4px rgba(25, 118, 210, 0.3), 0 8px 24px rgba(0, 0, 0, 0.2);
     animation: highlight-pulse 2s ease-in-out;
   }
 }
@@ -360,16 +369,16 @@
 .salden-zeitkonten-charts-section,
 .mitteilungen-betten-charts-section,
 .ausfallstatistik-charts-section {
-  max-width: 90vw;
-  margin: 0 auto 32px;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
-  padding: 16px;
+  max-width: 95vw;
+  margin: 0 auto 24px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 24px;
   position: relative;
   z-index: 100;
-  transition: all 0.5s ease;
+  transition: all 0.3s ease;
   scroll-margin-top: 20px;
 }
 
@@ -383,26 +392,38 @@
 
 /* MiNa/MiTa Section */
 .mina-mita-charts-section {
-  margin-bottom: 32px;
-  transition: all 0.5s ease;
+  max-width: 95vw;
+  margin: 0 auto 24px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 24px;
+  position: relative;
+  transition: all 0.3s ease;
   scroll-margin-top: 20px;
 
   &.highlighted {
-    box-shadow: 0 0 0 4px rgba(25, 118, 210, 0.3), 0 8px 24px rgba(0, 0, 0, 0.15);
-    border-radius: 12px;
+    box-shadow: 0 0 0 4px rgba(25, 118, 210, 0.3), 0 8px 24px rgba(0, 0, 0, 0.2);
     animation: highlight-pulse 2s ease-in-out;
   }
 }
 
 /* CO Charts Section - Side by Side */
 .co-charts-section {
-  margin-bottom: 32px;
-  transition: all 0.5s ease;
+  max-width: 95vw;
+  margin: 0 auto 24px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 24px;
+  position: relative;
+  transition: all 0.3s ease;
   scroll-margin-top: 20px;
 
   &.highlighted {
-    box-shadow: 0 0 0 4px rgba(25, 118, 210, 0.3), 0 8px 24px rgba(0, 0, 0, 0.15);
-    border-radius: 12px;
+    box-shadow: 0 0 0 4px rgba(25, 118, 210, 0.3), 0 8px 24px rgba(0, 0, 0, 0.2);
     animation: highlight-pulse 2s ease-in-out;
   }
 
@@ -462,7 +483,9 @@
   align-items: center;
   margin-bottom: 16px;
   padding-bottom: 12px;
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.08);
+  flex-wrap: wrap;
+  gap: 16px;
 
   .schema-title {
     margin: 0;
@@ -472,6 +495,42 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    flex: 0 0 auto;
+  }
+
+  .schema-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    flex: 0 1 auto;
+    justify-content: flex-end;
+
+    .year-select-field {
+      width: 140px;
+      min-width: 140px;
+      max-width: 140px;
+
+      ::ng-deep {
+        .mat-mdc-text-field-wrapper {
+          .mat-mdc-form-field-flex {
+            .mat-mdc-floating-label {
+              font-size: 14px;
+            }
+          }
+        }
+
+        .mat-mdc-form-field-infix {
+          min-height: 40px;
+          padding-top: 8px;
+          padding-bottom: 8px;
+        }
+
+        .mat-mdc-select-value {
+          font-size: 14px;
+        }
+      }
+    }
   }
 
   .delete-schema-button {
@@ -534,6 +593,18 @@
 
     .schema-title {
       font-size: 20px;
+    }
+
+    .schema-actions {
+      width: 100%;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+
+      .year-select-field {
+        width: 100%;
+        min-width: 100%;
+        max-width: 100%;
+      }
     }
 
     .delete-schema-button {

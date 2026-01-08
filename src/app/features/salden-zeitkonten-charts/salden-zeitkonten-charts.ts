@@ -247,7 +247,7 @@ interface KostenstellenMappingItem {
   `,
   styles: [`
     .salden-zeitkonten-charts {
-      padding: 24px;
+      padding: 0;
     }
 
     .charts-header {
