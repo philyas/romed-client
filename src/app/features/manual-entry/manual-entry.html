@@ -194,15 +194,6 @@
             Datei auswählen
           </button>
           <button 
-            mat-raised-button 
-            color="primary"
-            (click)="uploadDienstplan()"
-            [disabled]="!selectedFile() || uploading()">
-            <mat-spinner *ngIf="uploading()" diameter="20" style="display: inline-block; margin-right: 8px;"></mat-spinner>
-            <mat-icon *ngIf="!uploading()">upload</mat-icon>
-            {{ uploading() ? 'Wird hochgeladen...' : 'Dienstplan hochladen' }}
-          </button>
-          <button 
             mat-icon-button 
             *ngIf="selectedFile()"
             (click)="clearSelectedFile()"
@@ -214,6 +205,17 @@
           <mat-icon>description</mat-icon>
           <span>{{ selectedFile()?.name }}</span>
           <span class="file-size">({{ ((selectedFile()?.size || 0) / 1024) | number:'1.0-1' }} KB)</span>
+        </div>
+        <div class="upload-button-container" *ngIf="selectedFile()">
+          <button 
+            mat-raised-button 
+            color="primary"
+            (click)="uploadDienstplan()"
+            [disabled]="uploading()">
+            <mat-spinner *ngIf="uploading()" diameter="20" style="display: inline-block; margin-right: 8px;"></mat-spinner>
+            <mat-icon *ngIf="!uploading()">upload</mat-icon>
+            {{ uploading() ? 'Wird hochgeladen...' : 'Dienstplan hochladen' }}
+          </button>
         </div>
       </div>
     </mat-card-content>

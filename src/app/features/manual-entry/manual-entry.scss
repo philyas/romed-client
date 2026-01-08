@@ -380,6 +380,45 @@
           font-size: 11px;
         }
       }
+
+      .upload-button-container {
+        margin-top: 12px;
+        display: flex;
+        justify-content: flex-start;
+
+        button {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 14px;
+          font-weight: 600;
+          padding: 10px 20px;
+          background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+          color: white;
+          box-shadow: 0 4px 8px rgba(0, 102, 204, 0.3);
+          transition: all 0.3s ease;
+
+          &:hover:not(:disabled) {
+            background: linear-gradient(135deg, #0052a3 0%, #003d7a 100%);
+            box-shadow: 0 6px 12px rgba(0, 102, 204, 0.4);
+            transform: translateY(-2px);
+          }
+
+          &:active:not(:disabled) {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 102, 204, 0.3);
+          }
+
+          &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+          }
+
+          mat-icon {
+            color: white;
+          }
+        }
+      }
     }
 
       // Config Snapshot Styles
