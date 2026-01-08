@@ -1278,6 +1278,114 @@
   }
 }
 
+// Shift Indicator (bottom right)
+.shift-indicator {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 1000;
+  transition: all 0.4s ease;
+  pointer-events: none;
+
+  .shift-indicator-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.4s ease;
+    animation: pulse 2s ease-in-out infinite;
+
+    mat-icon {
+      font-size: 32px;
+      width: 32px;
+      height: 32px;
+      transition: all 0.4s ease;
+    }
+
+    .tag-icon {
+      color: #ff9800;
+      animation: rotate 20s linear infinite;
+    }
+
+    .nacht-icon {
+      color: #3f51b5;
+      animation: float 3s ease-in-out infinite;
+    }
+  }
+
+  .shift-indicator-label {
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    transition: all 0.4s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  // Tag styling
+  &.shift-tag {
+    .shift-indicator-icon {
+      background: linear-gradient(135deg, #fff8e1 0%, #ffe0b2 100%);
+      border: 2px solid rgba(255, 152, 0, 0.3);
+    }
+
+    .shift-indicator-label {
+      background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+      color: white;
+    }
+  }
+
+  // Nacht styling
+  &.shift-nacht {
+    .shift-indicator-icon {
+      background: linear-gradient(135deg, #e8eaf6 0%, #c5cae9 100%);
+      border: 2px solid rgba(63, 81, 181, 0.3);
+    }
+
+    .shift-indicator-label {
+      background: linear-gradient(135deg, #3f51b5 0%, #283593 100%);
+      color: white;
+    }
+  }
+}
+
+// Animations
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
 // Responsive Design
 @media (max-width: 768px) {
   .manual-entry {
