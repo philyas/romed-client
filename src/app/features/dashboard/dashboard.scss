@@ -1,14 +1,15 @@
 /* Dashboard component specific styles */
 .main-content {
   min-height: 100vh;
-  background: #e5e7eb;
-  background: linear-gradient(135deg, #e8eaed 0%, #d1d5db 100%);
   width: 100%;
+  position: relative;
+  z-index: 1;
 }
 
 .dashboard {
   padding: 24px;
   position: relative;
+  z-index: 1;
   min-height: 400px;
   min-height: 100vh;
 }
