@@ -717,7 +717,11 @@
   </div>
 
   <!-- Shift Indicator Icon (bottom right) -->
-  <div class="shift-indicator" [class.shift-tag]="selectedShift() === 'tag'" [class.shift-nacht]="selectedShift() === 'nacht'">
+  <div class="shift-indicator" 
+       [class.shift-tag]="selectedShift() === 'tag'" 
+       [class.shift-nacht]="selectedShift() === 'nacht'"
+       (click)="toggleShift()"
+       matTooltip="Zwischen Tag und Nacht wechseln">
     <div class="shift-indicator-icon">
       <mat-icon *ngIf="selectedShift() === 'tag'" class="tag-icon">light_mode</mat-icon>
       <mat-icon *ngIf="selectedShift() === 'nacht'" class="nacht-icon">nightlight</mat-icon>

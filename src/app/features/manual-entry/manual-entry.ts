@@ -616,6 +616,11 @@ export class ManualEntry {
     this.selectedKategorie.set(kategorie);
   }
 
+  toggleShift() {
+    const newShift = this.selectedShift() === 'tag' ? 'nacht' : 'tag';
+    this.onShiftChange(newShift);
+  }
+
   onShiftChange(shift: 'tag' | 'nacht') {
     const previousStation = this.selectedStation();
     this.selectedShift.set(shift);
