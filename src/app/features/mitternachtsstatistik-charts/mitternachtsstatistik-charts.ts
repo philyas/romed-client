@@ -428,11 +428,8 @@ interface StationChartData {
       perspective: 1000px;
       cursor: pointer;
       height: 450px;
-      transition: transform 0.2s ease;
       
       &:hover {
-        transform: scale(1.02);
-        
         .metric-card {
           box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15) !important;
         }

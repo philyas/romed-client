@@ -356,11 +356,6 @@ interface KostenstellenMappingItem {
       perspective: 1000px;
       min-height: 450px;
       cursor: pointer;
-      transition: transform 0.2s ease;
-    }
-
-    .flip-card:hover {
-      transform: translateY(-4px);
     }
 
     .flip-card-inner {

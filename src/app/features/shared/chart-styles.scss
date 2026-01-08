@@ -64,12 +64,11 @@ $chart-height-full: 500px;
   border-radius: $chart-radius-lg;
   border: 1px solid $chart-border;
   box-shadow: $chart-shadow-md;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   
   &:hover {
     box-shadow: $chart-shadow-hover;
-    transform: translateY(-2px);
   }
 }
 

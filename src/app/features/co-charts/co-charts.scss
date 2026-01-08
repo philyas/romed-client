@@ -1,4 +1,4 @@
-@import '../shared/chart-styles';
+@use '../shared/chart-styles' as *;
 
 .co-charts {
   padding: 0;
@@ -117,12 +117,9 @@
     min-height: 600px;
     height: 100%;
     position: relative;
-    transition: transform 0.2s ease;
 
     // Hover-Effekt für bessere Erkennbarkeit
     &:hover {
-      transform: scale(1.02);
-      
       .metric-card {
         box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15) !important;
       }
@@ -179,7 +176,7 @@
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
       &:hover {
         box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1), 0 6px 12px rgba(0, 0, 0, 0.08) !important;

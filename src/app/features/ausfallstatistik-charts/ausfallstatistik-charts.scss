@@ -1,4 +1,4 @@
-@import '../shared/chart-styles';
+@use '../shared/chart-styles' as *;
 
 .ausfallstatistik-charts {
   padding: 0;
@@ -32,12 +32,11 @@
         border-radius: 12px;
         border: 1px solid rgba(0, 0, 0, 0.08);
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.06);
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         overflow: hidden;
 
         &:hover {
           box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1), 0 6px 12px rgba(0, 0, 0, 0.08);
-          transform: translateY(-2px);
         }
 
         .chart-header {

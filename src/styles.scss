@@ -270,7 +270,7 @@ mat-card {
   border: 1px solid $medium-gray;
   margin-bottom: 24px;
   background: $pure-white;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
 
@@ -285,7 +285,6 @@ mat-card {
   }
 
   &:hover {
-    transform: translateY(-2px);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12) !important;
   }
 

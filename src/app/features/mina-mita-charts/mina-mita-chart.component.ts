@@ -142,11 +142,7 @@ interface ChartDataPoint {
       perspective: 1000px;
       cursor: pointer;
       height: 500px;
-      transition: transform 0.2s ease;
-      
       &:hover {
-        transform: scale(1.01);
-        
         .chart-card {
           box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15) !important;
         }
