@@ -1579,11 +1579,13 @@ export class ManualEntry {
     const gesamtzeit = this.getGesamtzeit(entry);
     const arbeitszeitstundenDezimal = gesamtzeit.stunden + (gesamtzeit.minuten / 60);
     
+    const schicht = this.selectedShift();
+    const schichtStunden = schicht === 'tag' ? this.schichtStundenTag() : this.schichtStundenNacht();
+    
     // Tatsächlich anrechnbar für diesen Tag
     const phkTageswerte = this.phkTageswerte();
     if (!phkTageswerte) {
       // Wenn keine PHK-Daten vorhanden, nur Arbeitszeitstunden verwenden
-      const schichtStunden = this.schichtStundenTag();
       const examPflege = arbeitszeitstundenDezimal / schichtStunden;
       return examPflege.toFixed(4);
     }
@@ -1591,7 +1593,6 @@ export class ManualEntry {
     const tagData = phkTageswerte.find(t => t.tag === entry.tag);
     if (!tagData) {
       // Wenn keine PHK-Daten für diesen Tag, nur Arbeitszeitstunden verwenden
-      const schichtStunden = this.schichtStundenTag();
       const examPflege = arbeitszeitstundenDezimal / schichtStunden;
       return examPflege.toFixed(4);
     }
@@ -1608,8 +1609,7 @@ export class ManualEntry {
     // Gesamte anrechbare AZ = Arbeitszeitstunden + Tatsächlich anrechnbar
     const gesamtAnrechbareAZ = arbeitszeitstundenDezimal + tatsaechlichAnrechenbar;
     
-    // Exam. Pflege = Gesamte anrechb. AZ / Schichtstunden (Tag: 16 Stunden)
-    const schichtStunden = this.schichtStundenTag();
+    // Exam. Pflege = Gesamte anrechb. AZ / Schichtstunden (Tag: 16h, Nacht: 8h)
     const examPflege = gesamtAnrechbareAZ / schichtStunden;
     
     return examPflege.toFixed(4);
