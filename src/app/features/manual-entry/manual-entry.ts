@@ -525,6 +525,7 @@ export class ManualEntry {
   openStationConfigDialog() {
     const station = this.selectedStation();
     const kategorie = this.selectedKategorie();
+    const schicht = this.selectedShift();
     
     if (!station) {
       this.snackBar.open('Bitte wählen Sie zuerst eine Station aus', 'Schließen', {
@@ -538,8 +539,8 @@ export class ManualEntry {
       data: {
         station,
         kategorie,
-        schicht: 'tag' as const,
-        schichtLabel: 'Tag'
+        schicht: schicht as 'tag' | 'nacht',
+        schichtLabel: schicht === 'tag' ? 'Tag' : 'Nacht'
       }
     });
 
