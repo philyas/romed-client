@@ -36,8 +36,10 @@
           <input 
             type="text"
             matInput
-            [formControl]="stationControl"
+            [value]="stationInputValue()"
+            (input)="onStationInput($event)"
             [matAutocomplete]="stationAuto"
+            (focus)="onStationInputFocus()"
             (blur)="onStationInputBlur()"
             placeholder="Station suchen oder auswählen">
           <mat-autocomplete 

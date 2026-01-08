@@ -77,21 +77,29 @@ export class ManualEntry {
   // State
   stations = signal<string[]>([]);
   selectedStation = signal<string>('');
-  stationControl = new FormControl<string>('');
-  stationSearchValue = signal<string>('');
+  stationSearchTerm = signal<string>('');
+  isEditingStation = signal<boolean>(false);
   
   // Filtered stations for autocomplete
   filteredStations = computed(() => {
-    const searchValue = this.stationSearchValue().toLowerCase();
+    const term = this.stationSearchTerm().trim().toLowerCase();
     const allStations = this.stations();
     
-    if (!searchValue) {
+    if (!term) {
       return allStations;
     }
     
     return allStations.filter(station => 
-      station.toLowerCase().includes(searchValue)
+      station.toLowerCase().includes(term)
     );
+  });
+  
+  // Computed input value - shows search term when editing, otherwise shows selected station
+  stationInputValue = computed(() => {
+    if (this.isEditingStation() || this.stationSearchTerm()) {
+      return this.stationSearchTerm();
+    }
+    return this.selectedStation();
   });
   selectedYear = signal<number>(new Date().getFullYear());
   selectedMonth = signal<number>(new Date().getMonth() + 1);
@@ -206,19 +214,6 @@ export class ManualEntry {
       }
     });
     
-    // Sync stationControl with selectedStation
-    effect(() => {
-      const station = this.selectedStation();
-      if (station !== this.stationControl.value) {
-        this.stationControl.setValue(station, { emitEvent: false });
-        this.stationSearchValue.set(station);
-      }
-    });
-    
-    // Listen to FormControl changes and update search signal
-    this.stationControl.valueChanges.subscribe(value => {
-      this.stationSearchValue.set(value || '');
-    });
     
     // Auto-load data when station, year, month, or kategorie changes
     effect(() => {
@@ -281,16 +276,13 @@ export class ManualEntry {
     apiCall.subscribe({
       next: (response) => {
         this.stations.set(response.stations);
-        // Sync stationControl with selectedStation if it's still valid
+        // Sync selectedStation if it's still valid
         const currentStation = this.selectedStation();
-        if (currentStation && response.stations.includes(currentStation)) {
-          this.stationControl.setValue(currentStation, { emitEvent: false });
-          this.stationSearchValue.set(currentStation);
-        } else if (currentStation && !response.stations.includes(currentStation)) {
+        if (currentStation && !response.stations.includes(currentStation)) {
           // Station not available in new shift, clear it
           this.selectedStation.set('');
-          this.stationControl.setValue('', { emitEvent: false });
-          this.stationSearchValue.set('');
+          this.stationSearchTerm.set('');
+          this.isEditingStation.set(false);
         }
       },
       error: (err) => {
@@ -556,35 +548,55 @@ export class ManualEntry {
   onStationChange(station: string | null) {
     if (station) {
       this.selectedStation.set(station);
-      this.stationControl.setValue(station, { emitEvent: false });
-      this.stationSearchValue.set(station);
+      this.stationSearchTerm.set('');
+      this.isEditingStation.set(false);
     } else {
       this.selectedStation.set('');
-      this.stationControl.setValue('', { emitEvent: false });
-      this.stationSearchValue.set('');
+      this.stationSearchTerm.set('');
+      this.isEditingStation.set(false);
     }
     // MiTa-Durchschnitt wird jetzt aus täglichen Werten berechnet (in loadDataForPeriod)
     // Kein separater API-Call mehr nötig
   }
   
+  onStationInput(event: Event) {
+    const value = (event.target as HTMLInputElement).value;
+    if (!this.isEditingStation()) {
+      this.isEditingStation.set(true);
+    }
+    this.stationSearchTerm.set(value);
+  }
+  
+  onStationInputFocus() {
+    // Clear search term to show all stations when focusing
+    if (!this.isEditingStation()) {
+      this.stationSearchTerm.set('');
+    }
+  }
+  
   onStationInputBlur() {
-    // If the input value doesn't match any station, clear the selection
-    const inputValue = this.stationControl.value;
+    // Reset editing state
+    this.isEditingStation.set(false);
+    
+    // If there's a search term, check if it matches a station
+    const searchTerm = this.stationSearchTerm();
     const currentStations = this.stations();
     
-    if (inputValue && !currentStations.includes(inputValue)) {
-      // Invalid input, clear it
-      this.selectedStation.set('');
-      this.stationControl.setValue('', { emitEvent: false });
-      this.stationSearchValue.set('');
-    } else if (inputValue && currentStations.includes(inputValue)) {
-      // Valid input, ensure it's selected
-      this.selectedStation.set(inputValue);
-      this.stationSearchValue.set(inputValue);
-    } else if (!inputValue) {
-      // Empty input, clear selection
-      this.selectedStation.set('');
-      this.stationSearchValue.set('');
+    if (searchTerm && currentStations.includes(searchTerm)) {
+      // Valid input, select it
+      this.selectedStation.set(searchTerm);
+      this.stationSearchTerm.set('');
+    } else if (searchTerm && !currentStations.includes(searchTerm)) {
+      // Invalid input, restore previous selection or clear
+      if (this.selectedStation()) {
+        this.stationSearchTerm.set('');
+      } else {
+        this.selectedStation.set('');
+        this.stationSearchTerm.set('');
+      }
+    } else {
+      // No search term, keep current selection
+      this.stationSearchTerm.set('');
     }
   }
   
@@ -620,21 +632,22 @@ export class ManualEntry {
         if (currentStations.includes(previousStation)) {
           // Station is available in new shift, keep it selected
           this.selectedStation.set(previousStation);
-          this.stationControl.setValue(previousStation, { emitEvent: false });
-          this.stationSearchValue.set(previousStation);
+          this.stationSearchTerm.set('');
+          this.isEditingStation.set(false);
           // Reload data for the station in the new shift
           this.loadDataForPeriod(previousStation, this.selectedYear(), this.selectedMonth(), this.selectedKategorie());
         } else {
           // Station not available, reset selection
           this.selectedStation.set('');
-          this.stationControl.setValue('', { emitEvent: false });
-          this.stationSearchValue.set('');
+          this.stationSearchTerm.set('');
+          this.isEditingStation.set(false);
           this.dayEntries.set([]);
         }
       }, 100);
     } else {
-      this.stationControl.setValue('', { emitEvent: false });
-      this.stationSearchValue.set('');
+      this.selectedStation.set('');
+      this.stationSearchTerm.set('');
+      this.isEditingStation.set(false);
       this.dayEntries.set([]);
     }
   }
