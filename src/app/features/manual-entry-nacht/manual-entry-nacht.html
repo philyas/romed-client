@@ -258,8 +258,8 @@
         <div class="stat-item" *ngIf="selectedKategorie() === 'PFK'">
           <mat-icon>percent</mat-icon>
           <div class="stat-content">
-            <span class="stat-label">PHK-Anteil</span>
-            <span class="stat-value">90%</span>
+            <span class="stat-label">PHK-Anteil (Nacht)</span>
+            <span class="stat-value">{{ getPhkAnteilPercent() }}</span>
           </div>
           <button mat-icon-button class="stat-info-button" (click)="openStatInfoModal('phkAnteil')" matTooltip="Berechnung anzeigen">
             <mat-icon>info</mat-icon>

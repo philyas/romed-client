@@ -1119,6 +1119,21 @@ export class ManualEntryNacht {
     return geleistetePhk.durchschnitt;
   }
 
+  // Berechnet den PHK-Anteil für Nacht
+  getPhkAnteil(): number {
+    const phkAnteilBase = this.phkAnteilNachtBase() || 10;
+    
+    // PHK-Anteil = 1 - (Basiswert / 100)
+    const phkAnteil = 1 - (phkAnteilBase / 100);
+    return phkAnteil;
+  }
+
+  // Gibt den PHK-Anteil als Prozent-String zurück (z.B. "90%")
+  getPhkAnteilPercent(): string {
+    const phkAnteil = this.getPhkAnteil();
+    return `${(phkAnteil * 100).toFixed(0)}%`;
+  }
+
   clearAllStationData() {
     const station = this.selectedStation();
     const year = this.selectedYear();
@@ -1362,7 +1377,7 @@ export class ManualEntryNacht {
 
   openStatInfoModal(statType: string) {
     const schichtStunden = this.schichtStundenNacht();
-    const phkAnteilBase = 10;
+    const phkAnteilBase = this.phkAnteilNachtBase() || 10;
     const phkAnteil = 1 - (phkAnteilBase / 100);
     const ppRatioBase = this.ppRatioNachtBase();
     const entries = this.dayEntries();

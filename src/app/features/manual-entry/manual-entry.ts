@@ -1421,6 +1421,24 @@ export class ManualEntry {
     return geleistetePhk.durchschnitt;
   }
 
+  // Berechnet den PHK-Anteil basierend auf der aktuellen Schicht
+  getPhkAnteil(): number {
+    const schicht = this.selectedShift();
+    const phkAnteilBase = schicht === 'tag' 
+      ? (this.phkAnteilTagBase() || 10) 
+      : (this.phkAnteilNachtBase() || 10);
+    
+    // PHK-Anteil = 1 - (Basiswert / 100)
+    const phkAnteil = 1 - (phkAnteilBase / 100);
+    return phkAnteil;
+  }
+
+  // Gibt den PHK-Anteil als Prozent-String zurück (z.B. "90%")
+  getPhkAnteilPercent(): string {
+    const phkAnteil = this.getPhkAnteil();
+    return `${(phkAnteil * 100).toFixed(0)}%`;
+  }
+
   getMitaForTag(tag: number): string {
     const dailyMap = this.dailyMinaMita();
     const dayData = dailyMap.get(tag);
