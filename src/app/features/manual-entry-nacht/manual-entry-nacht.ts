@@ -1437,20 +1437,20 @@ export class ManualEntryNacht {
 
       case 'phkAnteil':
         modalData = {
-          title: 'PHK-Anteil',
+          title: 'PHK-Anteil (Nacht)',
           steps: [
             {
               name: 'PHK-Anteil',
               formula: `PHK-Anteil = 1 - (Basiswert / 100)`,
-              description: `Der PHK-Anteil wird aus einem konfigurierbaren Basiswert berechnet. Standard: 90%`,
+              description: `Der PHK-Anteil wird aus einem konfigurierbaren Basiswert berechnet.`,
               example: `1 - (${phkAnteilBase} / 100) = ${phkAnteil.toFixed(4)} (${(phkAnteil * 100).toFixed(0)}%)`
             }
           ],
           constants: [
-            { name: 'PHK-Anteil Basiswert', value: `${phkAnteilBase}`, unit: 'Zahl' },
+            { name: 'PHK-Anteil Basiswert (Nacht)', value: `${phkAnteilBase}`, unit: 'Zahl' },
             { name: 'PHK-Anteil', value: `${phkAnteil.toFixed(4)}`, unit: `(${(phkAnteil * 100).toFixed(0)}%)` }
           ],
-          dataSource: 'Konfigurierbarer Basiswert (Standard: 10)'
+          dataSource: 'Konfigurierbarer Basiswert für Nacht-Schicht'
         };
         break;
 

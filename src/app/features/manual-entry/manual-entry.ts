@@ -1856,20 +1856,20 @@ export class ManualEntry {
 
       case 'phkAnteil':
         modalData = {
-          title: 'PHK-Anteil',
+          title: `PHK-Anteil (${schicht === 'tag' ? 'Tag' : 'Nacht'})`,
           steps: [
             {
               name: 'PHK-Anteil',
               formula: `PHK-Anteil = 1 - (Basiswert / 100)`,
-              description: `Der PHK-Anteil wird aus einem konfigurierbaren Basiswert berechnet. Standard: 90%`,
+              description: `Der PHK-Anteil wird aus einem konfigurierbaren Basiswert berechnet.`,
               example: `1 - (${phkAnteilBase} / 100) = ${phkAnteil.toFixed(4)} (${(phkAnteil * 100).toFixed(0)}%)`
             }
           ],
           constants: [
-            { name: 'PHK-Anteil Basiswert', value: `${phkAnteilBase}`, unit: 'Zahl' },
+            { name: `PHK-Anteil Basiswert (${schicht === 'tag' ? 'Tag' : 'Nacht'})`, value: `${phkAnteilBase}`, unit: 'Zahl' },
             { name: 'PHK-Anteil', value: `${phkAnteil.toFixed(4)}`, unit: `(${(phkAnteil * 100).toFixed(0)}%)` }
           ],
-          dataSource: 'Konfigurierbarer Basiswert (Standard: 10)'
+          dataSource: `Konfigurierbarer Basiswert für ${schicht === 'tag' ? 'Tag' : 'Nacht'}-Schicht`
         };
         break;
 
@@ -1892,7 +1892,7 @@ export class ManualEntry {
             }
           ],
           constants: [
-            { name: 'Schichtdauer', value: `${schichtStunden}`, unit: 'Stunden' }
+            { name: `Schichtdauer (${schicht === 'tag' ? 'Tag' : 'Nacht'})`, value: `${schichtStunden}`, unit: 'Stunden' }
           ],
           dataSource: 'Berechnet aus PFK-Stunden und PHK-Anteil'
         };
@@ -1939,7 +1939,7 @@ export class ManualEntry {
             }
           ],
           constants: [
-            { name: 'Schichtstunden (Tag)', value: `${schichtStunden}`, unit: 'Stunden' }
+            { name: `Schichtstunden (${schicht === 'tag' ? 'Tag' : 'Nacht'})`, value: `${schichtStunden}`, unit: 'Stunden' }
           ],
           dataSource: 'Gesamt Anrechenbar (berechnet)'
         };
@@ -2039,7 +2039,7 @@ export class ManualEntry {
             }
           ],
           constants: [
-            { name: `Pp-Ratio Basiswert (${schicht === 'tag' ? 'Tag' : 'Nacht'})`, value: `${ppRatioBase}`, unit: 'Zahl' }
+            { name: `P:P-Ratio Basiswert (${schicht === 'tag' ? 'Tag' : 'Nacht'})`, value: `${ppRatioBase}`, unit: 'Zahl' }
           ],
           dataSource: `Ergibt PFK (PFK Normal) (eingegeben) und ${bestandNameDelta} (aus Beständen)`
         };
@@ -2092,20 +2092,21 @@ export class ManualEntry {
 
       case 'ppugNachPfkDurchschnitt':
         const ppugNachPfk = this.getDurchschnittPpugNachPfk();
+        const bestandNamePpug = schicht === 'tag' ? 'MiTa Bestände (MiTa)' : 'MiNa Bestände (MiNa)';
         modalData = {
           title: 'PpUG nach PFK Ø',
           steps: [
             {
               name: 'PpUG nach PFK Durchschnitt',
-              formula: `⌀ PpUG nach PFK = Durchschnitt von (MiTa Bestände (MiTa) / Pp-Ratio)`,
-              description: `Berechnet den durchschnittlichen benötigten Pflegekraft-Bedarf basierend auf der Tagesbelegung`,
-              example: `Für jeden Tag: MiTa Bestände (MiTa) / ${ppRatioBase}, dann Durchschnitt über alle Tage`
+              formula: `⌀ PpUG nach PFK = Durchschnitt von (${bestandNamePpug} / P:P-Ratio)`,
+              description: `Berechnet den durchschnittlichen benötigten Pflegekraft-Bedarf basierend auf der ${schicht === 'tag' ? 'Tages' : 'Nacht'}belegung`,
+              example: `Für jeden Tag: ${bestandNamePpug} / ${ppRatioBase}, dann Durchschnitt über alle Tage`
             }
           ],
           constants: [
-            { name: 'Pp-Ratio Basiswert (Tag)', value: `${ppRatioBase}`, unit: 'Zahl' }
+            { name: `P:P-Ratio Basiswert (${schicht === 'tag' ? 'Tag' : 'Nacht'})`, value: `${ppRatioBase}`, unit: 'Zahl' }
           ],
-          dataSource: 'MiTa Bestände (MiTa) (aus MiNa/MiTa-Beständen)'
+          dataSource: `${bestandNamePpug} (aus MiNa/MiTa-Beständen)`
         };
         break;
 
@@ -2122,7 +2123,7 @@ export class ManualEntry {
             }
           ],
           constants: [
-            { name: 'Schichtdauer', value: `${schichtStunden}`, unit: 'Stunden' }
+            { name: `Schichtdauer (${schicht === 'tag' ? 'Tag' : 'Nacht'})`, value: `${schichtStunden}`, unit: 'Stunden' }
           ],
           dataSource: 'Manuell eingegebene PFK-Stunden pro Tag'
         };
@@ -2147,7 +2148,7 @@ export class ManualEntry {
             }
           ],
           constants: [
-            { name: 'Schichtstunden (Tag)', value: `${schichtStunden}`, unit: 'Stunden' }
+            { name: `Schichtstunden (${schicht === 'tag' ? 'Tag' : 'Nacht'})`, value: `${schichtStunden}`, unit: 'Stunden' }
           ],
           dataSource: 'Tatsächlich Anrechenbar (berechnet)'
         };
@@ -2185,10 +2186,9 @@ export class ManualEntry {
   }
 
   openCalculationModal(columnType: string) {
-    // Da wir in der Tag-Komponente sind, ist die Schicht immer 'tag'
-    const schicht = 'tag';
-    const schichtStunden = this.schichtStundenTag();
-    const phkAnteilBase = 10; // Standard-Wert, könnte aus API geladen werden
+    const schicht = this.selectedShift();
+    const schichtStunden = schicht === 'tag' ? this.schichtStundenTag() : this.schichtStundenNacht();
+    const phkAnteilBase = schicht === 'tag' ? (this.phkAnteilTagBase() || 10) : (this.phkAnteilNachtBase() || 10);
     const phkAnteil = 1 - (phkAnteilBase / 100);
 
     let modalData: any = {};
@@ -2206,7 +2206,7 @@ export class ManualEntry {
             }
           ],
           constants: [
-            { name: 'Schichtdauer', value: `${schichtStunden}`, unit: 'Stunden' }
+            { name: `Schichtdauer (${schicht === 'tag' ? 'Tag' : 'Nacht'})`, value: `${schichtStunden}`, unit: 'Stunden' }
           ]
         };
         break;
@@ -2229,7 +2229,7 @@ export class ManualEntry {
             }
           ],
           constants: [
-            { name: 'PHK-Anteil Basiswert', value: `${phkAnteilBase}`, unit: 'Zahl' },
+            { name: `PHK-Anteil Basiswert (${schicht === 'tag' ? 'Tag' : 'Nacht'})`, value: `${phkAnteilBase}`, unit: 'Zahl' },
             { name: 'PHK-Anteil', value: `${phkAnteil.toFixed(4)}`, unit: `(${(phkAnteil * 100).toFixed(0)}%)` }
           ]
         };
@@ -2261,7 +2261,7 @@ export class ManualEntry {
             }
           ],
           constants: [
-            { name: 'Schichtdauer', value: `${schichtStunden}`, unit: 'Stunden' }
+            { name: `Schichtdauer (${schicht === 'tag' ? 'Tag' : 'Nacht'})`, value: `${schichtStunden}`, unit: 'Stunden' }
           ]
         };
         break;
@@ -2416,7 +2416,7 @@ export class ManualEntry {
             }
           ],
           constants: [
-            { name: 'Schichtstunden (Tag)', value: `${schichtStunden}`, unit: 'Stunden' }
+            { name: `Schichtstunden (${schicht === 'tag' ? 'Tag' : 'Nacht'})`, value: `${schichtStunden}`, unit: 'Stunden' }
           ],
           dataSource: 'Gesamte anrechenbare Arbeitszeit (berechnet)'
         };
