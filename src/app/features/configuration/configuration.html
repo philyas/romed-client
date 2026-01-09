@@ -258,7 +258,7 @@
 
             <p class="tab-description">
               Hier können Sie für jede Station individuelle Parameter für die Arbeitszeitberechnung festlegen.
-              Diese Werte (Schichtstunden, PHK-Anteil, P:P-Ratio) werden bei der Berechnung von Arbeitszeiten verwendet.
+              Diese Werte (Schichtstunden, %PHP-Faktor, P:P-Ratio) werden bei der Berechnung von Arbeitszeiten verwendet.
             </p>
 
             <!-- Station Config Table -->
@@ -324,7 +324,7 @@
                             <span class="value">{{ stationConfig.tag_pfk.schicht_stunden }}h</span>
                           </div>
                           <div class="config-value">
-                            <span class="label">PHK-Anteil:</span>
+                            <span class="label">%PHP Tag:</span>
                             <span class="value">{{ stationConfig.tag_pfk.phk_anteil_base }}</span>
                           </div>
                           <div class="config-value">
@@ -346,7 +346,7 @@
                             <span class="value">{{ stationConfig.nacht_pfk.schicht_stunden }}h</span>
                           </div>
                           <div class="config-value">
-                            <span class="label">PHK-Anteil:</span>
+                            <span class="label">%PHP Nacht:</span>
                             <span class="value">{{ stationConfig.nacht_pfk.phk_anteil_base }}</span>
                           </div>
                           <div class="config-value">

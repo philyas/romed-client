@@ -106,7 +106,7 @@ export interface StationConfigDialogData {
             <div class="config-item" *ngIf="data.kategorie === 'PFK'">
               <div class="config-item-header">
                 <mat-icon>percent</mat-icon>
-                <span class="config-label">PHK-Anteil Basis</span>
+                <span class="config-label">%PHP</span>
               </div>
               <mat-form-field appearance="outline" class="config-input-field">
                 <input 

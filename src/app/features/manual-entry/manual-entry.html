@@ -127,7 +127,7 @@
             <span class="config-value">{{ configSnapshot()!.schicht_stunden_used }}h</span>
           </div>
           <div class="config-item" *ngIf="configSnapshot()!.phk_anteil_base_used !== null">
-            <span class="config-label">PHK-Anteil Basis:</span>
+            <span class="config-label">%PHP ({{ configSnapshot()!.schicht === 'tag' ? 'Tag' : 'Nacht' }}):</span>
             <span class="config-value">{{ configSnapshot()!.phk_anteil_base_used }}</span>
           </div>
           <div class="config-item">
@@ -258,11 +258,11 @@
           </button>
         </div>
 
-        <!-- PHK-Anteil (nur PFK) -->
+        <!-- %PHP-Faktor (nur PFK) -->
         <div class="stat-item" *ngIf="selectedKategorie() === 'PFK'">
           <mat-icon>percent</mat-icon>
           <div class="stat-content">
-            <span class="stat-label">PHK-Anteil ({{ selectedShift() === 'tag' ? 'Tag' : 'Nacht' }})</span>
+            <span class="stat-label">%PHP-Faktor ({{ selectedShift() === 'tag' ? 'Tag' : 'Nacht' }})</span>
             <span class="stat-value">{{ getPhkAnteilPercent() }}</span>
           </div>
           <button mat-icon-button class="stat-info-button" (click)="openStatInfoModal('phkAnteil')" matTooltip="Berechnung anzeigen">

@@ -182,7 +182,7 @@ export interface DienstplanPreviewData {
                             </div>
                             <div class="config-value" *ngIf="kategorieKey === 'PFK'">
                               <div class="config-input-row">
-                                <span class="config-label">PHK-Anteil:</span>
+                                <span class="config-label">%PHP:</span>
                                 <mat-form-field appearance="outline" class="config-input-field">
                                   <input
                                     matInput

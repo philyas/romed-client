@@ -67,7 +67,7 @@ interface StationConfigValues {
               </mat-form-field>
 
               <mat-form-field appearance="outline">
-                <mat-label>PHK-Anteil Basis</mat-label>
+                <mat-label>%PHP Tag</mat-label>
                 <input matInput type="number" step="0.1" min="1"
                        [(ngModel)]="editedConfigs.tag_pfk.phk_anteil_base">
               </mat-form-field>
@@ -112,7 +112,7 @@ interface StationConfigValues {
               </mat-form-field>
 
               <mat-form-field appearance="outline">
-                <mat-label>PHK-Anteil Basis</mat-label>
+                <mat-label>%PHP Nacht</mat-label>
                 <input matInput type="number" step="0.1" min="1"
                        [(ngModel)]="editedConfigs.nacht_pfk.phk_anteil_base">
               </mat-form-field>

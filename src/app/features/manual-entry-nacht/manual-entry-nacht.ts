@@ -1437,18 +1437,18 @@ export class ManualEntryNacht {
 
       case 'phkAnteil':
         modalData = {
-          title: 'PHK-Anteil (Nacht)',
+          title: '%PHP-Faktor (Nacht)',
           steps: [
             {
-              name: 'PHK-Anteil',
-              formula: `PHK-Anteil = 1 - (Basiswert / 100)`,
-              description: `Der PHK-Anteil wird aus einem konfigurierbaren Basiswert berechnet.`,
+              name: '%PHP-Faktor',
+              formula: `%PHP-Faktor = 1 - (Basiswert / 100)`,
+              description: `Der %PHP-Faktor wird aus einem konfigurierbaren Basiswert berechnet.`,
               example: `1 - (${phkAnteilBase} / 100) = ${phkAnteil.toFixed(4)} (${(phkAnteil * 100).toFixed(0)}%)`
             }
           ],
           constants: [
-            { name: 'PHK-Anteil Basiswert (Nacht)', value: `${phkAnteilBase}`, unit: 'Zahl' },
-            { name: 'PHK-Anteil', value: `${phkAnteil.toFixed(4)}`, unit: `(${(phkAnteil * 100).toFixed(0)}%)` }
+            { name: '%PHP (Nacht)', value: `${phkAnteilBase}`, unit: 'Zahl' },
+            { name: '%PHP-Faktor', value: `${phkAnteil.toFixed(4)}`, unit: `(${(phkAnteil * 100).toFixed(0)}%)` }
           ],
           dataSource: 'Konfigurierbarer Basiswert für Nacht-Schicht'
         };
@@ -1475,7 +1475,7 @@ export class ManualEntryNacht {
           constants: [
             { name: 'Schichtdauer (Nacht)', value: `${schichtStunden}`, unit: 'Stunden' }
           ],
-          dataSource: 'Berechnet aus PFK-Stunden und PHK-Anteil'
+          dataSource: 'Berechnet aus PFK-Stunden und %PHP-Faktor'
         };
         break;
 
@@ -1793,21 +1793,21 @@ export class ManualEntryNacht {
           title: 'Gesamt PFK+PHK',
           steps: [
             {
-              name: 'PHK-Anteil berechnen',
-              formula: `PHK-Anteil = 1 - (Basiswert / 100)`,
-              description: `Berechnung des PHK-Anteils aus dem konfigurierbaren Basiswert`,
+              name: '%PHP-Faktor berechnen',
+              formula: `%PHP-Faktor = 1 - (Basiswert / 100)`,
+              description: `Berechnung des %PHP-Faktors aus dem konfigurierbaren Basiswert`,
               example: `1 - (${phkAnteilBase} / 100) = ${phkAnteil.toFixed(4)} (${(phkAnteil * 100).toFixed(0)}%)`
             },
             {
               name: 'Gesamt PFK+PHK',
-              formula: `Gesamt PFK+PHK = Ergibt PFK (PFK Normal) / PHK-Anteil`,
+              formula: `Gesamt PFK+PHK = Ergibt PFK (PFK Normal) / %PHP-Faktor`,
               description: `Gesamtanzahl Personal (PFK + PHK zusammen)`,
               example: `8.0 / ${phkAnteil.toFixed(4)} = ${(8.0 / phkAnteil).toFixed(2)} Gesamt-Schichten`
             }
           ],
           constants: [
-            { name: 'PHK-Anteil Basiswert', value: `${phkAnteilBase}`, unit: 'Zahl' },
-            { name: 'PHK-Anteil', value: `${phkAnteil.toFixed(4)}`, unit: `(${(phkAnteil * 100).toFixed(0)}%)` }
+            { name: '%PHP (Nacht)', value: `${phkAnteilBase}`, unit: 'Zahl' },
+            { name: '%PHP-Faktor', value: `${phkAnteil.toFixed(4)}`, unit: `(${(phkAnteil * 100).toFixed(0)}%)` }
           ]
         };
         break;
