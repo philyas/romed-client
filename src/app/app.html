@@ -1,46 +1,86 @@
 <div class="main-container">
-  <nav>
-    <div class="nav-container">
-      <div class="nav-brand">
-        <img src="/assets/romed-logo-removebg-preview.png" alt="RoMed Logo" class="nav-logo">
-      </div>
-      
-      <!-- Desktop Navigation -->
-      <div class="nav-links desktop-nav">
-        <a [routerLink]="['/dashboard']" routerLinkActive="active" (click)="closeMenu()">Dashboard</a>
-        <a [routerLink]="['/upload']" routerLinkActive="active" (click)="closeMenu()">Upload</a>
-        <a [routerLink]="['/manual-entry']" [class.active]="isManualEntryActive()" (click)="closeMenu()">Arbeitszeiten</a>
-        <a [routerLink]="['/configuration']" routerLinkActive="active" (click)="closeMenu()">Einstellungen</a>
+  @if (!isAuthPage()) {
+    <nav>
+      <div class="nav-container">
+        <div class="nav-brand">
+          <img src="/assets/romed-logo-removebg-preview.png" alt="RoMed Logo" class="nav-logo">
+        </div>
+        
+        <!-- Desktop Navigation -->
+        <div class="nav-links desktop-nav">
+          <a [routerLink]="['/dashboard']" routerLinkActive="active" (click)="closeMenu()">Dashboard</a>
+          <a [routerLink]="['/upload']" routerLinkActive="active" (click)="closeMenu()">Upload</a>
+          <a [routerLink]="['/manual-entry']" [class.active]="isManualEntryActive()" (click)="closeMenu()">Arbeitszeiten</a>
+          <a [routerLink]="['/configuration']" routerLinkActive="active" (click)="closeMenu()">Einstellungen</a>
+          
+          @if (isAuthenticated()) {
+            <div class="user-menu">
+              <button mat-button [matMenuTriggerFor]="userMenu" class="user-menu-button">
+                <mat-icon>account_circle</mat-icon>
+                <span class="user-name">{{ getUserDisplayName() }}</span>
+                <mat-icon>arrow_drop_down</mat-icon>
+              </button>
+              <mat-menu #userMenu="matMenu">
+                <div class="user-menu-header">
+                  <div class="user-info">
+                    <strong>{{ getUserDisplayName() }}</strong>
+                    <span class="user-email">{{ currentUser()?.email }}</span>
+                    <span class="user-role" [class.admin]="isAdmin()">{{ currentUser()?.role === 'admin' ? 'Administrator' : 'Betrachter' }}</span>
+                  </div>
+                </div>
+                <mat-divider></mat-divider>
+                <button mat-menu-item (click)="logout()">
+                  <mat-icon>logout</mat-icon>
+                  <span>Abmelden</span>
+                </button>
+              </mat-menu>
+            </div>
+          }
+        </div>
+
+        <!-- Mobile Burger Menu Button -->
+        <button mat-icon-button class="burger-menu-button" (click)="toggleMenu()" aria-label="Menu">
+          <mat-icon>{{ menuOpen() ? 'close' : 'menu' }}</mat-icon>
+        </button>
       </div>
 
-      <!-- Mobile Burger Menu Button -->
-      <button mat-icon-button class="burger-menu-button" (click)="toggleMenu()" aria-label="Menu">
-        <mat-icon>{{ menuOpen() ? 'close' : 'menu' }}</mat-icon>
-      </button>
-    </div>
-
-    <!-- Mobile Navigation Menu -->
-    <div class="mobile-nav" [class.open]="menuOpen()">
-      <a [routerLink]="['/dashboard']" routerLinkActive="active" (click)="closeMenu()">
-        <mat-icon>dashboard</mat-icon>
-        Dashboard
-      </a>
-      <a [routerLink]="['/upload']" routerLinkActive="active" (click)="closeMenu()">
-        <mat-icon>upload_file</mat-icon>
-        Upload
-      </a>
-      <a [routerLink]="['/manual-entry']" [class.active]="isManualEntryActive()" (click)="closeMenu()">
-        <mat-icon>edit</mat-icon>
-        Arbeitszeiten
-      </a>
-      <a [routerLink]="['/configuration']" routerLinkActive="active" (click)="closeMenu()">
-        <mat-icon>settings</mat-icon>
-        Einstellungen
-      </a>
-    </div>
-  </nav>
+      <!-- Mobile Navigation Menu -->
+      <div class="mobile-nav" [class.open]="menuOpen()">
+        <a [routerLink]="['/dashboard']" routerLinkActive="active" (click)="closeMenu()">
+          <mat-icon>dashboard</mat-icon>
+          Dashboard
+        </a>
+        <a [routerLink]="['/upload']" routerLinkActive="active" (click)="closeMenu()">
+          <mat-icon>upload_file</mat-icon>
+          Upload
+        </a>
+        <a [routerLink]="['/manual-entry']" [class.active]="isManualEntryActive()" (click)="closeMenu()">
+          <mat-icon>edit</mat-icon>
+          Arbeitszeiten
+        </a>
+        <a [routerLink]="['/configuration']" routerLinkActive="active" (click)="closeMenu()">
+          <mat-icon>settings</mat-icon>
+          Einstellungen
+        </a>
+        @if (isAuthenticated()) {
+          <mat-divider></mat-divider>
+          <div class="mobile-user-info">
+            <mat-icon>account_circle</mat-icon>
+            <div class="mobile-user-details">
+              <strong>{{ getUserDisplayName() }}</strong>
+              <span class="user-email">{{ currentUser()?.email }}</span>
+            </div>
+          </div>
+          <a (click)="logout(); closeMenu()" class="logout-link">
+            <mat-icon>logout</mat-icon>
+            Abmelden
+          </a>
+        }
+      </div>
+    </nav>
+  }
 
   <main class="content-wrapper">
-<router-outlet />
+    <router-outlet />
   </main>
 </div>

@@ -1,0 +1,181 @@
+@use '../../../../styles.scss' as *;
+
+.verify-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: linear-gradient(135deg, $very-light-teal 0%, $pure-white 50%, $medical-gray 100%);
+  background-attachment: fixed;
+}
+
+.verify-card {
+  width: 100%;
+  max-width: 500px;
+  background: $pure-white;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, $primary-teal, $secondary-teal);
+  }
+}
+
+.verify-header {
+  background: linear-gradient(135deg, $very-light-teal 0%, $light-teal 100%);
+  padding: 40px 32px 32px;
+  text-align: center;
+  border-bottom: 2px solid $border-gray;
+
+  .verify-logo {
+    height: 100px;
+    width: auto;
+    object-fit: contain;
+    margin-bottom: 20px;
+  }
+
+  h1 {
+    color: $primary-teal;
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.5px;
+  }
+}
+
+.verify-content {
+  padding: 48px 32px;
+  text-align: center;
+
+  .verifying,
+  .verified,
+  .error-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+
+    mat-icon {
+      font-size: 64px;
+      width: 64px;
+      height: 64px;
+      margin-bottom: 8px;
+    }
+
+    h2 {
+      color: $primary-teal;
+      font-size: 24px;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    p {
+      color: $text-secondary;
+      font-size: 16px;
+      margin: 0;
+      line-height: 1.6;
+    }
+  }
+
+  .verifying {
+    mat-icon {
+      color: $primary-teal;
+      animation: spin 1s linear infinite;
+    }
+  }
+
+  .verified {
+    mat-icon {
+      color: $medical-green;
+    }
+  }
+
+  .error-state {
+    mat-icon {
+      color: $error-red;
+    }
+
+    .action-button {
+      margin-top: 8px;
+      border-radius: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 12px 24px;
+      background: $primary-teal !important;
+      color: $pure-white !important;
+
+      mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+        color: $pure-white;
+        margin-right: 8px;
+        vertical-align: middle;
+      }
+    }
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .verify-container {
+    padding: 16px;
+  }
+
+  .verify-card {
+    border-radius: 16px;
+  }
+
+  .verify-header {
+    padding: 32px 24px 24px;
+
+    .verify-logo {
+      height: 80px;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: 24px;
+    }
+  }
+
+  .verify-content {
+    padding: 32px 24px;
+
+    .verifying,
+    .verified,
+    .error-state {
+      mat-icon {
+        font-size: 48px;
+        width: 48px;
+        height: 48px;
+      }
+
+      h2 {
+        font-size: 20px;
+      }
+
+      p {
+        font-size: 14px;
+      }
+    }
+  }
+}

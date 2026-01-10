@@ -1,0 +1,112 @@
+<div class="register-container">
+  <div class="register-card">
+    <div class="register-header">
+      <img src="/assets/romed-logo-removebg-preview.png" alt="RoMed Logo" class="register-logo">
+      <h1>RoMed Datenportal</h1>
+      <p class="register-subtitle">Neues Konto erstellen</p>
+    </div>
+
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="register-form">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>E-Mail-Adresse</mat-label>
+        <input matInput type="email" formControlName="email" placeholder="ihre.email@romed.de" required>
+        <mat-icon matPrefix>email</mat-icon>
+        @if (registerForm.get('email')?.hasError('required') && registerForm.get('email')?.touched) {
+          <mat-error>E-Mail-Adresse ist erforderlich</mat-error>
+        }
+        @if (registerForm.get('email')?.hasError('email') && registerForm.get('email')?.touched) {
+          <mat-error>Bitte geben Sie eine gültige E-Mail-Adresse ein</mat-error>
+        }
+      </mat-form-field>
+
+      <div class="name-fields">
+        <mat-form-field appearance="outline" class="half-width">
+          <mat-label>Vorname</mat-label>
+          <input matInput type="text" formControlName="firstName" placeholder="Max">
+          <mat-icon matPrefix>person</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="half-width">
+          <mat-label>Nachname</mat-label>
+          <input matInput type="text" formControlName="lastName" placeholder="Mustermann">
+          <mat-icon matPrefix>person</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Passwort</mat-label>
+        <input 
+          matInput 
+          [type]="hidePassword() ? 'password' : 'text'" 
+          formControlName="password" 
+          placeholder="Mindestens 8 Zeichen"
+          required>
+        <mat-icon matPrefix>lock</mat-icon>
+        <button 
+          mat-icon-button 
+          matSuffix 
+          type="button"
+          (click)="togglePasswordVisibility()" 
+          [attr.aria-label]="'Passwort anzeigen'" 
+          [attr.aria-pressed]="!hidePassword()">
+          <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        @if (registerForm.get('password')?.hasError('required') && registerForm.get('password')?.touched) {
+          <mat-error>Passwort ist erforderlich</mat-error>
+        }
+        @if (registerForm.get('password')?.hasError('minlength') && registerForm.get('password')?.touched) {
+          <mat-error>Passwort muss mindestens 8 Zeichen lang sein</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Passwort bestätigen</mat-label>
+        <input 
+          matInput 
+          [type]="hideConfirmPassword() ? 'password' : 'text'" 
+          formControlName="confirmPassword" 
+          placeholder="Passwort wiederholen"
+          required>
+        <mat-icon matPrefix>lock_outline</mat-icon>
+        <button 
+          mat-icon-button 
+          matSuffix 
+          type="button"
+          (click)="toggleConfirmPasswordVisibility()" 
+          [attr.aria-label]="'Passwort anzeigen'" 
+          [attr.aria-pressed]="!hideConfirmPassword()">
+          <mat-icon>{{ hideConfirmPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        @if (registerForm.get('confirmPassword')?.hasError('required') && registerForm.get('confirmPassword')?.touched) {
+          <mat-error>Passwort-Bestätigung ist erforderlich</mat-error>
+        }
+        @if (passwordMismatch) {
+          <mat-error>Passwörter stimmen nicht überein</mat-error>
+        }
+      </mat-form-field>
+
+      <button 
+        mat-raised-button 
+        color="primary" 
+        type="submit" 
+        class="register-button"
+        [disabled]="registerForm.invalid || isLoading()">
+        @if (isLoading()) {
+          <ng-container>
+            <mat-icon class="spinning">sync</mat-icon>
+            Registrieren...
+          </ng-container>
+        } @else {
+          <ng-container>
+            <mat-icon>person_add</mat-icon>
+            Registrieren
+          </ng-container>
+        }
+      </button>
+    </form>
+
+    <div class="register-footer">
+      <p>Bereits ein Konto? <a routerLink="/login" class="link">Jetzt anmelden</a></p>
+    </div>
+  </div>
+</div>
