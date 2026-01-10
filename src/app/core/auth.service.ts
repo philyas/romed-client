@@ -1,7 +1,7 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, tap, catchError, throwError } from 'rxjs';
+import { Observable, tap, catchError, throwError, firstValueFrom } from 'rxjs';
 import { isDevMode } from '@angular/core';
 
 export interface User {
@@ -29,33 +29,69 @@ export class AuthService {
 
   private readonly userSignal = signal<User | null>(null);
   private readonly tokenSignal = signal<string | null>(null);
+  private readonly isInitializedSignal = signal(false);
+  private initializationPromise: Promise<void> | null = null;
 
   // Public computed signals
   readonly currentUser = computed(() => this.userSignal());
-  readonly isAuthenticated = computed(() => this.userSignal() !== null);
+  readonly isAuthenticated = computed(() => this.isInitializedSignal() && this.userSignal() !== null);
+  readonly isInitialized = computed(() => this.isInitializedSignal());
   readonly isAdmin = computed(() => this.userSignal()?.role === 'admin');
   readonly isEmailVerified = computed(() => this.userSignal()?.emailVerified === true);
 
   constructor() {
     // Load token and user from localStorage on init
-    const token = localStorage.getItem('auth_token');
-    const userStr = localStorage.getItem('auth_user');
-    
-    if (token && userStr) {
-      try {
-        this.tokenSignal.set(token);
-        this.userSignal.set(JSON.parse(userStr));
-        // Verify token is still valid by fetching current user
-        this.getCurrentUser().subscribe({
-          error: () => {
-            // Token is invalid, clear auth
-            this.logout();
-          }
-        });
-      } catch (error) {
-        console.error('[auth] Failed to restore user from localStorage:', error);
-        this.logout();
+    this.initializationPromise = this.initializeAuth();
+  }
+
+  async waitForInitialization(): Promise<void> {
+    if (this.initializationPromise) {
+      await this.initializationPromise;
+    }
+  }
+
+  private async initializeAuth(): Promise<void> {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const userStr = localStorage.getItem('auth_user');
+      
+      console.log('[auth] Initializing auth...', { hasToken: !!token, hasUser: !!userStr });
+      
+      if (!token || !userStr) {
+        console.log('[auth] No token or user found in localStorage');
+        this.isInitializedSignal.set(true);
+        return;
       }
+
+      // Set token and user temporarily for immediate UI feedback
+      this.tokenSignal.set(token);
+      const user = JSON.parse(userStr);
+      this.userSignal.set(user);
+      console.log('[auth] Token and user loaded from localStorage, validating...');
+      
+      // Verify token is still valid by fetching current user
+      try {
+        const response = await firstValueFrom(this.getCurrentUser());
+        console.log('[auth] Token validation successful:', response.user.email);
+        // Token is valid, user is already set by getCurrentUser
+        this.isInitializedSignal.set(true);
+      } catch (error: any) {
+        // Token is invalid or expired, clear auth (but don't navigate yet)
+        console.error('[auth] Token validation failed:', error);
+        console.error('[auth] Error details:', error?.error || error?.message || error);
+        this.userSignal.set(null);
+        this.tokenSignal.set(null);
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_user');
+        this.isInitializedSignal.set(true);
+      }
+    } catch (error) {
+      console.error('[auth] Failed to restore user from localStorage:', error);
+      this.userSignal.set(null);
+      this.tokenSignal.set(null);
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('auth_user');
+      this.isInitializedSignal.set(true);
     }
   }
 
@@ -121,17 +157,24 @@ export class AuthService {
   getCurrentUser(): Observable<{ user: User }> {
     const token = this.tokenSignal();
     if (!token) {
+      console.error('[auth] getCurrentUser called but no token available');
       return throwError(() => new Error('No token available'));
     }
 
-    return this.http.get<{ user: User }>(`${this.baseUrl}/api/auth/me`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    }).pipe(
+    // Don't manually set Authorization header - the interceptor will add it
+    console.log('[auth] Fetching current user from:', `${this.baseUrl}/api/auth/me`);
+    return this.http.get<{ user: User }>(`${this.baseUrl}/api/auth/me`).pipe(
       tap(response => {
+        console.log('[auth] Current user fetched successfully:', response.user.email);
         this.userSignal.set(response.user);
         localStorage.setItem('auth_user', JSON.stringify(response.user));
+      }),
+      catchError(error => {
+        console.error('[auth] Failed to fetch current user:', error);
+        console.error('[auth] Error status:', error?.status);
+        console.error('[auth] Error message:', error?.message);
+        console.error('[auth] Error details:', error?.error);
+        return throwError(() => error);
       })
     );
   }
@@ -141,6 +184,7 @@ export class AuthService {
     this.tokenSignal.set(null);
     localStorage.removeItem('auth_token');
     localStorage.removeItem('auth_user');
+    this.isInitializedSignal.set(true); // Ensure initialized after logout
     this.router.navigate(['/login']);
   }
 
@@ -153,5 +197,6 @@ export class AuthService {
     this.tokenSignal.set(token);
     localStorage.setItem('auth_token', token);
     localStorage.setItem('auth_user', JSON.stringify(user));
+    this.isInitializedSignal.set(true); // Ensure initialized after login
   }
 }

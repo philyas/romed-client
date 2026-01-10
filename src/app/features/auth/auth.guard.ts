@@ -2,9 +2,12 @@ import { inject } from '@angular/core';
 import { Router, CanActivateFn } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 
-export const authGuard: CanActivateFn = (route, state) => {
+export const authGuard: CanActivateFn = async (route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
+
+  // Wait for auth initialization (checking localStorage and validating token)
+  await authService.waitForInitialization();
 
   if (authService.isAuthenticated()) {
     return true;
@@ -15,9 +18,12 @@ export const authGuard: CanActivateFn = (route, state) => {
   return false;
 };
 
-export const adminGuard: CanActivateFn = (route, state) => {
+export const adminGuard: CanActivateFn = async (route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
+
+  // Wait for auth initialization
+  await authService.waitForInitialization();
 
   if (authService.isAuthenticated() && authService.isAdmin()) {
     return true;

@@ -23,8 +23,13 @@
               <mat-menu #userMenu="matMenu">
                 <div class="user-menu-header">
                   <div class="user-info">
-                    <strong>{{ getUserDisplayName() }}</strong>
-                    <span class="user-email">{{ currentUser()?.email }}</span>
+                    <div class="user-name-wrapper">
+                      <mat-icon class="user-avatar-icon">account_circle</mat-icon>
+                      <div class="user-text-info">
+                        <strong class="user-display-name">{{ getUserDisplayName() }}</strong>
+                        <span class="user-email">{{ currentUser()?.email }}</span>
+                      </div>
+                    </div>
                     <span class="user-role" [class.admin]="isAdmin()">{{ currentUser()?.role === 'admin' ? 'Administrator' : 'Betrachter' }}</span>
                   </div>
                 </div>

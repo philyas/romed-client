@@ -214,10 +214,12 @@ nav {
         }
 
         .user-name {
-          max-width: 150px;
+          max-width: 180px;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
+          font-size: 14px;
+          line-height: 1.4;
         }
       }
     }
@@ -228,41 +230,77 @@ nav {
     border-radius: 12px !important;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
     border: 1px solid $border-gray !important;
-    min-width: 250px !important;
+    min-width: 320px !important;
+    max-width: 400px !important;
 
     .user-menu-header {
-      padding: 16px;
+      padding: 20px;
       background: linear-gradient(135deg, $very-light-teal 0%, $pure-white 100%);
       border-bottom: 1px solid $border-gray;
 
       .user-info {
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 12px;
 
-        strong {
-          color: $primary-teal;
-          font-size: 16px;
-          font-weight: 600;
-        }
+        .user-name-wrapper {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
 
-        .user-email {
-          color: $text-secondary;
-          font-size: 14px;
+          .user-avatar-icon {
+            color: $primary-teal;
+            font-size: 40px;
+            width: 40px;
+            height: 40px;
+            flex-shrink: 0;
+            margin-top: 2px;
+          }
+
+          .user-text-info {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+
+            .user-display-name {
+              color: $primary-teal;
+              font-size: 15px;
+              font-weight: 600;
+              line-height: 1.4;
+              word-break: break-word;
+              overflow-wrap: break-word;
+              display: block;
+              max-width: 100%;
+            }
+
+            .user-email {
+              color: $text-secondary;
+              font-size: 13px;
+              line-height: 1.4;
+              word-break: break-all;
+              overflow-wrap: break-word;
+              display: block;
+              max-width: 100%;
+              opacity: 0.85;
+            }
+          }
         }
 
         .user-role {
           display: inline-block;
-          padding: 4px 12px;
-          border-radius: 12px;
-          font-size: 12px;
+          padding: 6px 14px;
+          border-radius: 16px;
+          font-size: 11px;
           font-weight: 600;
           text-transform: uppercase;
           letter-spacing: 0.5px;
           background: $light-teal;
           color: $primary-teal;
           width: fit-content;
-          margin-top: 4px;
+          line-height: 1.2;
+          margin-top: 0;
 
           &.admin {
             background: $medical-green;
@@ -348,7 +386,7 @@ nav {
 
     .mobile-user-info {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 12px;
       padding: 16px 24px;
       background: linear-gradient(135deg, $very-light-teal 0%, $pure-white 100%);
@@ -357,27 +395,39 @@ nav {
       margin: 8px 0;
 
       mat-icon {
-        font-size: 32px;
-        width: 32px;
-        height: 32px;
+        font-size: 36px;
+        width: 36px;
+        height: 36px;
         color: $primary-teal;
+        flex-shrink: 0;
+        margin-top: 2px;
       }
 
       .mobile-user-details {
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 6px;
         flex: 1;
+        min-width: 0;
 
         strong {
           color: $primary-teal;
-          font-size: 16px;
+          font-size: 15px;
           font-weight: 600;
+          line-height: 1.4;
+          word-break: break-word;
+          overflow-wrap: break-word;
+          display: block;
         }
 
         .user-email {
           color: $text-secondary;
-          font-size: 14px;
+          font-size: 13px;
+          line-height: 1.4;
+          word-break: break-all;
+          overflow-wrap: break-word;
+          display: block;
+          opacity: 0.85;
         }
       }
     }
