@@ -91,6 +91,9 @@ export class Configuration implements OnInit {
   stationSearchTerm = signal('');
   filteredStationConfigs = signal<StationConfig[]>([]);
   
+  // Filter for pause times
+  pauseFilter = signal<'all' | 'enabled' | 'disabled'>('all');
+  
   displayedColumns: string[] = ['kostenstelle', 'stations', 'standorte', 'standortnummer', 'ik', 'paediatrie', 'include_in_statistics', 'actions'];
 
   stationOptions = signal<string[]>([]);
@@ -126,15 +129,6 @@ export class Configuration implements OnInit {
         (statsFilterValue === 'excluded' && !(data.include_in_statistics ?? true));
 
       return matchesSearch && matchesStats;
-      const fields = [
-        data.kostenstelle,
-        ...(data.stations || []),
-        ...(data.standorte || []),
-        data.standortnummer ?? '',
-        data.ik ?? '',
-        data.paediatrie ?? ''
-      ];
-      return fields.some(f => (f ?? '').toString().toLowerCase().includes(term));
     };
     this.loadKostenstellen();
     void this.loadStationOptions();
@@ -337,15 +331,41 @@ export class Configuration implements OnInit {
   applyStationFilter(value: string) {
     const filterValue = (value || '').trim().toLowerCase();
     this.stationSearchTerm.set(filterValue);
+    this.applyFilters();
+  }
 
-    if (!filterValue) {
-      this.filteredStationConfigs.set(this.stationConfigs());
-    } else {
-      const filtered = this.stationConfigs().filter(stationConfig =>
-        stationConfig.station.toLowerCase().includes(filterValue)
+  applyPauseFilter(filter: 'all' | 'enabled' | 'disabled') {
+    this.pauseFilter.set(filter);
+    this.applyFilters();
+  }
+
+  private applyFilters() {
+    const searchTerm = this.stationSearchTerm().trim().toLowerCase();
+    const pauseFilter = this.pauseFilter();
+
+    let filtered = this.stationConfigs();
+
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(stationConfig =>
+        stationConfig.station.toLowerCase().includes(searchTerm)
       );
-      this.filteredStationConfigs.set(filtered);
     }
+
+    // Apply pause filter
+    if (pauseFilter !== 'all') {
+      filtered = filtered.filter(stationConfig => {
+        const hasEnabledPause = 
+          (stationConfig.tag_pfk?.pausen_aktiviert) ||
+          (stationConfig.nacht_pfk?.pausen_aktiviert) ||
+          (stationConfig.tag_phk?.pausen_aktiviert) ||
+          (stationConfig.nacht_phk?.pausen_aktiviert);
+
+        return pauseFilter === 'enabled' ? hasEnabledPause : !hasEnabledPause;
+      });
+    }
+
+    this.filteredStationConfigs.set(filtered);
   }
 
   downloadBackup(backupName: string) {
@@ -394,7 +414,7 @@ export class Configuration implements OnInit {
 
       Promise.all(configPromises).then(stationConfigs => {
         this.stationConfigs.set(stationConfigs);
-        this.applyStationFilter(this.stationSearchTerm()); // Apply initial filter
+        this.applyFilters(); // Apply filters (search + pause)
         this.loadingStationConfigs.set(false);
       }).catch(err => {
         console.error('Error loading station configs:', err);
@@ -503,6 +523,35 @@ export class Configuration implements OnInit {
 
   trackByStation(index: number, item: StationConfig): string {
     return item.station;
+  }
+
+  formatPausenzeiten(config: StationConfigValues | null): string {
+    if (!config || !config.pausen_aktiviert) {
+      return 'Deaktiviert';
+    }
+    const stunden = config.pausen_stunden ?? 0;
+    const minuten = config.pausen_minuten ?? 0;
+    
+    if (stunden === 0 && minuten === 0) {
+      return '0:00';
+    }
+    
+    // Format negative values correctly
+    const sign = (stunden < 0 || minuten < 0) ? '-' : '';
+    const absStunden = Math.abs(stunden);
+    const absMinuten = Math.abs(minuten);
+    
+    return `${sign}${absStunden}:${absMinuten.toString().padStart(2, '0')}`;
+  }
+
+  hasPausenzeitenEnabled(config: StationConfig | null): boolean {
+    if (!config) return false;
+    return !!(
+      config.tag_pfk?.pausen_aktiviert ||
+      config.nacht_pfk?.pausen_aktiviert ||
+      config.tag_phk?.pausen_aktiviert ||
+      config.nacht_phk?.pausen_aktiviert
+    );
   }
 
   trackByKostenstelle(index: number, item: Kostenstelle): string {

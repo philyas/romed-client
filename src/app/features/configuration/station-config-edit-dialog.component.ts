@@ -85,14 +85,16 @@ interface StationConfigValues {
                 <div class="pausen-fields" *ngIf="editedConfigs.tag_pfk.pausen_aktiviert">
                   <mat-form-field appearance="outline">
                     <mat-label>Pausen Stunden</mat-label>
-                    <input matInput type="number" step="1" min="0"
-                           [(ngModel)]="editedConfigs.tag_pfk.pausen_stunden">
+                    <input matInput type="number" step="1"
+                           [(ngModel)]="editedConfigs.tag_pfk.pausen_stunden"
+                           title="Kann negativ sein (z.B. -0:30 = 30 Min. Abzug)">
                     <span matSuffix>h</span>
                   </mat-form-field>
                   <mat-form-field appearance="outline">
                     <mat-label>Pausen Minuten</mat-label>
-                    <input matInput type="number" step="1" min="0" max="59"
-                           [(ngModel)]="editedConfigs.tag_pfk.pausen_minuten">
+                    <input matInput type="number" step="1" min="-59" max="59"
+                           [(ngModel)]="editedConfigs.tag_pfk.pausen_minuten"
+                           title="Kann negativ sein (z.B. -30 = 30 Min. Abzug)">
                     <span matSuffix>min</span>
                   </mat-form-field>
                 </div>
@@ -130,14 +132,16 @@ interface StationConfigValues {
                 <div class="pausen-fields" *ngIf="editedConfigs.nacht_pfk.pausen_aktiviert">
                   <mat-form-field appearance="outline">
                     <mat-label>Pausen Stunden</mat-label>
-                    <input matInput type="number" step="1" min="0"
-                           [(ngModel)]="editedConfigs.nacht_pfk.pausen_stunden">
+                    <input matInput type="number" step="1"
+                           [(ngModel)]="editedConfigs.nacht_pfk.pausen_stunden"
+                           title="Kann negativ sein (z.B. -0:30 = 30 Min. Abzug)">
                     <span matSuffix>h</span>
                   </mat-form-field>
                   <mat-form-field appearance="outline">
                     <mat-label>Pausen Minuten</mat-label>
-                    <input matInput type="number" step="1" min="0" max="59"
-                           [(ngModel)]="editedConfigs.nacht_pfk.pausen_minuten">
+                    <input matInput type="number" step="1" min="-59" max="59"
+                           [(ngModel)]="editedConfigs.nacht_pfk.pausen_minuten"
+                           title="Kann negativ sein (z.B. -30 = 30 Min. Abzug)">
                     <span matSuffix>min</span>
                   </mat-form-field>
                 </div>
@@ -169,14 +173,16 @@ interface StationConfigValues {
                 <div class="pausen-fields" *ngIf="editedConfigs.tag_phk.pausen_aktiviert">
                   <mat-form-field appearance="outline">
                     <mat-label>Pausen Stunden</mat-label>
-                    <input matInput type="number" step="1" min="0"
-                           [(ngModel)]="editedConfigs.tag_phk.pausen_stunden">
+                    <input matInput type="number" step="1"
+                           [(ngModel)]="editedConfigs.tag_phk.pausen_stunden"
+                           title="Kann negativ sein (z.B. -0:30 = 30 Min. Abzug)">
                     <span matSuffix>h</span>
                   </mat-form-field>
                   <mat-form-field appearance="outline">
                     <mat-label>Pausen Minuten</mat-label>
-                    <input matInput type="number" step="1" min="0" max="59"
-                           [(ngModel)]="editedConfigs.tag_phk.pausen_minuten">
+                    <input matInput type="number" step="1" min="-59" max="59"
+                           [(ngModel)]="editedConfigs.tag_phk.pausen_minuten"
+                           title="Kann negativ sein (z.B. -30 = 30 Min. Abzug)">
                     <span matSuffix>min</span>
                   </mat-form-field>
                 </div>
@@ -208,14 +214,16 @@ interface StationConfigValues {
                 <div class="pausen-fields" *ngIf="editedConfigs.nacht_phk.pausen_aktiviert">
                   <mat-form-field appearance="outline">
                     <mat-label>Pausen Stunden</mat-label>
-                    <input matInput type="number" step="1" min="0"
-                           [(ngModel)]="editedConfigs.nacht_phk.pausen_stunden">
+                    <input matInput type="number" step="1"
+                           [(ngModel)]="editedConfigs.nacht_phk.pausen_stunden"
+                           title="Kann negativ sein (z.B. -0:30 = 30 Min. Abzug)">
                     <span matSuffix>h</span>
                   </mat-form-field>
                   <mat-form-field appearance="outline">
                     <mat-label>Pausen Minuten</mat-label>
-                    <input matInput type="number" step="1" min="0" max="59"
-                           [(ngModel)]="editedConfigs.nacht_phk.pausen_minuten">
+                    <input matInput type="number" step="1" min="-59" max="59"
+                           [(ngModel)]="editedConfigs.nacht_phk.pausen_minuten"
+                           title="Kann negativ sein (z.B. -30 = 30 Min. Abzug)">
                     <span matSuffix>min</span>
                   </mat-form-field>
                 </div>
@@ -350,10 +358,6 @@ export class StationConfigEditDialogComponent {
   }
 
   private initConfigValues(existing: StationConfigValues | null, schicht: 'tag' | 'nacht', kategorie: 'PFK' | 'PHK'): StationConfigValues {
-    if (existing) {
-      return { ...existing };
-    }
-
     // Default values
     const defaults = {
       schicht_stunden: schicht === 'nacht' ? 8 : 16,
@@ -364,18 +368,40 @@ export class StationConfigEditDialogComponent {
       pausen_minuten: 0
     };
 
+    if (existing) {
+      // Merge existing values with defaults to ensure all fields are defined
+      return {
+        ...defaults,
+        ...existing,
+        // Ensure pausenzeiten fields are always defined (default to 0 if undefined)
+        pausen_aktiviert: existing.pausen_aktiviert ?? false,
+        pausen_stunden: existing.pausen_stunden ?? 0,
+        pausen_minuten: existing.pausen_minuten ?? 0
+      };
+    }
+
     return defaults;
   }
 
   isValid(): boolean {
-    return Object.values(this.editedConfigs).every(config =>
-      config.schicht_stunden > 0 &&
-      config.pp_ratio_base > 0 &&
-      (config.phk_anteil_base === null || config.phk_anteil_base > 0) &&
-      config.pausen_stunden >= 0 &&
-      config.pausen_minuten >= 0 &&
-      config.pausen_minuten <= 59
-    );
+    return Object.values(this.editedConfigs).every(config => {
+      const basicValid = config.schicht_stunden > 0 &&
+        config.pp_ratio_base > 0 &&
+        (config.phk_anteil_base === null || config.phk_anteil_base > 0);
+      
+      // Pausenzeiten-Validierung: nur wenn aktiviert oder wenn Werte vorhanden sind
+      const pausenMinuten = config.pausen_minuten ?? 0;
+      const pausenStunden = config.pausen_stunden ?? 0;
+      const pausenValid = !config.pausen_aktiviert || (
+        // Allow negative values for subtraction
+        pausenMinuten >= -59 &&
+        pausenMinuten <= 59 &&
+        // Stunden können auch negativ sein, keine Beschränkung nötig
+        true
+      );
+      
+      return basicValid && pausenValid;
+    });
   }
 
 

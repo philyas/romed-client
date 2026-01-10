@@ -614,27 +614,28 @@
                   class="table-input">
               </td>
               
-              <!-- Pausenzeit (immer sichtbar) -->
+              <!-- Pausenzeit (immer sichtbar, kann negativ sein für Abzug) -->
               <td class="input-cell">
                 <input 
                   type="number" 
-                  min="0" 
                   [value]="entry.pausen_stunden || 0"
                   (input)="updateEntry(i, 'pausen_stunden', $any($event.target).value)"
                   placeholder="0"
                   class="table-input pause-input"
-                  [disabled]="!stationConfig()?.pausen_aktiviert">
+                  [disabled]="!stationConfig()?.pausen_aktiviert"
+                  title="Kann negativ sein (z.B. -0:30 = 30 Min. Abzug)">
               </td>
               <td class="input-cell">
                 <input 
                   type="number" 
-                  min="0" 
+                  min="-59"
                   max="59" 
                   [value]="entry.pausen_minuten || 0"
                   (input)="updateEntry(i, 'pausen_minuten', $any($event.target).value)"
                   placeholder="0"
                   class="table-input pause-input"
-                  [disabled]="!stationConfig()?.pausen_aktiviert">
+                  [disabled]="!stationConfig()?.pausen_aktiviert"
+                  title="Kann negativ sein (z.B. -30 = 30 Min. Abzug)">
               </td>
               
               <!-- Gesamtzeit (berechnet) -->

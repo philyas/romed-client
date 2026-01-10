@@ -1051,8 +1051,87 @@
           border-radius: 6px;
           border: 1px solid #e0e0e0;
 
-          .station-search-field {
-            max-width: 400px;
+          .filters-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            align-items: start;
+
+            @media (max-width: 768px) {
+              grid-template-columns: 1fr;
+              gap: 12px;
+            }
+
+            .filter-group {
+              display: flex;
+              flex-direction: column;
+              gap: 6px;
+
+              .filter-label {
+                font-size: 12px;
+                font-weight: 700;
+                color: #6c757d;
+                margin: 0;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                line-height: 1;
+              }
+
+              .pause-filter,
+              .statistics-filter {
+                ::ng-deep {
+                  .mat-button-toggle-group {
+                    border-radius: 8px;
+                    overflow: visible;
+                    border: none;
+                    background: transparent;
+                    box-shadow: none;
+                    gap: 8px;
+                    padding: 4px;
+
+                    .mat-button-toggle {
+                      border-radius: 6px !important;
+                      border: 1px solid #e1e5e9 !important;
+                      background: white !important;
+                      color: #495057 !important;
+                      font-size: 11px !important;
+                      font-weight: 600 !important;
+                      padding: 6px 12px !important;
+                      transition: all 0.2s ease !important;
+
+                      &:hover:not(.mat-button-toggle-checked) {
+                        background: #f8f9fa !important;
+                        border-color: #00acc1 !important;
+                      }
+
+                      &.mat-button-toggle-checked {
+                        background: linear-gradient(135deg, #00acc1 0%, #0097a7 100%) !important;
+                        color: white !important;
+                        border-color: #00acc1 !important;
+                        box-shadow: 0 2px 4px rgba(0, 172, 193, 0.3) !important;
+                      }
+
+                      .mat-button-toggle-label-content {
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                        line-height: 1.2;
+
+                        mat-icon {
+                          font-size: 14px;
+                          width: 14px;
+                          height: 14px;
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+
+            .station-search-field {
+              max-width: 100%;
+            }
           }
 
           .search-info {
@@ -1159,6 +1238,25 @@
                       .value {
                         color: #00acc1;
                         font-weight: 600;
+                        display: flex;
+                        align-items: center;
+                        gap: 4px;
+                      }
+
+                      &.pause-config {
+                        .pause-icon {
+                          font-size: 14px;
+                          width: 14px;
+                          height: 14px;
+                        }
+
+                        .pause-enabled {
+                          color: #4caf50;
+                        }
+
+                        .pause-disabled {
+                          color: #999;
+                        }
                       }
                     }
                   }

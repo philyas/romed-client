@@ -258,7 +258,7 @@
 
             <p class="tab-description">
               Hier können Sie für jede Station individuelle Parameter für die Arbeitszeitberechnung festlegen.
-              Diese Werte (Schichtstunden, %PHP-Faktor, P:P-Ratio) werden bei der Berechnung von Arbeitszeiten verwendet.
+              Diese Werte (Schichtstunden, %PHP-Faktor, P:P-Ratio, Pausenzeiten) werden bei der Berechnung von Arbeitszeiten verwendet.
             </p>
 
             <!-- Station Config Table -->
@@ -268,29 +268,63 @@
                 <p>Stationskonfigurationen werden geladen...</p>
               </div>
 
-              <!-- Station Search -->
+              <!-- Station Search and Filters -->
               <div class="station-search-section" *ngIf="!loadingStationConfigs() && stationConfigs().length > 0">
-                <mat-form-field appearance="outline" class="station-search-field">
-                  <mat-label>Station suchen</mat-label>
-                  <input
-                    matInput
-                    type="text"
-                    placeholder="Stationsname eingeben..."
-                    [value]="stationSearchTerm()"
-                    (input)="applyStationFilter($event.target.value)"
-                    aria-label="Station suchen">
-                  <button
-                    *ngIf="stationSearchTerm()"
-                    mat-icon-button
-                    matSuffix
-                    aria-label="Suche löschen"
-                    (click)="applyStationFilter('')">
-                    <mat-icon>close</mat-icon>
-                  </button>
-                </mat-form-field>
+                <div class="filters-row">
+                  <!-- Search Field -->
+                  <div class="filter-group">
+                    <mat-form-field appearance="outline" class="station-search-field">
+                      <mat-label>Station suchen</mat-label>
+                      <input
+                        matInput
+                        type="text"
+                        placeholder="Stationsname eingeben..."
+                        [value]="stationSearchTerm()"
+                        (input)="applyStationFilter($event.target.value)"
+                        aria-label="Station suchen">
+                      <button
+                        *ngIf="stationSearchTerm()"
+                        mat-icon-button
+                        matSuffix
+                        aria-label="Suche löschen"
+                        (click)="applyStationFilter('')">
+                        <mat-icon>close</mat-icon>
+                      </button>
+                    </mat-form-field>
+                  </div>
+
+                  <!-- Pause Filter -->
+                  <div class="filter-group">
+                    <label class="filter-label">Pausenzeiten-Filter</label>
+                    <mat-button-toggle-group
+                      [value]="pauseFilter()"
+                      (change)="applyPauseFilter($event.value)"
+                      class="pause-filter">
+                      <mat-button-toggle value="all" class="filter-toggle">
+                        <mat-icon>list</mat-icon>
+                        <span>Alle</span>
+                      </mat-button-toggle>
+                      <mat-button-toggle value="enabled" class="filter-toggle">
+                        <mat-icon>schedule</mat-icon>
+                        <span>Aktiviert</span>
+                      </mat-button-toggle>
+                      <mat-button-toggle value="disabled" class="filter-toggle">
+                        <mat-icon>schedule_outlined</mat-icon>
+                        <span>Deaktiviert</span>
+                      </mat-button-toggle>
+                    </mat-button-toggle-group>
+                  </div>
+                </div>
                 <p class="search-info">
                   {{ filteredStationConfigs().length }} von {{ stationConfigs().length }} Stationen
-                  <span *ngIf="stationSearchTerm()"> (gefiltert nach "{{ stationSearchTerm() }}")</span>
+                  <span *ngIf="stationSearchTerm() || pauseFilter() !== 'all'">
+                    (gefiltert
+                    <span *ngIf="stationSearchTerm()"> nach "{{ stationSearchTerm() }}"</span>
+                    <span *ngIf="stationSearchTerm() && pauseFilter() !== 'all'"> und</span>
+                    <span *ngIf="pauseFilter() !== 'all'">
+                      Pausenzeiten: {{ pauseFilter() === 'enabled' ? 'Aktiviert' : 'Deaktiviert' }}
+                    </span>)
+                  </span>
                 </p>
               </div>
 
@@ -331,6 +365,13 @@
                             <span class="label">P:P-Ratio:</span>
                             <span class="value">{{ stationConfig.tag_pfk.pp_ratio_base }}</span>
                           </div>
+                          <div class="config-value pause-config">
+                            <span class="label">Pausenzeiten:</span>
+                            <span class="value" [class.pause-enabled]="stationConfig.tag_pfk.pausen_aktiviert" [class.pause-disabled]="!stationConfig.tag_pfk.pausen_aktiviert">
+                              <mat-icon class="pause-icon">{{ stationConfig.tag_pfk.pausen_aktiviert ? 'schedule' : 'schedule_outlined' }}</mat-icon>
+                              {{ formatPausenzeiten(stationConfig.tag_pfk) }}
+                            </span>
+                          </div>
                         </div>
                         <div class="no-config" *ngIf="!stationConfig.tag_pfk">
                           <mat-icon>info</mat-icon>
@@ -353,6 +394,13 @@
                             <span class="label">P:P-Ratio:</span>
                             <span class="value">{{ stationConfig.nacht_pfk.pp_ratio_base }}</span>
                           </div>
+                          <div class="config-value pause-config">
+                            <span class="label">Pausenzeiten:</span>
+                            <span class="value" [class.pause-enabled]="stationConfig.nacht_pfk.pausen_aktiviert" [class.pause-disabled]="!stationConfig.nacht_pfk.pausen_aktiviert">
+                              <mat-icon class="pause-icon">{{ stationConfig.nacht_pfk.pausen_aktiviert ? 'schedule' : 'schedule_outlined' }}</mat-icon>
+                              {{ formatPausenzeiten(stationConfig.nacht_pfk) }}
+                            </span>
+                          </div>
                         </div>
                         <div class="no-config" *ngIf="!stationConfig.nacht_pfk">
                           <mat-icon>info</mat-icon>
@@ -371,6 +419,13 @@
                             <span class="label">P:P-Ratio:</span>
                             <span class="value">{{ stationConfig.tag_phk.pp_ratio_base }}</span>
                           </div>
+                          <div class="config-value pause-config">
+                            <span class="label">Pausenzeiten:</span>
+                            <span class="value" [class.pause-enabled]="stationConfig.tag_phk.pausen_aktiviert" [class.pause-disabled]="!stationConfig.tag_phk.pausen_aktiviert">
+                              <mat-icon class="pause-icon">{{ stationConfig.tag_phk.pausen_aktiviert ? 'schedule' : 'schedule_outlined' }}</mat-icon>
+                              {{ formatPausenzeiten(stationConfig.tag_phk) }}
+                            </span>
+                          </div>
                         </div>
                         <div class="no-config" *ngIf="!stationConfig.tag_phk">
                           <mat-icon>info</mat-icon>
@@ -388,6 +443,13 @@
                           <div class="config-value">
                             <span class="label">P:P-Ratio:</span>
                             <span class="value">{{ stationConfig.nacht_phk.pp_ratio_base }}</span>
+                          </div>
+                          <div class="config-value pause-config">
+                            <span class="label">Pausenzeiten:</span>
+                            <span class="value" [class.pause-enabled]="stationConfig.nacht_phk.pausen_aktiviert" [class.pause-disabled]="!stationConfig.nacht_phk.pausen_aktiviert">
+                              <mat-icon class="pause-icon">{{ stationConfig.nacht_phk.pausen_aktiviert ? 'schedule' : 'schedule_outlined' }}</mat-icon>
+                              {{ formatPausenzeiten(stationConfig.nacht_phk) }}
+                            </span>
                           </div>
                         </div>
                         <div class="no-config" *ngIf="!stationConfig.nacht_phk">

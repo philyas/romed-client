@@ -412,15 +412,16 @@ export class ManualEntry {
               if (pausenConfig && pausenConfig.pausen_aktiviert) {
                 // Gesamtzeit in Minuten
                 const gesamtTotalMinutes = (gesamtStunden * 60) + gesamtMinuten;
-                // Pausenzeit in Minuten
+                // Pausenzeit in Minuten (kann negativ sein)
                 const pausenTotalMinutes = (pausenConfig.pausen_stunden * 60) + pausenConfig.pausen_minuten;
                 
                 // Normale Zeit = Gesamtzeit - Pausenzeit
+                // Wenn Pausenzeiten negativ sind, wird Zeit addiert (Gesamtzeit erhöht)
                 const normaleTotalMinutes = Math.max(0, gesamtTotalMinutes - pausenTotalMinutes);
                 normaleStunden = Math.floor(normaleTotalMinutes / 60);
                 normaleMinuten = normaleTotalMinutes % 60;
                 
-                // Pausenzeit (kann vom Benutzer überschrieben werden)
+                // Pausenzeit (kann vom Benutzer überschrieben werden, auch negativ)
                 pausenStunden = pausenConfig.pausen_stunden;
                 pausenMinuten = pausenConfig.pausen_minuten;
               }
@@ -695,11 +696,11 @@ export class ManualEntry {
   updateEntry(index: number, field: 'stunden' | 'minuten' | 'pausen_stunden' | 'pausen_minuten', value: string) {
     const numValue = parseInt(value) || 0;
     
-    // Validate
+    // Validate - allow negative values for pausenzeiten (for subtraction)
     if (field === 'stunden' && numValue < 0) return;
     if (field === 'minuten' && (numValue < 0 || numValue >= 60)) return;
-    if (field === 'pausen_stunden' && numValue < 0) return;
-    if (field === 'pausen_minuten' && (numValue < 0 || numValue >= 60)) return;
+    // Allow negative pausenzeiten: hours can be negative, minutes -59 to 59
+    if (field === 'pausen_minuten' && (numValue < -59 || numValue > 59)) return;
     
     this.dayEntries.update(entries => {
       const newEntries = [...entries];
@@ -712,13 +713,16 @@ export class ManualEntry {
   }
   
   // Berechne Gesamtzeit für einen Eintrag
+  // Negative Pausenzeiten werden abgezogen
   getGesamtzeit(entry: DayEntry): { stunden: number; minuten: number } {
     const normaleTotalMinutes = (entry.stunden * 60) + entry.minuten;
     const pausenTotalMinutes = ((entry.pausen_stunden || 0) * 60) + (entry.pausen_minuten || 0);
     const gesamtTotalMinutes = normaleTotalMinutes + pausenTotalMinutes;
+    // Clamp to 0 (can't have negative total time)
+    const clampedMinutes = Math.max(0, gesamtTotalMinutes);
     return {
-      stunden: Math.floor(gesamtTotalMinutes / 60),
-      minuten: gesamtTotalMinutes % 60
+      stunden: Math.floor(clampedMinutes / 60),
+      minuten: clampedMinutes % 60
     };
   }
 
