@@ -79,6 +79,8 @@ export class ManualEntry {
   selectedStation = signal<string>('');
   stationSearchTerm = signal<string>('');
   isEditingStation = signal<boolean>(false);
+  private isSelectingStation = false;
+  private blurTimeoutId: any = null;
   
   // Filtered stations for autocomplete
   filteredStations = computed(() => {
@@ -406,8 +408,10 @@ export class ManualEntry {
               // Wenn Pausenzeiten aktiviert sind, teile Gesamtzeit auf
               let normaleStunden = gesamtStunden;
               let normaleMinuten = gesamtMinuten;
-              let pausenStunden = 0;
-              let pausenMinuten = 0;
+              
+              // Setze Pausenzeiten-Werte aus Config, wenn aktiviert
+              let pausenStunden = (pausenConfig && pausenConfig.pausen_aktiviert) ? pausenConfig.pausen_stunden : 0;
+              let pausenMinuten = (pausenConfig && pausenConfig.pausen_aktiviert) ? pausenConfig.pausen_minuten : 0;
               
               if (pausenConfig && pausenConfig.pausen_aktiviert) {
                 // Gesamtzeit in Minuten
@@ -422,8 +426,7 @@ export class ManualEntry {
                 normaleMinuten = normaleTotalMinutes % 60;
                 
                 // Pausenzeit (kann vom Benutzer überschrieben werden, auch negativ)
-                pausenStunden = pausenConfig.pausen_stunden;
-                pausenMinuten = pausenConfig.pausen_minuten;
+                // Werte werden bereits oben aus Config gesetzt
               }
               
               entries.push({
@@ -492,11 +495,19 @@ export class ManualEntry {
       
       apiCall.subscribe({
         next: (config) => {
+          const wasPausenEnabled = this.stationConfig()?.pausen_aktiviert || false;
           this.stationConfig.set({
             pausen_aktiviert: config.pausen_aktiviert || false,
             pausen_stunden: config.pausen_stunden || 0,
             pausen_minuten: config.pausen_minuten || 0
           });
+          
+          // Wenn Pausenzeiten aktiviert sind, aktualisiere die Werte in den existierenden Einträgen
+          const isPausenEnabled = config.pausen_aktiviert || false;
+          if (isPausenEnabled && this.dayEntries().length > 0) {
+            this.updatePausenzeitenInEntries(config.pausen_stunden || 0, config.pausen_minuten || 0);
+          }
+          
           resolve();
         },
         error: (err) => {
@@ -510,6 +521,16 @@ export class ManualEntry {
         }
       });
     });
+  }
+  
+  updatePausenzeitenInEntries(pausenStunden: number, pausenMinuten: number) {
+    const entries = this.dayEntries();
+    const updatedEntries = entries.map(entry => ({
+      ...entry,
+      pausen_stunden: pausenStunden,
+      pausen_minuten: pausenMinuten
+    }));
+    this.dayEntries.set(updatedEntries);
   }
 
   loadConfigSnapshot(station: string, jahr: number, monat: number, kategorie: 'PFK' | 'PHK') {
@@ -565,6 +586,14 @@ export class ManualEntry {
   }
 
   onStationChange(station: string | null) {
+    this.isSelectingStation = true;
+    
+    // Clear any pending blur timeout
+    if (this.blurTimeoutId) {
+      clearTimeout(this.blurTimeoutId);
+      this.blurTimeoutId = null;
+    }
+    
     if (station) {
       this.selectedStation.set(station);
       this.stationSearchTerm.set('');
@@ -574,6 +603,12 @@ export class ManualEntry {
       this.stationSearchTerm.set('');
       this.isEditingStation.set(false);
     }
+    
+    // Reset flag after a short delay
+    setTimeout(() => {
+      this.isSelectingStation = false;
+    }, 100);
+    
     // MiTa-Durchschnitt wird jetzt aus täglichen Werten berechnet (in loadDataForPeriod)
     // Kein separater API-Call mehr nötig
   }
@@ -594,29 +629,45 @@ export class ManualEntry {
   }
   
   onStationInputBlur() {
-    // Reset editing state
-    this.isEditingStation.set(false);
+    // Clear any pending blur timeout
+    if (this.blurTimeoutId) {
+      clearTimeout(this.blurTimeoutId);
+      this.blurTimeoutId = null;
+    }
     
-    // If there's a search term, check if it matches a station
-    const searchTerm = this.stationSearchTerm();
-    const currentStations = this.stations();
-    
-    if (searchTerm && currentStations.includes(searchTerm)) {
-      // Valid input, select it
-      this.selectedStation.set(searchTerm);
-      this.stationSearchTerm.set('');
-    } else if (searchTerm && !currentStations.includes(searchTerm)) {
-      // Invalid input, restore previous selection or clear
-      if (this.selectedStation()) {
+    // Delay blur handling to allow optionSelected event to fire first
+    this.blurTimeoutId = setTimeout(() => {
+      // Skip blur handling if we're in the process of selecting a station
+      if (this.isSelectingStation) {
+        return;
+      }
+      
+      // Reset editing state
+      this.isEditingStation.set(false);
+      
+      // If there's a search term, check if it matches a station
+      const searchTerm = this.stationSearchTerm();
+      const currentStations = this.stations();
+      
+      if (searchTerm && currentStations.includes(searchTerm)) {
+        // Valid input, select it
+        this.selectedStation.set(searchTerm);
         this.stationSearchTerm.set('');
+      } else if (searchTerm && !currentStations.includes(searchTerm)) {
+        // Invalid input, restore previous selection or clear
+        if (this.selectedStation()) {
+          this.stationSearchTerm.set('');
+        } else {
+          this.selectedStation.set('');
+          this.stationSearchTerm.set('');
+        }
       } else {
-        this.selectedStation.set('');
+        // No search term, keep current selection
         this.stationSearchTerm.set('');
       }
-    } else {
-      // No search term, keep current selection
-      this.stationSearchTerm.set('');
-    }
+      
+      this.blurTimeoutId = null;
+    }, 150);
   }
   
   displayStation(station: string | null): string {
