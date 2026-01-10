@@ -12,6 +12,81 @@
           <h2>E-Mail-Adresse wird verifiziert...</h2>
           <p>Bitte warten Sie einen Moment.</p>
         </div>
+      } @else if (needsPassword()) {
+        <div class="password-setup">
+          <mat-icon class="lock-icon">lock</mat-icon>
+          <h2>Passwort setzen</h2>
+          <p>Bitte setzen Sie ein Passwort, um Ihre E-Mail-Adresse zu verifizieren und sich anzumelden.</p>
+          
+          <form [formGroup]="passwordForm" (ngSubmit)="setPassword()" class="password-form">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Passwort</mat-label>
+              <input
+                matInput
+                [type]="hidePassword() ? 'password' : 'text'"
+                formControlName="password"
+                required>
+              <mat-icon matPrefix>lock</mat-icon>
+              <button
+                mat-icon-button
+                matSuffix
+                (click)="hidePassword.set(!hidePassword())"
+                type="button">
+                <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+              @if (passwordForm.get('password')?.hasError('required') && passwordForm.get('password')?.touched) {
+                <mat-error>Passwort ist erforderlich</mat-error>
+              }
+              @if (passwordForm.get('password')?.hasError('minlength') && passwordForm.get('password')?.touched) {
+                <mat-error>Das Passwort muss mindestens 8 Zeichen lang sein</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Passwort bestätigen</mat-label>
+              <input
+                matInput
+                [type]="hideConfirmPassword() ? 'password' : 'text'"
+                formControlName="confirmPassword"
+                required>
+              <mat-icon matPrefix>lock_outline</mat-icon>
+              <button
+                mat-icon-button
+                matSuffix
+                (click)="hideConfirmPassword.set(!hideConfirmPassword())"
+                type="button">
+                <mat-icon>{{ hideConfirmPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+              @if (passwordForm.get('confirmPassword')?.hasError('required') && passwordForm.get('confirmPassword')?.touched) {
+                <mat-error>Passwort-Bestätigung ist erforderlich</mat-error>
+              }
+              @if (passwordForm.hasError('passwordMismatch') && passwordForm.get('confirmPassword')?.touched) {
+                <mat-error>Passwörter stimmen nicht überein</mat-error>
+              }
+            </mat-form-field>
+
+            @if (error()) {
+              <div class="error-message">
+                <mat-icon>error</mat-icon>
+                <span>{{ error() }}</span>
+              </div>
+            }
+
+            <div class="form-actions">
+              <button
+                mat-raised-button
+                color="primary"
+                type="submit"
+                [disabled]="passwordForm.invalid || settingPassword()"
+                class="submit-button">
+                @if (settingPassword()) {
+                  <mat-spinner diameter="20" style="display: inline-block; margin-right: 8px;"></mat-spinner>
+                }
+                Passwort setzen und E-Mail verifizieren
+              </button>
+            </div>
+          </form>
+        </div>
       } @else if (isVerified()) {
         <div class="verified">
           <mat-icon>check_circle</mat-icon>

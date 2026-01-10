@@ -1,0 +1,138 @@
+<div class="admin-container">
+  <mat-card class="admin-card">
+    <mat-card-header>
+      <div class="header-content">
+        <mat-icon class="header-icon">admin_panel_settings</mat-icon>
+        <div>
+          <mat-card-title>Benutzerverwaltung</mat-card-title>
+          <mat-card-subtitle>Verwalten Sie Benutzerkonten und deren Berechtigungen</mat-card-subtitle>
+        </div>
+      </div>
+      <button mat-raised-button color="primary" (click)="openCreateUserDialog()">
+        <mat-icon>person_add</mat-icon>
+        Neuen Benutzer anlegen
+      </button>
+    </mat-card-header>
+
+    <mat-card-content>
+      @if (loading()) {
+        <div class="loading-container">
+          <mat-spinner diameter="50"></mat-spinner>
+          <p>Lade Benutzer...</p>
+        </div>
+      } @else {
+        <div class="table-container">
+          <table mat-table [dataSource]="dataSource" class="users-table">
+            <!-- Email Column -->
+            <ng-container matColumnDef="email">
+              <th mat-header-cell *matHeaderCellDef>E-Mail</th>
+              <td mat-cell *matCellDef="let user">
+                <div class="email-cell">
+                  <mat-icon class="email-icon">email</mat-icon>
+                  <span>{{ user.email }}</span>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Name Column -->
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef>Name</th>
+              <td mat-cell *matCellDef="let user">{{ getUserName(user) }}</td>
+            </ng-container>
+
+            <!-- Role Column -->
+            <ng-container matColumnDef="role">
+              <th mat-header-cell *matHeaderCellDef>Rolle</th>
+              <td mat-cell *matCellDef="let user">
+                <mat-chip [class.admin-chip]="user.role === 'admin'">
+                  {{ user.role === 'admin' ? 'Administrator' : 'Betrachter' }}
+                </mat-chip>
+              </td>
+            </ng-container>
+
+            <!-- Status Column -->
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>Status</th>
+              <td mat-cell *matCellDef="let user">
+                <mat-slide-toggle
+                  [checked]="user.isActive"
+                  (change)="toggleUserActive(user)"
+                  [disabled]="!canDelete(user)"
+                  color="primary">
+                </mat-slide-toggle>
+                <span class="status-text">{{ user.isActive ? 'Aktiv' : 'Inaktiv' }}</span>
+              </td>
+            </ng-container>
+
+            <!-- Email Verified Column -->
+            <ng-container matColumnDef="emailVerified">
+              <th mat-header-cell *matHeaderCellDef>E-Mail verifiziert</th>
+              <td mat-cell *matCellDef="let user">
+                @if (user.emailVerified) {
+                  <mat-chip class="verified-chip">
+                    <mat-icon>check_circle</mat-icon>
+                    Ja
+                  </mat-chip>
+                } @else {
+                  <mat-chip class="unverified-chip">
+                    <mat-icon>cancel</mat-icon>
+                    Nein
+                  </mat-chip>
+                }
+              </td>
+            </ng-container>
+
+            <!-- Last Login Column -->
+            <ng-container matColumnDef="lastLogin">
+              <th mat-header-cell *matHeaderCellDef>Letzter Login</th>
+              <td mat-cell *matCellDef="let user">{{ formatDate(user.lastLogin) }}</td>
+            </ng-container>
+
+            <!-- Created At Column -->
+            <ng-container matColumnDef="createdAt">
+              <th mat-header-cell *matHeaderCellDef>Erstellt am</th>
+              <td mat-cell *matCellDef="let user">{{ formatDate(user.createdAt) }}</td>
+            </ng-container>
+
+            <!-- Actions Column -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef>Aktionen</th>
+              <td mat-cell *matCellDef="let user">
+                <div class="action-buttons">
+                  <button
+                    mat-icon-button
+                    color="primary"
+                    (click)="openEditUserDialog(user)"
+                    matTooltip="Benutzer bearbeiten">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  @if (!user.emailVerified) {
+                    <button
+                      mat-icon-button
+                      color="accent"
+                      (click)="resendVerificationEmail(user)"
+                      matTooltip="Verifizierungs-E-Mail erneut senden">
+                      <mat-icon>email</mat-icon>
+                    </button>
+                  }
+                  @if (canDelete(user)) {
+                    <button
+                      mat-icon-button
+                      color="warn"
+                      (click)="deleteUser(user)"
+                      matTooltip="Benutzer löschen">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  }
+                </div>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+          </table>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+</div>

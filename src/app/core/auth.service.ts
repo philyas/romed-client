@@ -139,9 +139,10 @@ export class AuthService {
     );
   }
 
-  verifyEmail(token: string): Observable<{ success: boolean; message: string }> {
-    return this.http.post<{ success: boolean; message: string }>(`${this.baseUrl}/api/auth/verify-email`, {
-      token
+  verifyEmail(token: string, password?: string): Observable<{ success: boolean; message: string; needsPassword?: boolean; token?: string }> {
+    return this.http.post<{ success: boolean; message: string; needsPassword?: boolean; token?: string }>(`${this.baseUrl}/api/auth/verify-email`, {
+      token,
+      password
     }).pipe(
       tap(() => {
         // Update user email verified status

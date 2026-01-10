@@ -12,6 +12,9 @@
           <a [routerLink]="['/upload']" routerLinkActive="active" (click)="closeMenu()">Upload</a>
           <a [routerLink]="['/manual-entry']" [class.active]="isManualEntryActive()" (click)="closeMenu()">Arbeitszeiten</a>
           <a [routerLink]="['/configuration']" routerLinkActive="active" (click)="closeMenu()">Einstellungen</a>
+          @if (isAdmin()) {
+            <a [routerLink]="['/admin']" routerLinkActive="active" (click)="closeMenu()">Administration</a>
+          }
           
           @if (isAuthenticated()) {
             <div class="user-menu">
@@ -67,6 +70,12 @@
           <mat-icon>settings</mat-icon>
           Einstellungen
         </a>
+        @if (isAdmin()) {
+          <a [routerLink]="['/admin']" routerLinkActive="active" (click)="closeMenu()">
+            <mat-icon>admin_panel_settings</mat-icon>
+            Administration
+          </a>
+        }
         @if (isAuthenticated()) {
           <mat-divider></mat-divider>
           <div class="mobile-user-info">
