@@ -10,22 +10,26 @@
 
     <!-- Swiss Army Knife Toolbar - Always Available -->
     <div class="swiss-toolbar">
-      <!-- Tag/Nacht Toggle -->
+      <!-- Tag/Nacht Toggle (Medicine Pill Style) -->
       <div class="toolbar-section shift-section">
-        <mat-tab-group [selectedIndex]="selectedShift() === 'tag' ? 0 : 1" (selectedTabChange)="onShiftChange($event.index === 0 ? 'tag' : 'nacht')" class="compact-tabs">
-          <mat-tab>
-            <ng-template mat-tab-label>
-              <mat-icon>light_mode</mat-icon>
-              <span>Tag</span>
-            </ng-template>
-          </mat-tab>
-          <mat-tab>
-            <ng-template mat-tab-label>
-              <mat-icon>nightlight</mat-icon>
-              <span>Nacht</span>
-            </ng-template>
-          </mat-tab>
-        </mat-tab-group>
+        <div class="pill-toggle">
+          <button 
+            class="pill-btn"
+            [class.active]="selectedShift() === 'tag'"
+            [class.tag-active]="selectedShift() === 'tag'"
+            (click)="onShiftChange('tag')">
+            <mat-icon>light_mode</mat-icon>
+            <span>Tag</span>
+          </button>
+          <button 
+            class="pill-btn"
+            [class.active]="selectedShift() === 'nacht'"
+            [class.nacht-active]="selectedShift() === 'nacht'"
+            (click)="onShiftChange('nacht')">
+            <mat-icon>nightlight</mat-icon>
+            <span>Nacht</span>
+          </button>
+        </div>
       </div>
 
       <!-- Station Selection -->
