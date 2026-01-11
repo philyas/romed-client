@@ -98,137 +98,43 @@
           </button>
         </div>
       </div>
+
+      <!-- Action Buttons -->
+      <div class="toolbar-section actions-section">
+        <!-- Config Button -->
+        <button 
+          mat-stroked-button 
+          color="primary"
+          (click)="openStationConfigDialog()"
+          [disabled]="!selectedStation()"
+          matTooltip="Stationskonfiguration bearbeiten"
+          class="toolbar-action-btn config-btn">
+          <mat-icon>settings</mat-icon>
+          <span class="btn-label">Konfig</span>
+        </button>
+
+          <!-- Upload Button -->
+        <button 
+          mat-stroked-button 
+          color="accent"
+          (click)="openUploadDialog()"
+          [disabled]="uploading()"
+          matTooltip="Dienstplan-Excel hochladen"
+          class="toolbar-action-btn upload-btn">
+          <mat-spinner *ngIf="uploading()" diameter="16" style="display: inline-block; margin-right: 4px;"></mat-spinner>
+          <mat-icon *ngIf="!uploading()">cloud_upload</mat-icon>
+          <span class="btn-label">Upload</span>
+        </button>
+      </div>
     </div>
 
-  <!-- Station Selection / Creation -->
-  <mat-card class="selection-card">
-    <mat-card-content>
-
-      <!-- Config Snapshot Info -->
-      <div class="config-snapshot-info" *ngIf="selectedStation() && (configSnapshot() || loadingConfigSnapshot())">
-        <mat-divider style="margin: 16px 0;"></mat-divider>
-        <div class="config-snapshot-header">
-          <mat-icon>settings</mat-icon>
-          <span class="config-snapshot-title">Verwendete Konfiguration</span>
-          <mat-chip *ngIf="configSnapshot()?.isCurrentConfig" color="accent" selected>
-            Aktuelle Konfiguration
-          </mat-chip>
-          <mat-chip *ngIf="configSnapshot() && !configSnapshot()?.isCurrentConfig" color="primary" selected>
-            Gespeicherter Snapshot
-          </mat-chip>
-          <button 
-            mat-stroked-button 
-            color="primary"
-            (click)="openStationConfigDialog()"
-            matTooltip="Stationskonfiguration dauerhaft bearbeiten"
-            class="edit-config-button">
-            <mat-icon>edit</mat-icon>
-            Konfiguration bearbeiten
-          </button>
-        </div>
-        <div *ngIf="loadingConfigSnapshot()" class="config-loading">
-          <mat-progress-spinner mode="indeterminate" diameter="20"></mat-progress-spinner>
-          <span>Lade Konfiguration...</span>
-        </div>
-        <div *ngIf="configSnapshot() && !loadingConfigSnapshot()" class="config-values">
-          <div class="config-item">
-            <span class="config-label">Schichtstunden ({{ configSnapshot()!.schicht === 'tag' ? 'Tag' : 'Nacht' }}):</span>
-            <span class="config-value">{{ configSnapshot()!.schicht_stunden_used }}h</span>
-          </div>
-          <div class="config-item" *ngIf="configSnapshot()!.phk_anteil_base_used !== null">
-            <span class="config-label">%PHP ({{ configSnapshot()!.schicht === 'tag' ? 'Tag' : 'Nacht' }}):</span>
-            <span class="config-value">{{ configSnapshot()!.phk_anteil_base_used }}</span>
-          </div>
-          <div class="config-item">
-            <span class="config-label">P:P-Ratio Basis ({{ configSnapshot()!.schicht === 'tag' ? 'Tag' : 'Nacht' }}):</span>
-            <span class="config-value">{{ configSnapshot()!.pp_ratio_base_used }}</span>
-          </div>
-          <div class="config-timestamp" *ngIf="configSnapshot()!.erstellt_am">
-            <mat-icon>schedule</mat-icon>
-            <span>Gespeichert am: {{ configSnapshot()!.erstellt_am | date:'dd.MM.yyyy HH:mm' }}</span>
-            <span *ngIf="configSnapshot()!.aktualisiert_am && configSnapshot()!.aktualisiert_am !== configSnapshot()!.erstellt_am">
-              (Aktualisiert: {{ configSnapshot()!.aktualisiert_am | date:'dd.MM.yyyy HH:mm' }})
-            </span>
-          </div>
-          <div class="config-message" *ngIf="configSnapshot()!.message">
-            <mat-icon>info</mat-icon>
-            <span>{{ configSnapshot()!.message }}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- File Upload Section -->
-      <div class="upload-section">
-        <mat-divider style="margin: 20px 0;"></mat-divider>
-        <div class="upload-header">
-          <mat-icon>cloud_upload</mat-icon>
-          <h3>Dienstplan-Excel hochladen</h3>
-        </div>
-        <p class="upload-description">
-          Laden Sie eine Dienstplan-Excel-Datei (DP9) hoch, um Arbeitszeiten automatisch zu importieren.
-        </p>
-        <div class="variant-selection" style="margin-bottom: 16px;">
-          <mat-form-field appearance="outline" style="width: 100%;">
-            <mat-label>Berechnungsvariante</mat-label>
-            <mat-select [value]="selectedVariant()" (selectionChange)="selectedVariant.set($event.value)">
-              <mat-option value="legacy">
-                <div style="display: flex; flex-direction: column;">
-                  <strong>Legacy (bis 2025)</strong>
-                  <span style="font-size: 0.85em; color: #666;">Verwendet "Ist"-Zeilen direkt</span>
-                </div>
-              </mat-option>
-              <mat-option value="2026">
-                <div style="display: flex; flex-direction: column;">
-                  <strong>2026 (ab 2026)</strong>
-                  <span style="font-size: 0.85em; color: #666;">Verwendet PPUG-Zeilen nach neuen Regeln</span>
-                </div>
-              </mat-option>
-            </mat-select>
-            <mat-icon matSuffix>settings</mat-icon>
-            <mat-hint>Wählen Sie die Berechnungsvariante basierend auf dem Jahr der Daten</mat-hint>
-          </mat-form-field>
-        </div>
-        <div class="upload-controls">
-          <input 
-            #fileInput 
-            type="file" 
-            accept=".xlsx,.xls" 
-            (change)="onFileSelected($event)"
-            style="display: none;">
-          <button 
-            mat-stroked-button 
-            (click)="triggerFileSelect()"
-            [disabled]="uploading()">
-            <mat-icon>folder_open</mat-icon>
-            Datei auswählen
-          </button>
-          <button 
-            mat-icon-button 
-            *ngIf="selectedFile()"
-            (click)="clearSelectedFile()"
-            color="warn">
-            <mat-icon>close</mat-icon>
-          </button>
-        </div>
-        <div class="selected-file" *ngIf="selectedFile()">
-          <mat-icon>description</mat-icon>
-          <span>{{ selectedFile()?.name }}</span>
-          <span class="file-size">({{ ((selectedFile()?.size || 0) / 1024) | number:'1.0-1' }} KB)</span>
-        </div>
-        <div class="upload-button-container" *ngIf="selectedFile()">
-          <button 
-            mat-raised-button 
-            color="primary"
-            (click)="uploadDienstplan()"
-            [disabled]="uploading()">
-            <mat-spinner *ngIf="uploading()" diameter="20" style="display: inline-block; margin-right: 8px;"></mat-spinner>
-            <mat-icon *ngIf="!uploading()">upload</mat-icon>
-            {{ uploading() ? 'Wird hochgeladen...' : 'Dienstplan hochladen' }}
-          </button>
-        </div>
-      </div>
-    </mat-card-content>
-  </mat-card>
+  <!-- Hidden File Input for Upload -->
+  <input 
+    #fileInput 
+    type="file" 
+    accept=".xlsx,.xls" 
+    (change)="onFileSelected($event)"
+    style="display: none;">
 
   <!-- Statistics Card -->
   <mat-card class="stats-card" *ngIf="selectedStation() && !loading() && !isShifting()" [class.content-fade]="isShifting()">

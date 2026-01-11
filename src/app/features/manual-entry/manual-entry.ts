@@ -1737,14 +1737,45 @@ export class ManualEntry {
         this.snackBar.open('Bitte wählen Sie eine Excel-Datei (.xlsx oder .xls)', 'Schließen', { duration: 3000 });
         return;
       }
-      this.selectedFile.set(file);
+      // File selection happens in dialog, so we don't need to handle it here
+      // The dialog will handle the file directly
     }
+  }
+
+  openVariantSelectionDialog(file: File | null): void {
+    const dialogRef = this.dialog.open(UploadVariantDialogComponent, {
+      width: '550px',
+      maxWidth: '90vw',
+      disableClose: false,
+      data: {
+        fileName: file?.name || '',
+        currentVariant: this.selectedVariant(),
+        fileInput: this.fileInput?.nativeElement
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((result: { variant: 'legacy' | '2026'; file: File } | undefined) => {
+      if (result && result.file) {
+        // Set selected variant and file, then proceed with upload
+        this.selectedVariant.set(result.variant);
+        this.selectedFile.set(result.file);
+        this.uploadDienstplan();
+      } else {
+        // User cancelled, clear selected file
+        this.clearSelectedFile();
+      }
+    });
   }
 
   triggerFileSelect(): void {
     if (this.fileInput) {
       this.fileInput.nativeElement.click();
     }
+  }
+
+  openUploadDialog(): void {
+    // Open variant selection dialog directly (station validation will happen during upload)
+    this.openVariantSelectionDialog(null);
   }
 
   clearSelectedFile(): void {
@@ -2739,6 +2770,354 @@ export class CalculationInfoDialog {
 
   close(): void {
     this.dialogRef.close();
+  }
+}
+
+@Component({
+  selector: 'app-upload-variant-dialog',
+  template: `
+    <h2 mat-dialog-title style="display: flex; align-items: center; gap: 12px;">
+      <mat-icon>cloud_upload</mat-icon>
+      <span>Upload vorbereiten</span>
+    </h2>
+    
+    <mat-dialog-content>
+      <div class="upload-selection">
+        <!-- File Selection -->
+        <div class="file-selection-section">
+          <label class="section-label">1. Datei auswählen</label>
+          <input 
+            #fileInput
+            type="file" 
+            accept=".xlsx,.xls" 
+            (change)="onFileSelected($event)"
+            style="display: none;">
+          <button 
+            mat-stroked-button 
+            color="primary"
+            (click)="fileInput.click()"
+            class="file-select-btn">
+            <mat-icon>folder_open</mat-icon>
+            <span>{{ selectedFile ? 'Andere Datei wählen' : 'Excel-Datei auswählen' }}</span>
+          </button>
+          <div class="file-info" *ngIf="selectedFile">
+            <mat-icon>description</mat-icon>
+            <span class="file-name">{{ selectedFile.name }}</span>
+            <span class="file-size">({{ getFileSize() }})</span>
+            <button 
+              mat-icon-button 
+              (click)="clearFile()"
+              color="warn"
+              class="clear-file-btn">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </div>
+        
+        <mat-divider style="margin: 20px 0;"></mat-divider>
+        
+        <!-- Variant Selection -->
+        <div class="variant-selection-section">
+          <label class="section-label">2. Berechnungsvariante wählen</label>
+          <p class="description">
+            Bitte wählen Sie die Berechnungsvariante für den Upload:
+          </p>
+          
+          <div class="variant-options">
+            <button 
+              mat-raised-button 
+              [class.active]="selectedVariant === 'legacy'"
+              (click)="selectVariant('legacy')"
+              class="variant-btn legacy-btn">
+              <div class="variant-content">
+                <div class="variant-header">
+                  <mat-icon>history</mat-icon>
+                  <strong>Legacy (bis 2025)</strong>
+                </div>
+                <span class="variant-description">Verwendet "Ist"-Zeilen direkt</span>
+              </div>
+            </button>
+            
+            <button 
+              mat-raised-button 
+              [class.active]="selectedVariant === '2026'"
+              (click)="selectVariant('2026')"
+              class="variant-btn modern-btn">
+              <div class="variant-content">
+                <div class="variant-header">
+                  <mat-icon>update</mat-icon>
+                  <strong>2026 (ab 2026)</strong>
+                </div>
+                <span class="variant-description">Verwendet PPUG-Zeilen nach neuen Regeln</span>
+              </div>
+            </button>
+          </div>
+        </div>
+        
+        <div class="info-box">
+          <mat-icon>info</mat-icon>
+          <span>Die Variante sollte basierend auf dem Jahr der Daten in der Excel-Datei gewählt werden.</span>
+        </div>
+      </div>
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end">
+      <button mat-button (click)="onCancel()">Abbrechen</button>
+      <button 
+        mat-raised-button 
+        color="primary" 
+        (click)="onConfirm()" 
+        [disabled]="!selectedVariant || !selectedFile">
+        <mat-icon>upload</mat-icon>
+        Upload starten
+      </button>
+    </mat-dialog-actions>
+  `,
+  styles: [`
+    h2 mat-dialog-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 0;
+    }
+
+    mat-dialog-content {
+      min-width: 450px;
+      padding: 20px 24px;
+    }
+
+    .upload-selection {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .section-label {
+      display: block;
+      font-weight: 600;
+      font-size: 14px;
+      color: #333;
+      margin-bottom: 12px;
+    }
+
+    .file-selection-section {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .file-select-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      justify-content: center;
+      padding: 12px 16px;
+    }
+
+    .file-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: #f5f5f5;
+      border-radius: 8px;
+      border-left: 4px solid #0066cc;
+      flex-wrap: wrap;
+    }
+
+    .file-info mat-icon {
+      color: #0066cc;
+      font-size: 24px;
+      width: 24px;
+      height: 24px;
+    }
+
+    .file-name {
+      font-weight: 600;
+      color: #333;
+      word-break: break-all;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .file-size {
+      color: #666;
+      font-size: 12px;
+    }
+
+    .clear-file-btn {
+      margin-left: auto;
+    }
+
+    .variant-selection-section {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .description {
+      margin: 8px 0 16px 0;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .variant-options {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .variant-btn {
+      width: 100%;
+      padding: 16px;
+      text-align: left;
+      border: 2px solid #e0e0e0;
+      background: white;
+      transition: all 0.3s ease;
+      border-radius: 8px;
+      min-height: 80px;
+      display: flex;
+      align-items: center;
+    }
+
+    .variant-btn:hover:not(.active) {
+      border-color: #0066cc;
+      background: rgba(0, 102, 204, 0.05);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .variant-btn.active {
+      border-color: #0066cc;
+      background: linear-gradient(135deg, rgba(0, 102, 204, 0.1) 0%, rgba(0, 102, 204, 0.05) 100%);
+      box-shadow: 0 4px 12px rgba(0, 102, 204, 0.2);
+    }
+
+    .variant-content {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .variant-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 16px;
+    }
+
+    .variant-header mat-icon {
+      font-size: 24px;
+      width: 24px;
+      height: 24px;
+      color: #0066cc;
+    }
+
+    .variant-btn.active .variant-header mat-icon {
+      color: #0066cc;
+    }
+
+    .variant-description {
+      font-size: 13px;
+      color: #666;
+      margin-left: 36px;
+    }
+
+    .info-box {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px;
+      background: #e3f2fd;
+      border-radius: 8px;
+      border-left: 4px solid #2196f3;
+      font-size: 13px;
+      color: #1976d2;
+    }
+
+    .info-box mat-icon {
+      color: #2196f3;
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+      margin-top: 2px;
+    }
+
+    mat-dialog-actions {
+      padding: 16px 24px;
+    }
+
+    mat-dialog-actions button {
+      margin-left: 8px;
+    }
+  `],
+  imports: [
+    CommonModule,
+    MatDialogModule,
+    MatButtonModule,
+    MatIconModule,
+    MatDividerModule
+  ],
+  standalone: true
+})
+export class UploadVariantDialogComponent {
+  selectedVariant: 'legacy' | '2026' = 'legacy';
+  selectedFile: File | null = null;
+
+  constructor(
+    private dialogRef: MatDialogRef<UploadVariantDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: {
+      fileName: string;
+      currentVariant: 'legacy' | '2026';
+      fileInput?: HTMLInputElement;
+    }
+  ) {
+    // Initialize with current variant
+    this.selectedVariant = this.data.currentVariant;
+    // If file was already selected, use it
+    if (this.data.fileName) {
+      // File name is provided, but we need the actual file object
+      // This will be set when user selects file in dialog
+    }
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      // Validate file type
+      if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+        // Error will be handled by parent component
+        return;
+      }
+      this.selectedFile = file;
+    }
+  }
+
+  clearFile(): void {
+    this.selectedFile = null;
+  }
+
+  getFileSize(): string {
+    if (!this.selectedFile) return '';
+    const sizeKB = this.selectedFile.size / 1024;
+    return sizeKB < 1024 ? `${sizeKB.toFixed(1)} KB` : `${(sizeKB / 1024).toFixed(1)} MB`;
+  }
+
+  selectVariant(variant: 'legacy' | '2026'): void {
+    this.selectedVariant = variant;
+  }
+
+  onCancel(): void {
+    this.dialogRef.close();
+  }
+
+  onConfirm(): void {
+    if (this.selectedVariant && this.selectedFile) {
+      this.dialogRef.close({ variant: this.selectedVariant, file: this.selectedFile });
+    }
   }
 }
 

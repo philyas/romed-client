@@ -1073,6 +1073,36 @@ mat-card {
     border-color: $primary-teal !important;
     border-width: 2px !important;
   }
+
+  // Fix padding for input and select fields
+  .mat-mdc-form-field-infix {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  // Input fields padding
+  input.mdc-text-field__input,
+  .mdc-text-field__input {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    text-indent: 0 !important;
+  }
+
+  // Select fields padding
+  .mat-mdc-select-trigger,
+  .mat-mdc-select-value {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  // Autocomplete input padding
+  .mat-mdc-autocomplete-trigger {
+    .mdc-text-field__input {
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+      text-indent: 0 !important;
+    }
+  }
 }
 
 .mat-mdc-select-panel {

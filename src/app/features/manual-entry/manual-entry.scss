@@ -226,8 +226,8 @@
       }
 
       &.year-section {
-        min-width: 90px;
-        max-width: 110px;
+        min-width: 130px;
+        max-width: 150px;
 
         .compact-field {
           width: 100%;
@@ -356,6 +356,66 @@
 
             span {
               font-weight: 600;
+            }
+          }
+        }
+      }
+
+      &.actions-section {
+        display: flex;
+        gap: 8px;
+        margin-left: auto;
+
+        .toolbar-action-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          min-width: 90px;
+          height: 38px;
+          padding: 0 12px;
+          font-size: 12px;
+          font-weight: 600;
+          border-radius: 6px;
+          transition: all 0.3s ease;
+
+          mat-icon {
+            font-size: 18px;
+            width: 18px;
+            height: 18px;
+          }
+
+          .btn-label {
+            font-weight: 600;
+          }
+
+          mat-spinner {
+            ::ng-deep circle {
+              stroke: currentColor;
+            }
+          }
+
+          &.config-btn {
+            &:hover:not(:disabled) {
+              background: rgba(0, 102, 204, 0.1);
+              border-color: #0066cc;
+            }
+
+            &:disabled {
+              opacity: 0.5;
+              cursor: not-allowed;
+            }
+          }
+
+          &.upload-btn {
+            &:hover:not(:disabled) {
+              background: rgba(255, 152, 0, 0.1);
+              border-color: #ff9800;
+            }
+
+            &:disabled {
+              opacity: 0.5;
+              cursor: not-allowed;
             }
           }
         }
