@@ -27,13 +27,21 @@
                 <div class="user-menu-header">
                   <div class="user-info">
                     <div class="user-name-wrapper">
-                      <mat-icon class="user-avatar-icon">account_circle</mat-icon>
                       <div class="user-text-info">
-                        <strong class="user-display-name">{{ getUserDisplayName() }}</strong>
-                        <span class="user-email">{{ currentUser()?.email }}</span>
+                        <div class="user-display-name">
+                          <mat-icon class="name-icon">person</mat-icon>
+                          <span>{{ getUserDisplayName() }}</span>
+                        </div>
+                        <div class="user-email">
+                          <mat-icon class="email-icon">email</mat-icon>
+                          <span>{{ currentUser()?.email }}</span>
+                        </div>
                       </div>
                     </div>
-                    <span class="user-role" [class.admin]="isAdmin()">{{ currentUser()?.role === 'admin' ? 'Administrator' : 'Betrachter' }}</span>
+                    <div class="user-role" [class.admin]="isAdmin()">
+                      <mat-icon class="role-icon">{{ currentUser()?.role === 'admin' ? 'admin_panel_settings' : 'visibility' }}</mat-icon>
+                      <span>{{ currentUser()?.role === 'admin' ? 'Administrator' : 'Betrachter' }}</span>
+                    </div>
                   </div>
                 </div>
                 <mat-divider></mat-divider>
