@@ -70,10 +70,6 @@ mat-card-subtitle {
   padding: 16px;
 }
 
-.users-table td {
-  padding: 16px;
-  border-bottom: 1px solid #e0e0e0;
-}
 
 .users-table tr:hover {
   background: #f8fbff;
@@ -97,31 +93,86 @@ mat-card-subtitle {
   color: white !important;
 }
 
+.users-table td {
+  padding: 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.users-table td[mat-cell] {
+  text-align: center !important;
+}
+
+.users-table td[mat-cell] mat-chip {
+  margin: 0 auto !important;
+  display: inline-flex !important;
+  vertical-align: middle !important;
+}
+
+.verified-chip,
+.unverified-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+}
+
 .verified-chip {
   background-color: #4caf50 !important;
   color: white !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 4px !important;
+
+  ::ng-deep {
+    .mdc-evolution-chip__cell--primary,
+    .mdc-evolution-chip__action--primary {
+      display: flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+    }
+
+    .mdc-evolution-chip__text-label {
+      display: flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+    }
+  }
 
   mat-icon {
-    font-size: 18px;
-    width: 18px;
-    height: 18px;
+    font-size: 16px !important;
+    width: 16px !important;
+    height: 16px !important;
+    flex-shrink: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 }
 
 .unverified-chip {
   background-color: #ff9800 !important;
   color: white !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 4px !important;
+
+  ::ng-deep {
+    .mdc-evolution-chip__cell--primary,
+    .mdc-evolution-chip__action--primary {
+      display: flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+    }
+
+    .mdc-evolution-chip__text-label {
+      display: flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+    }
+  }
 
   mat-icon {
-    font-size: 18px;
-    width: 18px;
-    height: 18px;
+    font-size: 16px !important;
+    width: 16px !important;
+    height: 16px !important;
+    flex-shrink: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 }
 
