@@ -25,6 +25,7 @@ export interface CreateUserRequest {
   lastName?: string;
   role?: 'admin' | 'viewer';
   sendVerificationEmail?: boolean;
+  emailVerified?: boolean;
 }
 
 export interface UpdateUserRequest {

@@ -101,6 +101,10 @@ export interface UserDialogData {
             }
           </mat-form-field>
 
+          <mat-checkbox formControlName="emailVerified" class="full-width">
+            E-Mail als verifiziert markieren (User kann direkt einloggen)
+          </mat-checkbox>
+
           <mat-checkbox formControlName="sendVerificationEmail" class="full-width">
             Verifizierungs-E-Mail beim Anlegen senden
           </mat-checkbox>
@@ -219,7 +223,8 @@ export class UserDialogComponent implements OnInit {
       role: ['viewer', [Validators.required]],
       ...(this.data.mode === 'create' ? {
         password: ['', [this.passwordValidator]],
-        sendVerificationEmail: [true]
+        emailVerified: [false],
+        sendVerificationEmail: [false]
       } : {
         isActive: [true]
       })
@@ -266,6 +271,7 @@ export class UserDialogComponent implements OnInit {
           lastName: formValue.lastName || undefined,
           role: formValue.role,
           password: formValue.password || undefined,
+          emailVerified: formValue.emailVerified,
           sendVerificationEmail: formValue.sendVerificationEmail
         };
 
