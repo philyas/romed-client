@@ -173,93 +173,84 @@
               line-height: 1;
             }
 
-            .statistics-filter {
-              ::ng-deep {
-                .mat-button-toggle-group {
-                  border-radius: 8px;
-                  overflow: visible;
-                  border: none;
-                  background: transparent;
-                  box-shadow: none;
-                  gap: 8px;
-                  padding: 4px;
+            ::ng-deep .statistics-filter.mat-button-toggle-group {
+              border-radius: 8px;
+              overflow: visible;
+              border: none;
+              background: transparent;
+              box-shadow: none;
+              display: flex;
+              gap: 8px;
+              padding: 4px;
 
-                  .mat-button-toggle {
-                    border-radius: 6px !important;
-                    border: 1px solid #e1e5e9 !important;
-                    background: #ffffff;
-                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-                    position: relative;
-                    padding: 8px 16px;
-                    min-height: 36px;
-                    cursor: pointer;
-                    box-shadow:
-                      0 1px 2px rgba(0, 0, 0, 0.06),
-                      0 1px 1px rgba(0, 0, 0, 0.03);
-                    margin: 0 !important;
+              .mat-button-toggle {
+                border-radius: 6px !important;
+                border: 2px solid #d1d5db !important;
+                background: #ffffff !important;
+                transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+                position: relative;
+                min-height: 40px !important;
+                cursor: pointer;
+                box-shadow:
+                  0 2px 4px rgba(0, 0, 0, 0.08),
+                  0 1px 2px rgba(0, 0, 0, 0.04) !important;
+                margin: 0 !important;
+                overflow: hidden;
 
-                    &:hover {
-                      border-color: #00acc1 !important;
-                      box-shadow:
-                        0 4px 12px rgba(0, 172, 193, 0.15),
-                        0 2px 4px rgba(0, 0, 0, 0.08);
-                      transform: translateY(-2px);
+                &:hover {
+                  border-color: #00acc1 !important;
+                  background: #f0fdfa !important;
+                  box-shadow:
+                    0 4px 12px rgba(0, 172, 193, 0.2),
+                    0 2px 4px rgba(0, 0, 0, 0.08) !important;
+                }
 
-                      mat-icon {
-                        color: #00acc1;
-                        transform: scale(1.1);
-                      }
+                &.mat-button-toggle-checked {
+                  background: linear-gradient(135deg, #00acc1 0%, #0097a7 100%) !important;
+                  border-color: #00acc1 !important;
+                  color: white !important;
+                  box-shadow:
+                    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                    0 4px 16px rgba(0, 172, 193, 0.4),
+                    0 2px 6px rgba(0, 172, 193, 0.2) !important;
 
-                      span {
-                        color: #00acc1;
-                        font-weight: 600;
-                      }
-                    }
-
-                    &.mat-button-toggle-checked {
-                      background: linear-gradient(135deg, #00acc1 0%, #0097a7 100%) !important;
-                      border-color: #00acc1 !important;
-                      color: white;
-                      box-shadow:
-                        inset 0 1px 0 rgba(255, 255, 255, 0.3),
-                        0 4px 16px rgba(0, 172, 193, 0.4),
-                        0 2px 6px rgba(0, 172, 193, 0.2);
-                      transform: translateY(-2px);
-
-                      mat-icon {
-                        color: white;
-                        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15));
-                      }
-
-                      span {
-                        font-weight: 700;
-                        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-                      }
-                    }
-
-                    &:active {
-                      transform: translateY(0);
-                      transition: transform 0.1s ease;
-                    }
-
+                  .mat-button-toggle-label-content {
                     mat-icon {
-                      font-size: 16px;
-                      width: 16px;
-                      height: 16px;
-                      margin-right: 6px;
-                      color: #6b7280;
-                      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                      color: white !important;
                     }
 
                     span {
-                      font-size: 13px;
-                      font-weight: 500;
-                      color: #374151;
-                      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-                      position: relative;
-                      z-index: 1;
-                      letter-spacing: 0.025em;
+                      color: white !important;
+                      font-weight: 700 !important;
                     }
+                  }
+                }
+
+                .mat-button-toggle-button {
+                  padding: 8px 16px !important;
+                }
+
+                .mat-button-toggle-label-content {
+                  display: flex;
+                  align-items: center;
+                  gap: 6px;
+                  line-height: 1.2;
+                  padding: 0 !important;
+
+                  mat-icon {
+                    font-size: 18px !important;
+                    width: 18px !important;
+                    height: 18px !important;
+                    color: #6b7280;
+                    transition: all 0.2s ease;
+                  }
+
+                  span {
+                    font-size: 13px !important;
+                    font-weight: 600 !important;
+                    color: #374151;
+                    transition: all 0.2s ease;
+                    letter-spacing: 0.025em;
                   }
                 }
               }
@@ -1077,52 +1068,84 @@
                 line-height: 1;
               }
 
-              .pause-filter,
-              .statistics-filter {
-                ::ng-deep {
-                  .mat-button-toggle-group {
-                    border-radius: 8px;
-                    overflow: visible;
-                    border: none;
-                    background: transparent;
-                    box-shadow: none;
-                    gap: 8px;
-                    padding: 4px;
+              ::ng-deep .pause-filter.mat-button-toggle-group {
+                border-radius: 8px;
+                overflow: visible;
+                border: none;
+                background: transparent;
+                box-shadow: none;
+                display: flex;
+                gap: 8px;
+                padding: 4px;
 
-                    .mat-button-toggle {
-                      border-radius: 6px !important;
-                      border: 1px solid #e1e5e9 !important;
-                      background: white !important;
-                      color: #495057 !important;
-                      font-size: 11px !important;
-                      font-weight: 600 !important;
-                      padding: 6px 12px !important;
-                      transition: all 0.2s ease !important;
+                .mat-button-toggle {
+                  border-radius: 6px !important;
+                  border: 2px solid #d1d5db !important;
+                  background: #ffffff !important;
+                  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+                  position: relative;
+                  min-height: 40px !important;
+                  cursor: pointer;
+                  box-shadow:
+                    0 2px 4px rgba(0, 0, 0, 0.08),
+                    0 1px 2px rgba(0, 0, 0, 0.04) !important;
+                  margin: 0 !important;
+                  overflow: hidden;
 
-                      &:hover:not(.mat-button-toggle-checked) {
-                        background: #f8f9fa !important;
-                        border-color: #00acc1 !important;
+                  &:hover {
+                    border-color: #00acc1 !important;
+                    background: #f0fdfa !important;
+                    box-shadow:
+                      0 4px 12px rgba(0, 172, 193, 0.2),
+                      0 2px 4px rgba(0, 0, 0, 0.08) !important;
+                  }
+
+                  &.mat-button-toggle-checked {
+                    background: linear-gradient(135deg, #00acc1 0%, #0097a7 100%) !important;
+                    border-color: #00acc1 !important;
+                    color: white !important;
+                    box-shadow:
+                      inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                      0 4px 16px rgba(0, 172, 193, 0.4),
+                      0 2px 6px rgba(0, 172, 193, 0.2) !important;
+
+                    .mat-button-toggle-label-content {
+                      mat-icon {
+                        display: none !important;
                       }
 
-                      &.mat-button-toggle-checked {
-                        background: linear-gradient(135deg, #00acc1 0%, #0097a7 100%) !important;
+                      span {
                         color: white !important;
-                        border-color: #00acc1 !important;
-                        box-shadow: 0 2px 4px rgba(0, 172, 193, 0.3) !important;
+                        font-weight: 700 !important;
                       }
+                    }
+                  }
 
-                      .mat-button-toggle-label-content {
-                        display: flex;
-                        align-items: center;
-                        gap: 6px;
-                        line-height: 1.2;
+                  .mat-button-toggle-button {
+                    padding: 8px 16px !important;
+                  }
 
-                        mat-icon {
-                          font-size: 14px;
-                          width: 14px;
-                          height: 14px;
-                        }
-                      }
+                  .mat-button-toggle-label-content {
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    line-height: 1.2;
+                    padding: 0 !important;
+
+                    mat-icon {
+                      font-size: 18px !important;
+                      width: 18px !important;
+                      height: 18px !important;
+                      color: #6b7280;
+                      transition: all 0.2s ease;
+                    }
+
+                    span {
+                      font-size: 13px !important;
+                      font-weight: 600 !important;
+                      color: #374151;
+                      transition: all 0.2s ease;
+                      letter-spacing: 0.025em;
                     }
                   }
                 }

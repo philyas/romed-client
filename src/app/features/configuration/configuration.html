@@ -42,6 +42,7 @@
                   <mat-button-toggle-group
                     [value]="statisticsFilter()"
                     (change)="applyStatisticsFilter($event.value)"
+                    [hideSingleSelectionIndicator]="true"
                     class="statistics-filter">
                     <mat-button-toggle value="all" class="filter-toggle">
                       <mat-icon>list</mat-icon>
@@ -299,6 +300,7 @@
                     <mat-button-toggle-group
                       [value]="pauseFilter()"
                       (change)="applyPauseFilter($event.value)"
+                      [hideSingleSelectionIndicator]="true"
                       class="pause-filter">
                       <mat-button-toggle value="all" class="filter-toggle">
                         <mat-icon>list</mat-icon>
