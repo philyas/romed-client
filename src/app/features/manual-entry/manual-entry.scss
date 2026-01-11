@@ -45,77 +45,361 @@
     }
   }
 
-  // Shift Tabs
-  .shift-tabs {
+  // Swiss Army Knife Toolbar - Always Available
+  .swiss-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     margin-bottom: 12px;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1), 0 1px 4px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 102, 204, 0.2);
+    flex-wrap: wrap;
     flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+    transition: box-shadow 0.3s ease;
 
-    ::ng-deep {
-      .mat-mdc-tab-group {
-        .mat-mdc-tab-header {
-          background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-          border-bottom: none;
-          padding: 0 6px;
-        }
+    &:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
 
-        .mat-mdc-tab {
-          min-width: 120px;
-          height: 36px;
+    .toolbar-section {
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
 
-          .mdc-tab {
-            border-radius: 6px;
-            margin: 3px;
-            transition: all 0.3s ease;
+      &.shift-section {
+        ::ng-deep {
+          .mat-mdc-tab-group.compact-tabs {
+            .mat-mdc-tab-header {
+              background: transparent;
+              border-bottom: none;
+              padding: 0;
+              min-height: auto;
+            }
 
-            &:hover {
-              background: rgba(0, 172, 193, 0.05);
+            .mat-mdc-tab {
+              min-width: 80px;
+              height: 38px;
+
+              .mdc-tab {
+                border-radius: 8px;
+                margin: 0 4px;
+                transition: all 0.3s ease;
+                border: 2px solid transparent;
+
+                &:hover {
+                  background: rgba(0, 0, 0, 0.05);
+                }
+              }
+
+              .mat-mdc-tab-label {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                letter-spacing: 0.3px;
+                padding: 0 12px;
+                transition: all 0.3s ease;
+
+                mat-icon {
+                  font-size: 18px;
+                  width: 18px;
+                  height: 18px;
+                  transition: all 0.3s ease;
+                }
+              }
+
+              // Tag Tab Styling
+              &:first-child {
+                .mdc-tab {
+                  &:hover {
+                    background: rgba(255, 152, 0, 0.1);
+                    border-color: rgba(255, 152, 0, 0.3);
+                  }
+                }
+
+                .mat-mdc-tab-label {
+                  color: #ff9800;
+
+                  mat-icon {
+                    color: #ff9800;
+                  }
+                }
+
+                &.mdc-tab--active {
+                  .mdc-tab {
+                    background: linear-gradient(135deg, rgba(255, 152, 0, 0.2) 0%, rgba(245, 124, 0, 0.2) 100%);
+                    border-color: #ff9800;
+                    box-shadow: 0 2px 6px rgba(255, 152, 0, 0.3);
+                  }
+
+                  .mat-mdc-tab-label {
+                    color: #f57c00;
+                    font-weight: 700;
+
+                    mat-icon {
+                      color: #f57c00;
+                    }
+                  }
+                }
+              }
+
+              // Nacht Tab Styling
+              &:last-child {
+                .mdc-tab {
+                  &:hover {
+                    background: rgba(63, 81, 181, 0.1);
+                    border-color: rgba(63, 81, 181, 0.3);
+                  }
+                }
+
+                .mat-mdc-tab-label {
+                  color: #3f51b5;
+
+                  mat-icon {
+                    color: #3f51b5;
+                  }
+                }
+
+                &.mdc-tab--active {
+                  .mdc-tab {
+                    background: linear-gradient(135deg, rgba(63, 81, 181, 0.2) 0%, rgba(40, 53, 147, 0.2) 100%);
+                    border-color: #3f51b5;
+                    box-shadow: 0 2px 6px rgba(63, 81, 181, 0.3);
+                  }
+
+                  .mat-mdc-tab-label {
+                    color: #283593;
+                    font-weight: 700;
+
+                    mat-icon {
+                      color: #283593;
+                    }
+                  }
+                }
+              }
+            }
+
+            .mdc-tab-indicator {
+              display: none;
             }
           }
+        }
+      }
 
-          .mat-mdc-tab-label {
+      &.station-section {
+        flex: 1;
+        min-width: 150px;
+        max-width: 220px;
+
+        .compact-field {
+          width: 100%;
+
+          ::ng-deep {
+            .mat-mdc-form-field-subscript-wrapper {
+              margin-top: 0;
+              display: none;
+            }
+
+            .mat-mdc-text-field-wrapper {
+              padding-bottom: 0;
+            }
+
+            .mat-mdc-form-field-infix {
+              min-height: 38px;
+              padding-top: 10px;
+              padding-bottom: 10px;
+            }
+
+            .mat-mdc-select-trigger,
+            input {
+              font-size: 13px;
+              font-weight: 500;
+            }
+
+            .mat-mdc-form-field-label {
+              font-size: 12px;
+            }
+
+            .mat-mdc-form-field-icon-suffix {
+              padding-right: 8px;
+            }
+          }
+        }
+      }
+
+      &.year-section {
+        min-width: 90px;
+        max-width: 110px;
+
+        .compact-field {
+          width: 100%;
+
+          ::ng-deep {
+            .mat-mdc-form-field-subscript-wrapper {
+              margin-top: 0;
+              display: none;
+            }
+
+            .mat-mdc-text-field-wrapper {
+              padding-bottom: 0;
+            }
+
+            .mat-mdc-form-field-infix {
+              min-height: 38px;
+              padding-top: 10px;
+              padding-bottom: 10px;
+            }
+
+            .mat-mdc-select-trigger {
+              font-size: 13px;
+              font-weight: 600;
+            }
+
+            .mat-mdc-form-field-label {
+              font-size: 12px;
+            }
+
+            .mat-mdc-form-field-icon-suffix {
+              padding-right: 8px;
+            }
+          }
+        }
+      }
+
+      &.month-section {
+        min-width: 130px;
+        max-width: 160px;
+
+        .compact-field {
+          width: 100%;
+
+          ::ng-deep {
+            .mat-mdc-form-field-subscript-wrapper {
+              margin-top: 0;
+              display: none;
+            }
+
+            .mat-mdc-text-field-wrapper {
+              padding-bottom: 0;
+            }
+
+            .mat-mdc-form-field-infix {
+              min-height: 38px;
+              padding-top: 10px;
+              padding-bottom: 10px;
+            }
+
+            .mat-mdc-select-trigger {
+              font-size: 13px;
+              font-weight: 500;
+            }
+
+            .mat-mdc-form-field-label {
+              font-size: 12px;
+            }
+
+            .mat-mdc-form-field-icon-suffix {
+              padding-right: 8px;
+            }
+          }
+        }
+      }
+
+      &.kategorie-section {
+        .kategorie-toggle-compact {
+          display: flex;
+          gap: 6px;
+          background: #f5f5f5;
+          padding: 4px;
+          border-radius: 8px;
+          border: 1px solid #e0e0e0;
+
+          .kategorie-btn-compact {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 6px;
-            font-size: 13px;
+            min-width: 70px;
+            height: 38px;
+            padding: 0 12px;
+            font-size: 12px;
             font-weight: 600;
-            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            border-radius: 6px;
+            border: 2px solid transparent;
+            background: transparent;
+            color: #666;
+            box-shadow: none;
 
             mat-icon {
-              font-size: 18px;
-              width: 18px;
-              height: 18px;
+              font-size: 16px;
+              width: 16px;
+              height: 16px;
+            }
+
+            &:hover:not(.active) {
+              background: rgba(0, 172, 193, 0.08);
+              border-color: rgba(0, 172, 193, 0.3);
+              color: #00acc1;
+              transform: translateY(-1px);
+            }
+
+            &.active {
+              background: linear-gradient(135deg, #00acc1 0%, #0097a7 100%);
+              color: white;
+              border-color: #00acc1;
+              box-shadow: 0 2px 6px rgba(0, 172, 193, 0.4);
+              transform: translateY(-1px);
+
+              mat-icon {
+                color: white;
+              }
+            }
+
+            span {
+              font-weight: 600;
             }
           }
         }
+      }
+    }
 
-        .mdc-tab-indicator {
-          height: 3px;
-          border-radius: 2px 2px 0 0;
+    // Responsive adjustments for toolbar
+    @media (max-width: 1200px) {
+      gap: 8px;
+      padding: 10px 12px;
 
-          .mdc-tab-indicator__content {
-            border-color: #00acc1;
-            border-width: 3px;
-          }
+      .toolbar-section {
+        &.station-section {
+          max-width: 200px;
+        }
+      }
+    }
+
+    @media (max-width: 900px) {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+
+      .toolbar-section {
+        width: 100%;
+
+        &.station-section {
+          max-width: 100%;
         }
 
-        .mdc-tab--active {
-          .mdc-tab {
-            background: rgba(0, 172, 193, 0.1);
-            box-shadow: 0 2px 4px rgba(0, 172, 193, 0.2);
-          }
-
-          .mat-mdc-tab-label {
-            color: #00acc1;
-          }
-        }
-
-        .mdc-tab__ripple {
-          border-radius: 8px;
+        &.year-section,
+        &.month-section {
+          max-width: 100%;
         }
       }
     }
@@ -1327,190 +1611,6 @@
   }
 }
 
-// Shift Indicator (bottom right)
-.shift-indicator {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  z-index: 1000;
-  transition: all 0.4s ease;
-  cursor: pointer;
-  user-select: none;
-
-  &:hover {
-    transform: scale(1.1);
-    
-    .shift-indicator-icon {
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-    }
-  }
-
-  &:active {
-    transform: scale(0.95);
-  }
-
-  .shift-indicator-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    transition: all 0.4s ease;
-    animation: pulse 2s ease-in-out infinite;
-    position: relative;
-
-    mat-icon {
-      font-size: 32px;
-      width: 32px;
-      height: 32px;
-      transition: opacity 0.3s ease, transform 0.3s ease;
-      opacity: 1;
-    }
-
-    .shift-spinner {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      opacity: 1;
-      transition: opacity 0.3s ease;
-    }
-
-    .tag-icon {
-      color: #ff9800;
-      animation: rotate 20s linear infinite;
-    }
-
-    .nacht-icon {
-      color: #3f51b5;
-      animation: float 3s ease-in-out infinite;
-    }
-  }
-
-  // Shifting state - smooth fade transition
-  &.shifting {
-    .shift-indicator-icon {
-      animation: none; // Disable pulse during transition
-      
-      mat-icon {
-        opacity: 0;
-        transform: scale(0.8) rotate(90deg);
-      }
-
-      .shift-spinner {
-        opacity: 1;
-        animation: fadeInSpin 0.3s ease;
-      }
-    }
-
-    .shift-indicator-label {
-      opacity: 0.7;
-      transition: opacity 0.3s ease;
-    }
-  }
-
-  // Fade in animation for new icon after transition
-  &:not(.shifting) {
-    .shift-indicator-icon {
-      mat-icon {
-        animation: fadeInIcon 0.4s ease;
-      }
-    }
-  }
-
-  .shift-indicator-label {
-    padding: 4px 12px;
-    border-radius: 16px;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    transition: all 0.4s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  }
-
-  // Tag styling
-  &.shift-tag {
-    .shift-indicator-icon {
-      background: linear-gradient(135deg, #fff8e1 0%, #ffe0b2 100%);
-      border: 2px solid rgba(255, 152, 0, 0.3);
-    }
-
-    .shift-indicator-label {
-      background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
-      color: white;
-    }
-  }
-
-  // Nacht styling
-  &.shift-nacht {
-    .shift-indicator-icon {
-      background: linear-gradient(135deg, #e8eaf6 0%, #c5cae9 100%);
-      border: 2px solid rgba(63, 81, 181, 0.3);
-    }
-
-    .shift-indicator-label {
-      background: linear-gradient(135deg, #3f51b5 0%, #283593 100%);
-      color: white;
-    }
-  }
-}
-
-// Animations
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-}
-
-@keyframes rotate {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-8px);
-  }
-}
-
-@keyframes fadeInSpin {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.8);
-  }
-  100% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
-}
-
-@keyframes fadeInIcon {
-  0% {
-    opacity: 0;
-    transform: scale(0.8) rotate(-90deg);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) rotate(0deg);
-  }
-}
 
 // Responsive Design
 @media (max-width: 768px) {

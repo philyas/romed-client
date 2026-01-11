@@ -8,42 +8,41 @@
       </div>
     </div>
 
-    <!-- Shift Selection Tabs -->
-    <div class="shift-tabs">
-      <mat-tab-group [selectedIndex]="selectedShift() === 'tag' ? 0 : 1" (selectedTabChange)="onShiftChange($event.index === 0 ? 'tag' : 'nacht')">
-        <mat-tab>
-          <ng-template mat-tab-label>
-            <mat-icon>light_mode</mat-icon>
-            <span>Tag</span>
-          </ng-template>
-        </mat-tab>
-        <mat-tab>
-          <ng-template mat-tab-label>
-            <mat-icon>nightlight</mat-icon>
-            <span>Nacht</span>
-          </ng-template>
-        </mat-tab>
-      </mat-tab-group>
-    </div>
+    <!-- Swiss Army Knife Toolbar - Always Available -->
+    <div class="swiss-toolbar">
+      <!-- Tag/Nacht Toggle -->
+      <div class="toolbar-section shift-section">
+        <mat-tab-group [selectedIndex]="selectedShift() === 'tag' ? 0 : 1" (selectedTabChange)="onShiftChange($event.index === 0 ? 'tag' : 'nacht')" class="compact-tabs">
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <mat-icon>light_mode</mat-icon>
+              <span>Tag</span>
+            </ng-template>
+          </mat-tab>
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <mat-icon>nightlight</mat-icon>
+              <span>Nacht</span>
+            </ng-template>
+          </mat-tab>
+        </mat-tab-group>
+      </div>
 
-  <!-- Station Selection / Creation -->
-  <mat-card class="selection-card">
-    <mat-card-content>
-      <div class="selection-row">
-        <!-- Station Dropdown with Search -->
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Station auswählen</mat-label>
+      <!-- Station Selection -->
+      <div class="toolbar-section station-section">
+        <mat-form-field appearance="outline" class="compact-field">
+          <mat-label>Station</mat-label>
           <input 
             type="text"
             matInput
             [value]="stationInputValue()"
             (input)="onStationInput($event)"
-            [matAutocomplete]="stationAuto"
+            [matAutocomplete]="stationAutoToolbar"
             (focus)="onStationInputFocus()"
             (blur)="onStationInputBlur()"
-            placeholder="Station suchen oder auswählen">
+            placeholder="Station wählen">
           <mat-autocomplete 
-            #stationAuto="matAutocomplete"
+            #stationAutoToolbar="matAutocomplete"
             [displayWith]="displayStation"
             (optionSelected)="onStationChange($event.option.value)">
             <mat-option *ngFor="let station of filteredStations()" [value]="station">
@@ -51,13 +50,12 @@
             </mat-option>
           </mat-autocomplete>
           <mat-icon matSuffix>business</mat-icon>
-          <mat-hint>Stationen aus MiNa/MiTa-Bestände - Tippen Sie zum Suchen</mat-hint>
         </mat-form-field>
       </div>
 
-      <!-- Year and Month Selection -->
-      <div class="selection-row" *ngIf="selectedStation()">
-        <mat-form-field appearance="outline">
+      <!-- Year Selection -->
+      <div class="toolbar-section year-section">
+        <mat-form-field appearance="outline" class="compact-field">
           <mat-label>Jahr</mat-label>
           <mat-select [value]="selectedYear()" (selectionChange)="onYearChange($event.value)">
             <mat-option *ngFor="let year of availableYears()" [value]="year">
@@ -66,8 +64,11 @@
           </mat-select>
           <mat-icon matSuffix>calendar_today</mat-icon>
         </mat-form-field>
+      </div>
 
-        <mat-form-field appearance="outline">
+      <!-- Month Selection -->
+      <div class="toolbar-section month-section">
+        <mat-form-field appearance="outline" class="compact-field">
           <mat-label>Monat</mat-label>
           <mat-select [value]="selectedMonth()" (selectionChange)="onMonthChange($event.value)">
             <mat-option *ngFor="let month of availableMonths" [value]="month.value">
@@ -78,22 +79,26 @@
         </mat-form-field>
       </div>
 
-      <!-- Kategorie Selection (PFK/PHK) -->
-      <div class="kategorie-selection" *ngIf="selectedStation()">
-        <div class="kategorie-label">Kategorie:</div>
-        <div class="kategorie-buttons">
+      <!-- PFK/PHK Toggle -->
+      <div class="toolbar-section kategorie-section">
+        <div class="kategorie-toggle-compact">
           <button 
             mat-raised-button 
             *ngFor="let kat of kategorien"
             [color]="selectedKategorie() === kat.value ? 'primary' : ''"
             [class.active]="selectedKategorie() === kat.value"
             (click)="onKategorieChange(kat.value)"
-            class="kategorie-btn">
+            class="kategorie-btn-compact">
             <mat-icon>{{ kat.value === 'PFK' ? 'verified' : 'support' }}</mat-icon>
-            {{ kat.label }}
+            <span>{{ kat.shortLabel }}</span>
           </button>
         </div>
       </div>
+    </div>
+
+  <!-- Station Selection / Creation -->
+  <mat-card class="selection-card">
+    <mat-card-content>
 
       <!-- Config Snapshot Info -->
       <div class="config-snapshot-info" *ngIf="selectedStation() && (configSnapshot() || loadingConfigSnapshot())">
@@ -719,21 +724,5 @@
     </div>
   </div>
 
-  <!-- Shift Indicator Icon (bottom right) -->
-  <div class="shift-indicator" 
-       [class.shift-tag]="selectedShift() === 'tag'" 
-       [class.shift-nacht]="selectedShift() === 'nacht'"
-       [class.shifting]="isShifting()"
-       (click)="toggleShift()"
-       matTooltip="Zwischen Tag und Nacht wechseln">
-    <div class="shift-indicator-icon">
-      <mat-spinner *ngIf="isShifting()" diameter="24" class="shift-spinner"></mat-spinner>
-      <mat-icon *ngIf="!isShifting() && selectedShift() === 'tag'" class="tag-icon">light_mode</mat-icon>
-      <mat-icon *ngIf="!isShifting() && selectedShift() === 'nacht'" class="nacht-icon">nightlight</mat-icon>
-    </div>
-    <div class="shift-indicator-label">
-      {{ selectedShift() === 'tag' ? 'Tag' : 'Nacht' }}
-    </div>
-  </div>
 </div>
 
