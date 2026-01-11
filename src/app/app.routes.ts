@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, adminGuard } from './features/auth/auth.guard';
+import { authGuard, adminGuard, viewerGuard } from './features/auth/auth.guard';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
@@ -18,22 +18,22 @@ export const routes: Routes = [
   {
     path: 'upload',
     loadComponent: () => import('./features/upload/upload').then(m => m.Upload),
-    canActivate: [authGuard]
+    canActivate: [viewerGuard]
   },
   {
     path: 'dashboard',
     loadComponent: () => import('./features/dashboard/dashboard').then(m => m.Dashboard),
-    canActivate: [authGuard]
+    canActivate: [viewerGuard]
   },
   {
     path: 'manual-entry',
     loadComponent: () => import('./features/manual-entry/manual-entry').then(m => m.ManualEntry),
-    canActivate: [authGuard]
+    canActivate: [viewerGuard]
   },
   {
     path: 'configuration',
     loadComponent: () => import('./features/configuration/configuration').then(m => m.Configuration),
-    canActivate: [authGuard]
+    canActivate: [viewerGuard]
   },
   {
     path: 'admin',

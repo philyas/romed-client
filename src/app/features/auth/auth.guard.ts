@@ -37,3 +37,31 @@ export const adminGuard: CanActivateFn = async (route, state) => {
   }
   return false;
 };
+
+export const viewerGuard: CanActivateFn = async (route, state) => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  // Wait for auth initialization
+  await authService.waitForInitialization();
+
+  if (!authService.isAuthenticated()) {
+    router.navigate(['/login'], { queryParams: { returnUrl: state.url } });
+    return false;
+  }
+
+  // Viewer can only access dashboard
+  // If viewer tries to access other routes, redirect to dashboard
+  if (authService.currentUser()?.role === 'viewer' && state.url !== '/dashboard' && !state.url.startsWith('/dashboard')) {
+    router.navigate(['/dashboard']);
+    return false;
+  }
+
+  // Admin can access all routes
+  if (authService.isAdmin()) {
+    return true;
+  }
+
+  // Viewer can access dashboard
+  return true;
+};

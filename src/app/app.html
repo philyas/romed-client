@@ -9,10 +9,10 @@
         <!-- Desktop Navigation -->
         <div class="nav-links desktop-nav">
           <a [routerLink]="['/dashboard']" routerLinkActive="active" (click)="closeMenu()">Dashboard</a>
-          <a [routerLink]="['/upload']" routerLinkActive="active" (click)="closeMenu()">Upload</a>
-          <a [routerLink]="['/manual-entry']" [class.active]="isManualEntryActive()" (click)="closeMenu()">Arbeitszeiten</a>
-          <a [routerLink]="['/configuration']" routerLinkActive="active" (click)="closeMenu()">Einstellungen</a>
           @if (isAdmin()) {
+            <a [routerLink]="['/upload']" routerLinkActive="active" (click)="closeMenu()">Upload</a>
+            <a [routerLink]="['/manual-entry']" [class.active]="isManualEntryActive()" (click)="closeMenu()">Arbeitszeiten</a>
+            <a [routerLink]="['/configuration']" routerLinkActive="active" (click)="closeMenu()">Einstellungen</a>
             <a [routerLink]="['/admin']" routerLinkActive="active" (click)="closeMenu()">Administration</a>
           }
           
@@ -66,19 +66,19 @@
           <mat-icon>dashboard</mat-icon>
           Dashboard
         </a>
-        <a [routerLink]="['/upload']" routerLinkActive="active" (click)="closeMenu()">
-          <mat-icon>upload_file</mat-icon>
-          Upload
-        </a>
-        <a [routerLink]="['/manual-entry']" [class.active]="isManualEntryActive()" (click)="closeMenu()">
-          <mat-icon>edit</mat-icon>
-          Arbeitszeiten
-        </a>
-        <a [routerLink]="['/configuration']" routerLinkActive="active" (click)="closeMenu()">
-          <mat-icon>settings</mat-icon>
-          Einstellungen
-        </a>
         @if (isAdmin()) {
+          <a [routerLink]="['/upload']" routerLinkActive="active" (click)="closeMenu()">
+            <mat-icon>upload_file</mat-icon>
+            Upload
+          </a>
+          <a [routerLink]="['/manual-entry']" [class.active]="isManualEntryActive()" (click)="closeMenu()">
+            <mat-icon>edit</mat-icon>
+            Arbeitszeiten
+          </a>
+          <a [routerLink]="['/configuration']" routerLinkActive="active" (click)="closeMenu()">
+            <mat-icon>settings</mat-icon>
+            Einstellungen
+          </a>
           <a [routerLink]="['/admin']" routerLinkActive="active" (click)="closeMenu()">
             <mat-icon>admin_panel_settings</mat-icon>
             Administration
