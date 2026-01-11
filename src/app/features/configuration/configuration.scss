@@ -855,9 +855,78 @@
 
         .backup-actions {
           display: flex;
-          gap: 8px;
+          gap: 12px;
           margin-bottom: 16px;
           flex-wrap: wrap;
+
+          ::ng-deep button[mat-raised-button] {
+            border-radius: 6px !important;
+            border: 2px solid transparent !important;
+            background: #ffffff !important;
+            color: #374151 !important;
+            font-weight: 600 !important;
+            font-size: 13px !important;
+            padding: 10px 20px !important;
+            min-height: 44px !important;
+            box-shadow:
+              0 2px 4px rgba(0, 0, 0, 0.08),
+              0 1px 2px rgba(0, 0, 0, 0.04) !important;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+
+            mat-icon {
+              font-size: 18px !important;
+              width: 18px !important;
+              height: 18px !important;
+              color: #6b7280 !important;
+            }
+
+            &:hover:not(:disabled) {
+              border-color: #ff9800 !important;
+              background: #fff8f0 !important;
+              box-shadow:
+                0 4px 12px rgba(255, 152, 0, 0.2),
+                0 2px 4px rgba(0, 0, 0, 0.08) !important;
+              color: #e65100 !important;
+
+              mat-icon {
+                color: #ff9800 !important;
+              }
+            }
+
+            &:active:not(:disabled) {
+              transform: scale(0.98);
+            }
+
+            &[color="primary"] {
+              background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%) !important;
+              border-color: #ff9800 !important;
+              color: white !important;
+              box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                0 4px 16px rgba(255, 152, 0, 0.4),
+                0 2px 6px rgba(255, 152, 0, 0.2) !important;
+
+              mat-icon {
+                color: white !important;
+              }
+
+              &:hover:not(:disabled) {
+                background: linear-gradient(135deg, #f57c00 0%, #ef6c00 100%) !important;
+                box-shadow:
+                  inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                  0 6px 20px rgba(255, 152, 0, 0.5),
+                  0 2px 8px rgba(255, 152, 0, 0.3) !important;
+              }
+            }
+
+            &:disabled {
+              opacity: 0.6 !important;
+              cursor: not-allowed !important;
+            }
+          }
         }
 
         .backups-list {
