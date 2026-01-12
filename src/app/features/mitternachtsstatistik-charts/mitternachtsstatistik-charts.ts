@@ -1021,6 +1021,7 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
 
             const pflegetage = Number(row['Pflegetage']) || 0;
             const verweildauer = Number(row['VD.inkl.']) || 0;
+            // Verwende nur aufgestellte Betten (aus Schema mitteilungen_betten), keine Planbetten als Fallback
             const usedBetten = betten !== null ? betten : 0;
 
             const monthIndex = monthNumber - 1;
@@ -1747,16 +1748,20 @@ export class MitternachtsstatistikCharts implements OnInit, OnChanges {
     }
   }
 
-  private extractYear(upload: { month?: string; jahr?: number }): number | null {
+  private extractYear(upload: { month?: string; jahr?: number; year?: number }): number | null {
+    // Zuerst versuchen, aus month zu extrahieren (Format "MM-YYYY")
     if (upload.month) {
       if (upload.month.includes('-')) {
         const [, yearStr] = upload.month.split('-');
         const parsed = parseInt(yearStr);
         if (!isNaN(parsed)) return parsed;
       }
-      const monthOnlyYear = new Date().getFullYear();
-      return monthOnlyYear;
     }
+    // Dann year prüfen (vom Backend)
+    if (typeof upload.year === 'number') {
+      return upload.year;
+    }
+    // Dann jahr prüfen (alternative Schreibweise)
     if (typeof upload.jahr === 'number') {
       return upload.jahr;
     }
