@@ -578,9 +578,58 @@
         font-size: 20px;
         font-weight: 600;
         margin: 0 0 12px 0;
+        flex-wrap: wrap;
 
         mat-icon {
           color: #0066cc;
+        }
+
+        .snapshot-indicator {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          margin-left: 10px;
+          padding: 4px 10px;
+          background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+          border: 1px solid #2196f3;
+          border-radius: 14px;
+          font-size: 11px;
+          font-weight: 600;
+          color: #1976d2;
+          white-space: nowrap;
+          transition: all 0.2s ease;
+
+          &:hover {
+            background: linear-gradient(135deg, #bbdefb 0%, #90caf9 100%);
+            box-shadow: 0 2px 4px rgba(33, 150, 243, 0.2);
+            transform: translateY(-1px);
+          }
+
+          mat-icon {
+            font-size: 14px;
+            width: 14px;
+            height: 14px;
+            color: #1976d2;
+            flex-shrink: 0;
+          }
+
+          .snapshot-values {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            line-height: 1.2;
+          }
+
+          .snapshot-value {
+            font-weight: 700;
+            color: #1565c0;
+          }
+
+          .snapshot-separator {
+            color: #64b5f6;
+            font-weight: 400;
+            margin: 0 2px;
+          }
         }
       }
 

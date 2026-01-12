@@ -339,6 +339,16 @@
         <mat-card-title>
           <mat-icon>grid_on</mat-icon>
           {{ getMonthName(selectedMonth()) }} {{ selectedYear() }} - {{ selectedStation() }} ({{ selectedKategorie() }})
+          <span *ngIf="configSnapshot() && !configSnapshot()?.isCurrentConfig" class="snapshot-indicator" [matTooltip]="'Snapshot vom ' + (configSnapshot()!.erstellt_am | date:'dd.MM.yyyy HH:mm')">
+            <mat-icon>history</mat-icon>
+            <span class="snapshot-values">
+              <span class="snapshot-value">{{ configSnapshot()!.schicht_stunden_used }}h</span>
+              <span class="snapshot-separator">•</span>
+              <span class="snapshot-value" *ngIf="configSnapshot()!.phk_anteil_base_used !== null">{{ configSnapshot()!.phk_anteil_base_used }}%</span>
+              <span class="snapshot-separator" *ngIf="configSnapshot()!.phk_anteil_base_used !== null">•</span>
+              <span class="snapshot-value">{{ configSnapshot()!.pp_ratio_base_used }} P:P</span>
+            </span>
+          </span>
         </mat-card-title>
       </div>
       
