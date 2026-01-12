@@ -765,6 +765,55 @@ export class Api {
     );
   }
 
+  // OPTIMIERT: Bulk-Endpoint für Stationskonfigurationen
+  getStationConfigsBulk(): Observable<{
+    success: boolean;
+    configs: {
+      [station: string]: {
+        [key: string]: {
+          station: string;
+          kategorie: string;
+          schicht: string;
+          schicht_stunden: number;
+          phk_anteil_base: number | null;
+          pp_ratio_base: number;
+          pausen_aktiviert: boolean;
+          pausen_stunden: number;
+          pausen_minuten: number;
+          fromSnapshot: boolean;
+        };
+      };
+    };
+    globalConfig: {
+      tag: { schicht_stunden: number; phk_anteil_base: number | null; pp_ratio_base: number };
+      nacht: { schicht_stunden: number; phk_anteil_base: number | null; pp_ratio_base: number };
+    };
+  }> {
+    return this.http.get<{
+      success: boolean;
+      configs: {
+        [station: string]: {
+          [key: string]: {
+            station: string;
+            kategorie: string;
+            schicht: string;
+            schicht_stunden: number;
+            phk_anteil_base: number | null;
+            pp_ratio_base: number;
+            pausen_aktiviert: boolean;
+            pausen_stunden: number;
+            pausen_minuten: number;
+            fromSnapshot: boolean;
+          };
+        };
+      };
+      globalConfig: {
+        tag: { schicht_stunden: number; phk_anteil_base: number | null; pp_ratio_base: number };
+        nacht: { schicht_stunden: number; phk_anteil_base: number | null; pp_ratio_base: number };
+      };
+    }>(`${this.baseUrl}/manual-entry/station-configs/bulk`);
+  }
+
   // Recompute API
   recomputeManualEntry(
     station: string, 

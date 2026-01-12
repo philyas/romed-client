@@ -12,6 +12,7 @@ import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -65,6 +66,7 @@ interface StationConfig {
     MatSnackBarModule,
     MatChipsModule,
     MatProgressSpinnerModule,
+    MatProgressBarModule,
     MatTooltipModule,
     MatSlideToggleModule,
     MatButtonToggleModule,
@@ -397,33 +399,131 @@ export class Configuration implements OnInit {
 
   loadStationConfigs() {
     this.loadingStationConfigs.set(true);
-    // Get all stations from both day and night manual entry
+    // OPTIMIERT: Verwende Bulk-Endpoint statt einzelne Calls
     Promise.all([
       firstValueFrom(this.api.getManualEntryStations()),
-      firstValueFrom(this.api.getManualEntryNachtStations())
-    ]).then(([dayStations, nightStations]) => {
+      firstValueFrom(this.api.getManualEntryNachtStations()),
+      firstValueFrom(this.api.getStationConfigsBulk())
+    ]).then(([dayStations, nightStations, bulkConfigs]) => {
       const allStations = new Set<string>([
         ...(dayStations?.stations ?? []),
         ...(nightStations?.stations ?? [])
       ]);
 
-      // Load config for each station and category combination
-      const configPromises: Promise<StationConfig>[] = Array.from(allStations).map(station =>
-        this.loadStationConfig(station)
-      );
+      // Konvertiere Bulk-Response in StationConfig Array
+      const stationConfigs: StationConfig[] = Array.from(allStations).map(station => {
+        const config: StationConfig = {
+          station,
+          tag_pfk: null,
+          nacht_pfk: null,
+          tag_phk: null,
+          nacht_phk: null
+        };
 
-      Promise.all(configPromises).then(stationConfigs => {
-        this.stationConfigs.set(stationConfigs);
-        this.applyFilters(); // Apply filters (search + pause)
-        this.loadingStationConfigs.set(false);
-      }).catch(err => {
-        console.error('Error loading station configs:', err);
-        this.snackBar.open('Fehler beim Laden der Stationskonfigurationen', 'Schließen', { duration: 3000 });
-        this.loadingStationConfigs.set(false);
+        const stationConfigs = bulkConfigs.configs[station] || {};
+        const globalConfig = bulkConfigs.globalConfig;
+
+        // Tag PFK
+        const tagPfkKey = 'PFK-tag';
+        const tagPfkConfig = stationConfigs[tagPfkKey];
+        if (tagPfkConfig) {
+          config.tag_pfk = {
+            schicht_stunden: tagPfkConfig.schicht_stunden,
+            phk_anteil_base: tagPfkConfig.phk_anteil_base,
+            pp_ratio_base: tagPfkConfig.pp_ratio_base,
+            pausen_aktiviert: tagPfkConfig.pausen_aktiviert || false,
+            pausen_stunden: tagPfkConfig.pausen_stunden || 0,
+            pausen_minuten: tagPfkConfig.pausen_minuten || 0
+          };
+        } else if (globalConfig) {
+          config.tag_pfk = {
+            schicht_stunden: globalConfig.tag.schicht_stunden,
+            phk_anteil_base: globalConfig.tag.phk_anteil_base,
+            pp_ratio_base: globalConfig.tag.pp_ratio_base,
+            pausen_aktiviert: false,
+            pausen_stunden: 0,
+            pausen_minuten: 0
+          };
+        }
+
+        // Nacht PFK
+        const nachtPfkKey = 'PFK-nacht';
+        const nachtPfkConfig = stationConfigs[nachtPfkKey];
+        if (nachtPfkConfig) {
+          config.nacht_pfk = {
+            schicht_stunden: nachtPfkConfig.schicht_stunden,
+            phk_anteil_base: nachtPfkConfig.phk_anteil_base,
+            pp_ratio_base: nachtPfkConfig.pp_ratio_base,
+            pausen_aktiviert: nachtPfkConfig.pausen_aktiviert || false,
+            pausen_stunden: nachtPfkConfig.pausen_stunden || 0,
+            pausen_minuten: nachtPfkConfig.pausen_minuten || 0
+          };
+        } else if (globalConfig) {
+          config.nacht_pfk = {
+            schicht_stunden: globalConfig.nacht.schicht_stunden,
+            phk_anteil_base: globalConfig.nacht.phk_anteil_base,
+            pp_ratio_base: globalConfig.nacht.pp_ratio_base,
+            pausen_aktiviert: false,
+            pausen_stunden: 0,
+            pausen_minuten: 0
+          };
+        }
+
+        // Tag PHK
+        const tagPhkKey = 'PHK-tag';
+        const tagPhkConfig = stationConfigs[tagPhkKey];
+        if (tagPhkConfig) {
+          config.tag_phk = {
+            schicht_stunden: tagPhkConfig.schicht_stunden,
+            phk_anteil_base: null,
+            pp_ratio_base: tagPhkConfig.pp_ratio_base,
+            pausen_aktiviert: tagPhkConfig.pausen_aktiviert || false,
+            pausen_stunden: tagPhkConfig.pausen_stunden || 0,
+            pausen_minuten: tagPhkConfig.pausen_minuten || 0
+          };
+        } else if (globalConfig) {
+          config.tag_phk = {
+            schicht_stunden: globalConfig.tag.schicht_stunden,
+            phk_anteil_base: null,
+            pp_ratio_base: globalConfig.tag.pp_ratio_base,
+            pausen_aktiviert: false,
+            pausen_stunden: 0,
+            pausen_minuten: 0
+          };
+        }
+
+        // Nacht PHK
+        const nachtPhkKey = 'PHK-nacht';
+        const nachtPhkConfig = stationConfigs[nachtPhkKey];
+        if (nachtPhkConfig) {
+          config.nacht_phk = {
+            schicht_stunden: nachtPhkConfig.schicht_stunden,
+            phk_anteil_base: null,
+            pp_ratio_base: nachtPhkConfig.pp_ratio_base,
+            pausen_aktiviert: nachtPhkConfig.pausen_aktiviert || false,
+            pausen_stunden: nachtPhkConfig.pausen_stunden || 0,
+            pausen_minuten: nachtPhkConfig.pausen_minuten || 0
+          };
+        } else if (globalConfig) {
+          config.nacht_phk = {
+            schicht_stunden: globalConfig.nacht.schicht_stunden,
+            phk_anteil_base: null,
+            pp_ratio_base: globalConfig.nacht.pp_ratio_base,
+            pausen_aktiviert: false,
+            pausen_stunden: 0,
+            pausen_minuten: 0
+          };
+        }
+
+        return config;
       });
+
+      this.stationConfigs.set(stationConfigs);
+      this.applyFilters(); // Apply filters (search + pause)
+      this.loadingStationConfigs.set(false);
     }).catch(err => {
-      console.error('Error loading stations:', err);
-      this.snackBar.open('Fehler beim Laden der Stationen', 'Schließen', { duration: 3000 });
+      console.error('Error loading station configs:', err);
+      this.snackBar.open('Fehler beim Laden der Stationskonfigurationen', 'Schließen', { duration: 3000 });
       this.loadingStationConfigs.set(false);
     });
   }

@@ -368,27 +368,43 @@
 
       // Content Section
       .content-section {
+        .loading-overlay {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 24px;
+          background: rgba(255, 255, 255, 0.95);
+          border-radius: 8px;
+          z-index: 100;
+          backdrop-filter: blur(2px);
+
+          mat-progress-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            border-radius: 8px 8px 0 0;
+          }
+
+          .loading-spinner {
+            margin-top: 32px;
+          }
+        }
+
         .loading-state {
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          padding: 32px 16px;
+          padding: 48px 16px;
           background: white;
           border-radius: 8px;
           border: 1px solid #e9ecef;
           box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
-
-          .loading-spinner {
-            margin-bottom: 12px;
-          }
-
-          .loading-text {
-            margin: 0;
-            color: #6c757d;
-            font-size: 13px;
-            font-weight: 500;
-          }
         }
 
         .empty-state {
@@ -809,19 +825,32 @@
           }
         }
 
-        .loading-spinner {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 32px;
-          gap: 12px;
+          .loading-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
+            z-index: 100;
+            backdrop-filter: blur(2px);
 
-          p {
-            color: #666;
-            font-size: 13px;
+            mat-progress-bar {
+              position: absolute;
+              top: 0;
+              left: 0;
+              right: 0;
+              width: 100%;
+              border-radius: 8px 8px 0 0;
+            }
+
+            .loading-spinner {
+              margin-top: 32px;
+            }
           }
-        }
 
         .table-container {
           overflow-x: auto;
@@ -1084,19 +1113,32 @@
           }
         }
 
-        .loading-spinner {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 32px;
-          gap: 12px;
+          .loading-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
+            z-index: 100;
+            backdrop-filter: blur(2px);
 
-          p {
-            color: #666;
-            font-size: 13px;
+            mat-progress-bar {
+              position: absolute;
+              top: 0;
+              left: 0;
+              right: 0;
+              width: 100%;
+              border-radius: 8px 8px 0 0;
+            }
+
+            .loading-spinner {
+              margin-top: 32px;
+            }
           }
-        }
 
         .empty-state {
           text-align: center;
@@ -1319,19 +1361,32 @@
           }
         }
 
-        .loading-spinner {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 32px;
-          gap: 12px;
+          .loading-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
+            z-index: 100;
+            backdrop-filter: blur(2px);
 
-          p {
-            color: #666;
-            font-size: 13px;
+            mat-progress-bar {
+              position: absolute;
+              top: 0;
+              left: 0;
+              right: 0;
+              width: 100%;
+              border-radius: 8px 8px 0 0;
+            }
+
+            .loading-spinner {
+              margin-top: 32px;
+            }
           }
-        }
 
         .station-config-list {
           .station-config-item {

@@ -86,11 +86,11 @@
             </div>
 
             <!-- Content Section -->
-            <div class="content-section">
+            <div class="content-section" style="position: relative;">
               <!-- Loading State -->
-              <div class="loading-state" *ngIf="loading()">
-                <mat-spinner diameter="48" class="loading-spinner"></mat-spinner>
-                <p class="loading-text">Kostenstellen werden geladen...</p>
+              <div class="loading-overlay" *ngIf="loading()">
+                <mat-progress-bar mode="indeterminate" color="primary"></mat-progress-bar>
+                <mat-spinner diameter="64" class="loading-spinner"></mat-spinner>
               </div>
 
               <!-- Empty State -->
@@ -263,10 +263,10 @@
             </p>
 
             <!-- Station Config Table -->
-            <div class="station-config-section">
-              <div class="loading-spinner" *ngIf="loadingStationConfigs()">
-                <mat-spinner diameter="40"></mat-spinner>
-                <p>Stationskonfigurationen werden geladen...</p>
+            <div class="station-config-section" style="position: relative;">
+              <div class="loading-overlay" *ngIf="loadingStationConfigs()">
+                <mat-progress-bar mode="indeterminate" color="primary"></mat-progress-bar>
+                <mat-spinner diameter="64" class="loading-spinner"></mat-spinner>
               </div>
 
               <!-- Station Search and Filters -->
@@ -548,9 +548,9 @@
                 <p class="hint">Erstellen Sie ein Backup, um Ihre Datenbank zu sichern</p>
               </div>
 
-              <div class="loading-spinner" *ngIf="loadingBackups()">
-                <mat-spinner diameter="40"></mat-spinner>
-                <p>Backups werden geladen...</p>
+              <div class="loading-overlay" *ngIf="loadingBackups()" style="position: relative;">
+                <mat-progress-bar mode="indeterminate" color="primary"></mat-progress-bar>
+                <mat-spinner diameter="64" class="loading-spinner"></mat-spinner>
               </div>
             </div>
           </div>
