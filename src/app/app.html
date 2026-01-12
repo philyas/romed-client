@@ -45,6 +45,10 @@
                   </div>
                 </div>
                 <mat-divider></mat-divider>
+                <a mat-menu-item routerLink="/user-settings">
+                  <mat-icon>settings</mat-icon>
+                  <span>Benutzereinstellungen</span>
+                </a>
                 <button mat-menu-item (click)="logout()">
                   <mat-icon>logout</mat-icon>
                   <span>Abmelden</span>
@@ -93,6 +97,10 @@
               <span class="user-email">{{ currentUser()?.email }}</span>
             </div>
           </div>
+          <a [routerLink]="['/user-settings']" routerLinkActive="active" (click)="closeMenu()">
+            <mat-icon>settings</mat-icon>
+            Benutzereinstellungen
+          </a>
           <a (click)="logout(); closeMenu()" class="logout-link">
             <mat-icon>logout</mat-icon>
             Abmelden

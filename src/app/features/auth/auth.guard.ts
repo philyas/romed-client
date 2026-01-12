@@ -50,9 +50,11 @@ export const viewerGuard: CanActivateFn = async (route, state) => {
     return false;
   }
 
-  // Viewer can only access dashboard
+  // Viewer can only access dashboard and user-settings
   // If viewer tries to access other routes, redirect to dashboard
-  if (authService.currentUser()?.role === 'viewer' && state.url !== '/dashboard' && !state.url.startsWith('/dashboard')) {
+  const allowedViewerRoutes = ['/dashboard', '/user-settings'];
+  const isAllowedRoute = allowedViewerRoutes.some(route => state.url === route || state.url.startsWith(route + '/'));
+  if (authService.currentUser()?.role === 'viewer' && !isAllowedRoute) {
     router.navigate(['/dashboard']);
     return false;
   }

@@ -65,6 +65,14 @@ export class App {
     this.closeMenu();
   }
 
+  navigateToUserSettings(): void {
+    this.router.navigate(['/user-settings']).then(() => {
+      this.closeMenu();
+    }).catch(err => {
+      console.error('Navigation error:', err);
+    });
+  }
+
   getUserDisplayName(): string {
     const user = this.currentUser();
     if (!user) return '';

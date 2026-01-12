@@ -1,0 +1,129 @@
+<div class="user-settings-container">
+  <div class="user-settings-card">
+    <div class="settings-header">
+      <mat-icon class="header-icon">settings</mat-icon>
+      <h1>Benutzereinstellungen</h1>
+    </div>
+
+    <div class="settings-content">
+      <div class="user-info-section">
+        <div class="info-item">
+          <mat-icon>person</mat-icon>
+          <div class="info-content">
+            <span class="info-label">Name</span>
+            <span class="info-value">{{ currentUser?.firstName }} {{ currentUser?.lastName }}</span>
+          </div>
+        </div>
+        <div class="info-item">
+          <mat-icon>email</mat-icon>
+          <div class="info-content">
+            <span class="info-label">E-Mail</span>
+            <span class="info-value">{{ currentUser?.email }}</span>
+          </div>
+        </div>
+        <div class="info-item">
+          <mat-icon>{{ currentUser?.role === 'admin' ? 'admin_panel_settings' : 'visibility' }}</mat-icon>
+          <div class="info-content">
+            <span class="info-label">Rolle</span>
+            <span class="info-value">{{ currentUser?.role === 'admin' ? 'Administrator' : 'Betrachter' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <div class="password-section">
+        <h2>Passwort ändern</h2>
+        
+        <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="password-form">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Aktuelles Passwort</mat-label>
+            <input
+              matInput
+              [type]="hideOldPassword() ? 'password' : 'text'"
+              formControlName="oldPassword"
+              required>
+            <mat-icon matPrefix>lock</mat-icon>
+            <button
+              mat-icon-button
+              matSuffix
+              (click)="hideOldPassword.set(!hideOldPassword())"
+              type="button">
+              <mat-icon>{{ hideOldPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            @if (passwordForm.get('oldPassword')?.hasError('required') && passwordForm.get('oldPassword')?.touched) {
+              <mat-error>Aktuelles Passwort ist erforderlich</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Neues Passwort</mat-label>
+            <input
+              matInput
+              [type]="hideNewPassword() ? 'password' : 'text'"
+              formControlName="newPassword"
+              required>
+            <mat-icon matPrefix>lock_outline</mat-icon>
+            <button
+              mat-icon-button
+              matSuffix
+              (click)="hideNewPassword.set(!hideNewPassword())"
+              type="button">
+              <mat-icon>{{ hideNewPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            @if (passwordForm.get('newPassword')?.hasError('required') && passwordForm.get('newPassword')?.touched) {
+              <mat-error>Neues Passwort ist erforderlich</mat-error>
+            }
+            @if (passwordForm.get('newPassword')?.hasError('minlength') && passwordForm.get('newPassword')?.touched) {
+              <mat-error>Das Passwort muss mindestens 8 Zeichen lang sein</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Neues Passwort bestätigen</mat-label>
+            <input
+              matInput
+              [type]="hideConfirmPassword() ? 'password' : 'text'"
+              formControlName="confirmPassword"
+              required>
+            <mat-icon matPrefix>lock_outline</mat-icon>
+            <button
+              mat-icon-button
+              matSuffix
+              (click)="hideConfirmPassword.set(!hideConfirmPassword())"
+              type="button">
+              <mat-icon>{{ hideConfirmPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            @if (passwordForm.get('confirmPassword')?.hasError('required') && passwordForm.get('confirmPassword')?.touched) {
+              <mat-error>Passwort-Bestätigung ist erforderlich</mat-error>
+            }
+            @if (passwordForm.hasError('passwordMismatch') && passwordForm.get('confirmPassword')?.touched) {
+              <mat-error>Passwörter stimmen nicht überein</mat-error>
+            }
+          </mat-form-field>
+
+          @if (error()) {
+            <div class="error-message">
+              <mat-icon>error</mat-icon>
+              <span>{{ error() }}</span>
+            </div>
+          }
+
+          <div class="form-actions">
+            <button
+              mat-raised-button
+              color="primary"
+              type="submit"
+              [disabled]="passwordForm.invalid || changingPassword()"
+              class="submit-button">
+              @if (changingPassword()) {
+                <mat-spinner diameter="20" style="display: inline-block; margin-right: 8px;"></mat-spinner>
+              }
+              Passwort ändern
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

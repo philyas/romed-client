@@ -40,5 +40,10 @@ export const routes: Routes = [
     loadComponent: () => import('./features/admin/admin').then(m => m.AdminComponent),
     canActivate: [adminGuard]
   },
+  {
+    path: 'user-settings',
+    loadComponent: () => import('./features/user-settings/user-settings').then(m => m.UserSettingsComponent),
+    canActivate: [viewerGuard]
+  },
   { path: '**', redirectTo: 'dashboard' }
 ];

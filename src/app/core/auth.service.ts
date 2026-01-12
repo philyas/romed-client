@@ -189,6 +189,18 @@ export class AuthService {
     this.router.navigate(['/login']);
   }
 
+  changePassword(oldPassword: string, newPassword: string): Observable<{ success: boolean; message: string }> {
+    return this.http.post<{ success: boolean; message: string }>(`${this.baseUrl}/api/auth/change-password`, {
+      oldPassword,
+      newPassword
+    }).pipe(
+      catchError(error => {
+        console.error('[auth] Change password error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
   getToken(): string | null {
     return this.tokenSignal();
   }
