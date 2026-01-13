@@ -31,6 +31,8 @@ interface StationConfigValues {
   pausen_start: string;
   pausen_ende: string;
   pausen_modus: 'addieren' | 'abziehen';
+  pausen_von_datum?: string | null;
+  pausen_bis_datum?: string | null;
 }
 
 @Component({
@@ -110,6 +112,18 @@ interface StationConfigValues {
                       <mat-radio-button value="addieren">Addieren</mat-radio-button>
                     </mat-radio-group>
                   </div>
+                  <div class="date-range-row">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Von Datum (optional)</mat-label>
+                      <input matInput type="date"
+                             [(ngModel)]="editedConfigs.tag_pfk.pausen_von_datum">
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                      <mat-label>Bis Datum (optional)</mat-label>
+                      <input matInput type="date"
+                             [(ngModel)]="editedConfigs.tag_pfk.pausen_bis_datum">
+                    </mat-form-field>
+                  </div>
                 </div>
               </div>
             </div>
@@ -165,6 +179,18 @@ interface StationConfigValues {
                       <mat-radio-button value="addieren">Addieren</mat-radio-button>
                     </mat-radio-group>
                   </div>
+                  <div class="date-range-row">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Von Datum (optional)</mat-label>
+                      <input matInput type="date"
+                             [(ngModel)]="editedConfigs.nacht_pfk.pausen_von_datum">
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                      <mat-label>Bis Datum (optional)</mat-label>
+                      <input matInput type="date"
+                             [(ngModel)]="editedConfigs.nacht_pfk.pausen_bis_datum">
+                    </mat-form-field>
+                  </div>
                 </div>
               </div>
             </div>
@@ -214,6 +240,18 @@ interface StationConfigValues {
                       <mat-radio-button value="addieren">Addieren</mat-radio-button>
                     </mat-radio-group>
                   </div>
+                  <div class="date-range-row">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Von Datum (optional)</mat-label>
+                      <input matInput type="date"
+                             [(ngModel)]="editedConfigs.tag_phk.pausen_von_datum">
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                      <mat-label>Bis Datum (optional)</mat-label>
+                      <input matInput type="date"
+                             [(ngModel)]="editedConfigs.tag_phk.pausen_bis_datum">
+                    </mat-form-field>
+                  </div>
                 </div>
               </div>
             </div>
@@ -262,6 +300,18 @@ interface StationConfigValues {
                       <mat-radio-button value="abziehen">Abziehen</mat-radio-button>
                       <mat-radio-button value="addieren">Addieren</mat-radio-button>
                     </mat-radio-group>
+                  </div>
+                  <div class="date-range-row">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Von Datum (optional)</mat-label>
+                      <input matInput type="date"
+                             [(ngModel)]="editedConfigs.nacht_phk.pausen_von_datum">
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                      <mat-label>Bis Datum (optional)</mat-label>
+                      <input matInput type="date"
+                             [(ngModel)]="editedConfigs.nacht_phk.pausen_bis_datum">
+                    </mat-form-field>
                   </div>
                 </div>
               </div>
@@ -373,6 +423,13 @@ interface StationConfigValues {
       }
     }
 
+    .date-range-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
     .loading-container {
       display: flex;
       flex-direction: column;
@@ -431,7 +488,9 @@ export class StationConfigEditDialogComponent {
       pausen_aktiviert: false,
       pausen_start: '12:00',
       pausen_ende: '12:30',
-      pausen_modus: 'abziehen'
+      pausen_modus: 'abziehen',
+      pausen_von_datum: null,
+      pausen_bis_datum: null
     };
 
     if (existing) {
@@ -443,7 +502,9 @@ export class StationConfigEditDialogComponent {
         pausen_aktiviert: existing.pausen_aktiviert ?? false,
         pausen_start: existing.pausen_start ?? '12:00',
         pausen_ende: existing.pausen_ende ?? '12:30',
-        pausen_modus: existing.pausen_modus ?? 'abziehen'
+        pausen_modus: existing.pausen_modus ?? 'abziehen',
+        pausen_von_datum: existing.pausen_von_datum ?? null,
+        pausen_bis_datum: existing.pausen_bis_datum ?? null
       };
     }
 
@@ -484,7 +545,15 @@ export class StationConfigEditDialogComponent {
         ['addieren', 'abziehen'].includes(config.pausen_modus)
       );
       
-      return basicValid && pausenValid;
+      // Validate date range: if both dates are set, von_datum must be <= bis_datum
+      let dateRangeValid = true;
+      if (config.pausen_von_datum && config.pausen_bis_datum) {
+        const vonDate = new Date(config.pausen_von_datum);
+        const bisDate = new Date(config.pausen_bis_datum);
+        dateRangeValid = vonDate <= bisDate;
+      }
+      
+      return basicValid && pausenValid && dateRangeValid;
     });
   }
 
@@ -528,7 +597,9 @@ export class StationConfigEditDialogComponent {
       pausen_aktiviert: config.pausen_aktiviert,
       pausen_start: config.pausen_start,
       pausen_ende: config.pausen_ende,
-      pausen_modus: config.pausen_modus
+      pausen_modus: config.pausen_modus,
+      pausen_von_datum: config.pausen_von_datum || null,
+      pausen_bis_datum: config.pausen_bis_datum || null
     };
 
     if (schicht === 'nacht') {

@@ -41,6 +41,8 @@ interface StationConfigValues {
   pausen_ende?: string;
   pausen_modus?: 'addieren' | 'abziehen';
   pausen_dauer_minuten?: number;
+  pausen_von_datum?: string | null;
+  pausen_bis_datum?: string | null;
 }
 
 interface StationConfig {

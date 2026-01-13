@@ -686,6 +686,8 @@ export class Api {
       pausen_ende?: string;
       pausen_modus?: 'addieren' | 'abziehen';
       pausen_dauer_minuten?: number;
+      pausen_von_datum?: string | null;
+      pausen_bis_datum?: string | null;
       fromSnapshot: boolean;
       snapshotMonth?: number;
       snapshotYear?: number;
@@ -705,6 +707,8 @@ export class Api {
       pausen_start?: string;
       pausen_ende?: string;
       pausen_modus?: 'addieren' | 'abziehen';
+      pausen_von_datum?: string | null;
+      pausen_bis_datum?: string | null;
     }
   ): Observable<{ success: boolean; message: string }> {
     return this.http.put<{ success: boolean; message: string }>(
@@ -751,6 +755,8 @@ export class Api {
       pausen_ende?: string;
       pausen_modus?: 'addieren' | 'abziehen';
       pausen_dauer_minuten?: number;
+      pausen_von_datum?: string | null;
+      pausen_bis_datum?: string | null;
       fromSnapshot: boolean;
       snapshotMonth?: number;
       snapshotYear?: number;
@@ -769,6 +775,8 @@ export class Api {
       pausen_start?: string;
       pausen_ende?: string;
       pausen_modus?: 'addieren' | 'abziehen';
+      pausen_von_datum?: string | null;
+      pausen_bis_datum?: string | null;
     }
   ): Observable<{ success: boolean; message: string }> {
     return this.http.put<{ success: boolean; message: string }>(

@@ -157,6 +157,7 @@ interface PflegestufenData {
                           <tr>
                             <th>Altersgruppe</th>
                             <th>Einstufungen absolut</th>
+                            <th>Pflegeminuten</th>
                             <th>Anteil</th>
                           </tr>
                         </thead>
@@ -164,62 +165,219 @@ interface PflegestufenData {
                           <tr>
                             <td class="station-cell">A1</td>
                             <td class="number-cell">{{ getAltersgruppeTotal('A1') }}</td>
+                            <td class="number-cell">{{ getAltersgruppeMinuten('A1') | number:'1.0-0' }}</td>
                             <td class="number-cell">{{ getAltersgruppePercentage('A1') }}%</td>
                           </tr>
                           <tr>
                             <td class="station-cell">A2</td>
                             <td class="number-cell">{{ getAltersgruppeTotal('A2') }}</td>
+                            <td class="number-cell">{{ getAltersgruppeMinuten('A2') | number:'1.0-0' }}</td>
                             <td class="number-cell">{{ getAltersgruppePercentage('A2') }}%</td>
                           </tr>
                           <tr>
                             <td class="station-cell">A3</td>
                             <td class="number-cell">{{ getAltersgruppeTotal('A3') }}</td>
+                            <td class="number-cell">{{ getAltersgruppeMinuten('A3') | number:'1.0-0' }}</td>
                             <td class="number-cell">{{ getAltersgruppePercentage('A3') }}%</td>
                           </tr>
                           <tr>
                             <td class="station-cell">A4</td>
                             <td class="number-cell">{{ getAltersgruppeTotal('A4') }}</td>
+                            <td class="number-cell">{{ getAltersgruppeMinuten('A4') | number:'1.0-0' }}</td>
                             <td class="number-cell">{{ getAltersgruppePercentage('A4') }}%</td>
                           </tr>
                           <tr>
                             <td class="station-cell">ohne Einstufung</td>
                             <td class="number-cell">{{ getAltersgruppeTotal('ohne') }}</td>
+                            <td class="number-cell">{{ getAltersgruppeMinuten('ohne') | number:'1.0-0' }}</td>
                             <td class="number-cell">{{ getAltersgruppePercentage('ohne') }}%</td>
                           </tr>
                           <tr>
                             <td class="station-cell">KA1</td>
                             <td class="number-cell">{{ getAltersgruppeTotal('KA1') }}</td>
+                            <td class="number-cell">{{ getAltersgruppeMinuten('KA1') | number:'1.0-0' }}</td>
                             <td class="number-cell">{{ getAltersgruppePercentage('KA1') }}%</td>
                           </tr>
                           <tr>
                             <td class="station-cell">KA2</td>
                             <td class="number-cell">{{ getAltersgruppeTotal('KA2') }}</td>
+                            <td class="number-cell">{{ getAltersgruppeMinuten('KA2') | number:'1.0-0' }}</td>
                             <td class="number-cell">{{ getAltersgruppePercentage('KA2') }}%</td>
                           </tr>
                           <tr>
                             <td class="station-cell">KA3</td>
                             <td class="number-cell">{{ getAltersgruppeTotal('KA3') }}</td>
+                            <td class="number-cell">{{ getAltersgruppeMinuten('KA3') | number:'1.0-0' }}</td>
                             <td class="number-cell">{{ getAltersgruppePercentage('KA3') }}%</td>
                           </tr>
                           <tr>
                             <td class="station-cell">KA4</td>
                             <td class="number-cell">{{ getAltersgruppeTotal('KA4') }}</td>
+                            <td class="number-cell">{{ getAltersgruppeMinuten('KA4') | number:'1.0-0' }}</td>
                             <td class="number-cell">{{ getAltersgruppePercentage('KA4') }}%</td>
                           </tr>
                           <tr>
                             <td class="station-cell">PICU</td>
                             <td class="number-cell">{{ getAltersgruppeTotal('PICU') }}</td>
+                            <td class="number-cell">{{ getAltersgruppeMinuten('PICU') | number:'1.0-0' }}</td>
                             <td class="number-cell">{{ getAltersgruppePercentage('PICU') }}%</td>
                           </tr>
                           <tr>
                             <td class="station-cell">NICU</td>
                             <td class="number-cell">{{ getAltersgruppeTotal('NICU') }}</td>
+                            <td class="number-cell">{{ getAltersgruppeMinuten('NICU') | number:'1.0-0' }}</td>
                             <td class="number-cell">{{ getAltersgruppePercentage('NICU') }}%</td>
                           </tr>
                           <tr class="total-row">
                             <td><strong>Gesamt</strong></td>
                             <td class="number-cell"><strong>{{ getTotalEinstufungenForAltersgruppen() }}</strong></td>
+                            <td class="number-cell"><strong>{{ getTotalMinutenForAltersgruppen() | number:'1.0-0' }}</strong></td>
                             <td class="number-cell"><strong>100%</strong></td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pflegeminuten Chart -->
+          <div class="flip-card full-width" [class.flipped]="flippedCards()['pflegeminuten']" (click)="toggleFlip('pflegeminuten')">
+            <div class="flip-card-inner">
+              <div class="flip-card-front">
+                <mat-card class="metric-card">
+                  <mat-card-header class="metric-header pflegebedarf-header">
+                    <mat-card-title>
+                      <mat-icon>access_time</mat-icon>
+                      Pflegeminuten nach Altersgruppen
+                      <span class="flip-hint-text">Klicken zum Umdrehen</span>
+                      <mat-icon class="flip-icon">flip</mat-icon>
+                    </mat-card-title>
+                    <mat-card-subtitle>{{ selectedStation() === 'Alle' ? 'Alle Stationen' : selectedStation() }} - {{ selectedStandort() }} ({{ selectedYear() }})</mat-card-subtitle>
+                  </mat-card-header>
+                  <mat-card-content class="chart-content">
+                    <div class="chart-container">
+                      <div class="chart-loading-overlay" *ngIf="chartLoading()">
+                        <div class="loading-bar"></div>
+                        <p>Daten werden geladen…</p>
+                      </div>
+                      <canvas baseChart
+                        [data]="pflegeminutenChartData()"
+                        [options]="pflegeminutenChartOptions"
+                        [type]="'bar'">
+                      </canvas>
+                    </div>
+                    <div class="chart-info">
+                      <mat-chip-set>
+                        <mat-chip class="info-chip a1-chip">A1: {{ getAltersgruppeMinuten('A1') | number:'1.0-0' }} Min</mat-chip>
+                        <mat-chip class="info-chip a2-chip">A2: {{ getAltersgruppeMinuten('A2') | number:'1.0-0' }} Min</mat-chip>
+                        <mat-chip class="info-chip a3-chip">A3: {{ getAltersgruppeMinuten('A3') | number:'1.0-0' }} Min</mat-chip>
+                        <mat-chip class="info-chip a4-chip">A4: {{ getAltersgruppeMinuten('A4') | number:'1.0-0' }} Min</mat-chip>
+                        <mat-chip class="info-chip ka1-chip">KA1: {{ getAltersgruppeMinuten('KA1') | number:'1.0-0' }} Min</mat-chip>
+                        <mat-chip class="info-chip ka2-chip">KA2: {{ getAltersgruppeMinuten('KA2') | number:'1.0-0' }} Min</mat-chip>
+                        <mat-chip class="info-chip ka3-chip">KA3: {{ getAltersgruppeMinuten('KA3') | number:'1.0-0' }} Min</mat-chip>
+                        <mat-chip class="info-chip ka4-chip">KA4: {{ getAltersgruppeMinuten('KA4') | number:'1.0-0' }} Min</mat-chip>
+                        <mat-chip class="info-chip picu-chip">PICU: {{ getAltersgruppeMinuten('PICU') | number:'1.0-0' }} Min</mat-chip>
+                        <mat-chip class="info-chip nicu-chip">NICU: {{ getAltersgruppeMinuten('NICU') | number:'1.0-0' }} Min</mat-chip>
+                        <mat-chip class="info-chip ohne-chip">ohne: {{ getAltersgruppeMinuten('ohne') | number:'1.0-0' }} Min</mat-chip>
+                      </mat-chip-set>
+                    </div>
+                  </mat-card-content>
+                </mat-card>
+              </div>
+              <div class="flip-card-back">
+                <mat-card class="metric-card">
+                  <mat-card-header class="metric-header pflegebedarf-header">
+                    <mat-card-title>
+                      Pflegeminuten Details
+                      <mat-icon class="flip-icon">flip</mat-icon>
+                    </mat-card-title>
+                  </mat-card-header>
+                  <mat-card-content class="data-content">
+                    <div class="data-table-container">
+                      <table class="data-table">
+                        <thead>
+                          <tr>
+                            <th>Altersgruppe</th>
+                            <th>Pflegeminuten</th>
+                            <th>Anteil</th>
+                            <th>Ø Minuten/Einstufung</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td class="station-cell">A1</td>
+                            <td class="number-cell">{{ getAltersgruppeMinuten('A1') | number:'1.0-0' }}</td>
+                            <td class="number-cell">{{ getAltersgruppeMinutenPercentage('A1') }}%</td>
+                            <td class="number-cell">{{ getAltersgruppeDurchschnittMinuten('A1') | number:'1.0-1' }}</td>
+                          </tr>
+                          <tr>
+                            <td class="station-cell">A2</td>
+                            <td class="number-cell">{{ getAltersgruppeMinuten('A2') | number:'1.0-0' }}</td>
+                            <td class="number-cell">{{ getAltersgruppeMinutenPercentage('A2') }}%</td>
+                            <td class="number-cell">{{ getAltersgruppeDurchschnittMinuten('A2') | number:'1.0-1' }}</td>
+                          </tr>
+                          <tr>
+                            <td class="station-cell">A3</td>
+                            <td class="number-cell">{{ getAltersgruppeMinuten('A3') | number:'1.0-0' }}</td>
+                            <td class="number-cell">{{ getAltersgruppeMinutenPercentage('A3') }}%</td>
+                            <td class="number-cell">{{ getAltersgruppeDurchschnittMinuten('A3') | number:'1.0-1' }}</td>
+                          </tr>
+                          <tr>
+                            <td class="station-cell">A4</td>
+                            <td class="number-cell">{{ getAltersgruppeMinuten('A4') | number:'1.0-0' }}</td>
+                            <td class="number-cell">{{ getAltersgruppeMinutenPercentage('A4') }}%</td>
+                            <td class="number-cell">{{ getAltersgruppeDurchschnittMinuten('A4') | number:'1.0-1' }}</td>
+                          </tr>
+                          <tr>
+                            <td class="station-cell">ohne Einstufung</td>
+                            <td class="number-cell">{{ getAltersgruppeMinuten('ohne') | number:'1.0-0' }}</td>
+                            <td class="number-cell">{{ getAltersgruppeMinutenPercentage('ohne') }}%</td>
+                            <td class="number-cell">{{ getAltersgruppeDurchschnittMinuten('ohne') | number:'1.0-1' }}</td>
+                          </tr>
+                          <tr>
+                            <td class="station-cell">KA1</td>
+                            <td class="number-cell">{{ getAltersgruppeMinuten('KA1') | number:'1.0-0' }}</td>
+                            <td class="number-cell">{{ getAltersgruppeMinutenPercentage('KA1') }}%</td>
+                            <td class="number-cell">{{ getAltersgruppeDurchschnittMinuten('KA1') | number:'1.0-1' }}</td>
+                          </tr>
+                          <tr>
+                            <td class="station-cell">KA2</td>
+                            <td class="number-cell">{{ getAltersgruppeMinuten('KA2') | number:'1.0-0' }}</td>
+                            <td class="number-cell">{{ getAltersgruppeMinutenPercentage('KA2') }}%</td>
+                            <td class="number-cell">{{ getAltersgruppeDurchschnittMinuten('KA2') | number:'1.0-1' }}</td>
+                          </tr>
+                          <tr>
+                            <td class="station-cell">KA3</td>
+                            <td class="number-cell">{{ getAltersgruppeMinuten('KA3') | number:'1.0-0' }}</td>
+                            <td class="number-cell">{{ getAltersgruppeMinutenPercentage('KA3') }}%</td>
+                            <td class="number-cell">{{ getAltersgruppeDurchschnittMinuten('KA3') | number:'1.0-1' }}</td>
+                          </tr>
+                          <tr>
+                            <td class="station-cell">KA4</td>
+                            <td class="number-cell">{{ getAltersgruppeMinuten('KA4') | number:'1.0-0' }}</td>
+                            <td class="number-cell">{{ getAltersgruppeMinutenPercentage('KA4') }}%</td>
+                            <td class="number-cell">{{ getAltersgruppeDurchschnittMinuten('KA4') | number:'1.0-1' }}</td>
+                          </tr>
+                          <tr>
+                            <td class="station-cell">PICU</td>
+                            <td class="number-cell">{{ getAltersgruppeMinuten('PICU') | number:'1.0-0' }}</td>
+                            <td class="number-cell">{{ getAltersgruppeMinutenPercentage('PICU') }}%</td>
+                            <td class="number-cell">{{ getAltersgruppeDurchschnittMinuten('PICU') | number:'1.0-1' }}</td>
+                          </tr>
+                          <tr>
+                            <td class="station-cell">NICU</td>
+                            <td class="number-cell">{{ getAltersgruppeMinuten('NICU') | number:'1.0-0' }}</td>
+                            <td class="number-cell">{{ getAltersgruppeMinutenPercentage('NICU') }}%</td>
+                            <td class="number-cell">{{ getAltersgruppeDurchschnittMinuten('NICU') | number:'1.0-1' }}</td>
+                          </tr>
+                          <tr class="total-row">
+                            <td><strong>Gesamt</strong></td>
+                            <td class="number-cell"><strong>{{ getTotalMinutenForAltersgruppen() | number:'1.0-0' }}</strong></td>
+                            <td class="number-cell"><strong>100%</strong></td>
+                            <td class="number-cell"><strong>{{ getGesamtDurchschnittMinuten() | number:'1.0-1' }}</strong></td>
                           </tr>
                         </tbody>
                       </table>
@@ -267,7 +425,7 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
   });
 
   altersgruppenChartData = computed<ChartData<'bar'>>(() => {
-    const allMonthsData = this.pflegestufenData().filter(d =>
+    const allMonthsData = this.filterByYear(this.pflegestufenData()).filter(d =>
       d.Standort === this.selectedStandort() &&
       d.Kategorie !== 'Gesamt' &&
       (this.selectedStation() === 'Alle' || d.Station === this.selectedStation())
@@ -424,8 +582,167 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
   };
   private readonly chartReadyEffect = effect(() => {
     this.altersgruppenChartData();
+    this.pflegeminutenChartData();
     queueMicrotask(() => this.chartLoading.set(false));
   }, { allowSignalWrites: true });
+
+  pflegeminutenChartData = computed<ChartData<'bar'>>(() => {
+    const allMonthsData = this.filterByYear(this.pflegestufenData()).filter(d =>
+      d.Standort === this.selectedStandort() &&
+      d.Kategorie !== 'Gesamt' &&
+      (this.selectedStation() === 'Alle' || d.Station === this.selectedStation())
+    );
+
+    const monthData: Record<number, { A1: number; A2: number; A3: number; A4: number; KA1: number; KA2: number; KA3: number; KA4: number; PICU: number; NICU: number; ohne: number }> = {};
+    for (let i = 1; i <= 12; i++) {
+      monthData[i] = { A1: 0, A2: 0, A3: 0, A4: 0, KA1: 0, KA2: 0, KA3: 0, KA4: 0, PICU: 0, NICU: 0, ohne: 0 };
+    }
+
+    allMonthsData.forEach(row => {
+      const monat = row.Monat;
+      const kategorie = row.Kategorie;
+      if (!kategorie || !monat || monat < 1 || monat > 12) return;
+
+      const kategorieUpper = kategorie.toUpperCase();
+      const minuten = this.toNumber(row['Pfl.bedarf Minuten']);
+      if (kategorie.startsWith('A1')) monthData[monat].A1 += minuten;
+      else if (kategorie.startsWith('A2')) monthData[monat].A2 += minuten;
+      else if (kategorie.startsWith('A3')) monthData[monat].A3 += minuten;
+      else if (kategorie.startsWith('A4')) monthData[monat].A4 += minuten;
+      else if (kategorie.startsWith('KA1')) monthData[monat].KA1 += minuten;
+      else if (kategorie.startsWith('KA2')) monthData[monat].KA2 += minuten;
+      else if (kategorie.startsWith('KA3')) monthData[monat].KA3 += minuten;
+      else if (kategorie.startsWith('KA4')) monthData[monat].KA4 += minuten;
+      else if (kategorieUpper.includes('PICU')) monthData[monat].PICU += minuten;
+      else if (kategorieUpper.includes('NICU')) monthData[monat].NICU += minuten;
+      else if (kategorie.toLowerCase().includes('ohne einstufung')) monthData[monat].ohne += minuten;
+    });
+
+    const months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+    const labels = months.map(m => this.getMonthName(m));
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'A1',
+          data: months.map(m => monthData[m].A1),
+          backgroundColor: 'rgba(33, 150, 243, 0.7)',
+          borderColor: 'rgba(33, 150, 243, 1)',
+          borderWidth: 2
+        },
+        {
+          label: 'A2',
+          data: months.map(m => monthData[m].A2),
+          backgroundColor: 'rgba(76, 175, 80, 0.7)',
+          borderColor: 'rgba(76, 175, 80, 1)',
+          borderWidth: 2
+        },
+        {
+          label: 'A3',
+          data: months.map(m => monthData[m].A3),
+          backgroundColor: 'rgba(255, 152, 0, 0.7)',
+          borderColor: 'rgba(255, 152, 0, 1)',
+          borderWidth: 2
+        },
+        {
+          label: 'A4',
+          data: months.map(m => monthData[m].A4),
+          backgroundColor: 'rgba(156, 39, 176, 0.7)',
+          borderColor: 'rgba(156, 39, 176, 1)',
+          borderWidth: 2
+        },
+        {
+          label: 'ohne Einstufung',
+          data: months.map(m => monthData[m].ohne),
+          backgroundColor: 'rgba(244, 67, 54, 0.7)',
+          borderColor: 'rgba(244, 67, 54, 1)',
+          borderWidth: 2
+        },
+        {
+          label: 'KA1',
+          data: months.map(m => monthData[m].KA1),
+          backgroundColor: 'rgba(0, 188, 212, 0.7)',
+          borderColor: 'rgba(0, 188, 212, 1)',
+          borderWidth: 2
+        },
+        {
+          label: 'KA2',
+          data: months.map(m => monthData[m].KA2),
+          backgroundColor: 'rgba(233, 30, 99, 0.7)',
+          borderColor: 'rgba(233, 30, 99, 1)',
+          borderWidth: 2
+        },
+        {
+          label: 'KA3',
+          data: months.map(m => monthData[m].KA3),
+          backgroundColor: 'rgba(255, 235, 59, 0.7)',
+          borderColor: 'rgba(255, 235, 59, 1)',
+          borderWidth: 2
+        },
+        {
+          label: 'KA4',
+          data: months.map(m => monthData[m].KA4),
+          backgroundColor: 'rgba(141, 110, 99, 0.7)',
+          borderColor: 'rgba(141, 110, 99, 1)',
+          borderWidth: 2
+        },
+        {
+          label: 'PICU',
+          data: months.map(m => monthData[m].PICU),
+          backgroundColor: 'rgba(63, 81, 181, 0.7)',
+          borderColor: 'rgba(63, 81, 181, 1)',
+          borderWidth: 2
+        },
+        {
+          label: 'NICU',
+          data: months.map(m => monthData[m].NICU),
+          backgroundColor: 'rgba(205, 220, 57, 0.7)',
+          borderColor: 'rgba(205, 220, 57, 1)',
+          borderWidth: 2
+        }
+      ]
+    };
+  });
+  readonly pflegeminutenChartOptions: ChartConfiguration['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top',
+        labels: {
+          usePointStyle: true,
+          padding: 15
+        }
+      },
+      title: { display: false },
+      tooltip: {
+        mode: 'index',
+        intersect: false,
+        callbacks: {
+          label: (context) => {
+            return `${context.dataset.label}: ${(context.parsed.y ?? 0).toLocaleString('de-DE')} Min`;
+          }
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Pflegeminuten'
+        }
+      },
+      x: {
+        title: {
+          display: true,
+          text: 'Monat'
+        }
+      }
+    }
+  };
   comparisonSeries = computed<ComparisonSeries[]>(() => {
     const standort = this.selectedStandort();
     if (!standort) {
@@ -664,8 +981,8 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
   }
 
   getAltersgruppeTotal(gruppe: string): number {
-    // Get data for ALL months (not filtered by selectedMonth)
-    const allMonthsData = this.pflegestufenData().filter(d => 
+    // Get data for selected year
+    const allMonthsData = this.filterByYear(this.pflegestufenData()).filter(d => 
       d.Standort === this.selectedStandort() &&
       d.Kategorie !== 'Gesamt' &&
       (this.selectedStation() === 'Alle' || d.Station === this.selectedStation())
@@ -702,14 +1019,78 @@ export class PflegestufenstatistikCharts implements OnInit, OnChanges {
   }
 
   getTotalEinstufungenForAltersgruppen(): number {
-    // Get data for ALL months (not filtered by selectedMonth)
-    const allMonthsData = this.pflegestufenData().filter(d => 
+    // Get data for selected year
+    const allMonthsData = this.filterByYear(this.pflegestufenData()).filter(d => 
       d.Standort === this.selectedStandort() &&
       d.Kategorie !== 'Gesamt' &&
       (this.selectedStation() === 'Alle' || d.Station === this.selectedStation())
     );
     
     return allMonthsData.reduce((sum, d) => sum + d['Einstufungen absolut'], 0);
+  }
+
+  getAltersgruppeMinuten(gruppe: string): number {
+    // Get data for selected year
+    const allMonthsData = this.filterByYear(this.pflegestufenData()).filter(d => 
+      d.Standort === this.selectedStandort() &&
+      d.Kategorie !== 'Gesamt' &&
+      (this.selectedStation() === 'Alle' || d.Station === this.selectedStation())
+    );
+    
+    let total = 0;
+    
+    allMonthsData.forEach(row => {
+      const kategorie = row.Kategorie;
+      if (!kategorie) return;
+      
+      const kategorieUpper = kategorie.toUpperCase();
+      const minuten = this.toNumber(row['Pfl.bedarf Minuten']);
+      if (gruppe === 'A1' && kategorie.startsWith('A1')) total += minuten;
+      else if (gruppe === 'A2' && kategorie.startsWith('A2')) total += minuten;
+      else if (gruppe === 'A3' && kategorie.startsWith('A3')) total += minuten;
+      else if (gruppe === 'A4' && kategorie.startsWith('A4')) total += minuten;
+      else if (gruppe === 'KA1' && kategorie.startsWith('KA1')) total += minuten;
+      else if (gruppe === 'KA2' && kategorie.startsWith('KA2')) total += minuten;
+      else if (gruppe === 'KA3' && kategorie.startsWith('KA3')) total += minuten;
+      else if (gruppe === 'KA4' && kategorie.startsWith('KA4')) total += minuten;
+      else if (gruppe === 'PICU' && kategorieUpper.includes('PICU')) total += minuten;
+      else if (gruppe === 'NICU' && kategorieUpper.includes('NICU')) total += minuten;
+      else if (gruppe === 'ohne' && kategorie.toLowerCase().includes('ohne einstufung')) total += minuten;
+    });
+    
+    return total;
+  }
+
+  getTotalMinutenForAltersgruppen(): number {
+    // Get data for selected year
+    const allMonthsData = this.filterByYear(this.pflegestufenData()).filter(d => 
+      d.Standort === this.selectedStandort() &&
+      d.Kategorie !== 'Gesamt' &&
+      (this.selectedStation() === 'Alle' || d.Station === this.selectedStation())
+    );
+    
+    return allMonthsData.reduce((sum, d) => sum + this.toNumber(d['Pfl.bedarf Minuten']), 0);
+  }
+
+  getAltersgruppeMinutenPercentage(gruppe: string): string {
+    const total = this.getTotalMinutenForAltersgruppen();
+    if (total === 0) return '0.0';
+    const gruppeTotal = this.getAltersgruppeMinuten(gruppe);
+    return ((gruppeTotal / total) * 100).toFixed(1);
+  }
+
+  getAltersgruppeDurchschnittMinuten(gruppe: string): number {
+    const minuten = this.getAltersgruppeMinuten(gruppe);
+    const einstufungen = this.getAltersgruppeTotal(gruppe);
+    if (einstufungen === 0) return 0;
+    return minuten / einstufungen;
+  }
+
+  getGesamtDurchschnittMinuten(): number {
+    const totalMinuten = this.getTotalMinutenForAltersgruppen();
+    const totalEinstufungen = this.getTotalEinstufungenForAltersgruppen();
+    if (totalEinstufungen === 0) return 0;
+    return totalMinuten / totalEinstufungen;
   }
 
   private prepareDataInfoItems(uploads: UploadRecord[]) {
