@@ -10,6 +10,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatSelectModule } from '@angular/material/select';
+import { MatRadioModule } from '@angular/material/radio';
 import { firstValueFrom } from 'rxjs';
 import { Api } from '../../core/api';
 
@@ -26,8 +28,9 @@ interface StationConfigValues {
   phk_anteil_base: number | null;
   pp_ratio_base: number;
   pausen_aktiviert: boolean;
-  pausen_stunden: number;
-  pausen_minuten: number;
+  pausen_start: string;
+  pausen_ende: string;
+  pausen_modus: 'addieren' | 'abziehen';
 }
 
 @Component({
@@ -45,6 +48,8 @@ interface StationConfigValues {
     MatProgressSpinnerModule,
     MatSnackBarModule,
     MatSlideToggleModule,
+    MatSelectModule,
+    MatRadioModule,
   ],
   template: `
     <h2 mat-dialog-title>
@@ -83,20 +88,28 @@ interface StationConfigValues {
                   Pausenzeiten aktivieren
                 </mat-slide-toggle>
                 <div class="pausen-fields" *ngIf="editedConfigs.tag_pfk.pausen_aktiviert">
-                  <mat-form-field appearance="outline">
-                    <mat-label>Pausen Stunden</mat-label>
-                    <input matInput type="number" step="1"
-                           [(ngModel)]="editedConfigs.tag_pfk.pausen_stunden"
-                           title="Kann negativ sein (z.B. -0:30 = 30 Min. Abzug)">
-                    <span matSuffix>h</span>
-                  </mat-form-field>
-                  <mat-form-field appearance="outline">
-                    <mat-label>Pausen Minuten</mat-label>
-                    <input matInput type="number" step="1" min="-59" max="59"
-                           [(ngModel)]="editedConfigs.tag_pfk.pausen_minuten"
-                           title="Kann negativ sein (z.B. -30 = 30 Min. Abzug)">
-                    <span matSuffix>min</span>
-                  </mat-form-field>
+                  <div class="time-row">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Pause Start</mat-label>
+                      <input matInput type="time"
+                             [(ngModel)]="editedConfigs.tag_pfk.pausen_start">
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                      <mat-label>Pause Ende</mat-label>
+                      <input matInput type="time"
+                             [(ngModel)]="editedConfigs.tag_pfk.pausen_ende">
+                    </mat-form-field>
+                  </div>
+                  <div class="pause-duration">
+                    = {{ calculatePauseDuration(editedConfigs.tag_pfk.pausen_start, editedConfigs.tag_pfk.pausen_ende) }} Minuten
+                  </div>
+                  <div class="modus-row">
+                    <label class="modus-label">Modus:</label>
+                    <mat-radio-group [(ngModel)]="editedConfigs.tag_pfk.pausen_modus">
+                      <mat-radio-button value="abziehen">Abziehen</mat-radio-button>
+                      <mat-radio-button value="addieren">Addieren</mat-radio-button>
+                    </mat-radio-group>
+                  </div>
                 </div>
               </div>
             </div>
@@ -130,20 +143,28 @@ interface StationConfigValues {
                   Pausenzeiten aktivieren
                 </mat-slide-toggle>
                 <div class="pausen-fields" *ngIf="editedConfigs.nacht_pfk.pausen_aktiviert">
-                  <mat-form-field appearance="outline">
-                    <mat-label>Pausen Stunden</mat-label>
-                    <input matInput type="number" step="1"
-                           [(ngModel)]="editedConfigs.nacht_pfk.pausen_stunden"
-                           title="Kann negativ sein (z.B. -0:30 = 30 Min. Abzug)">
-                    <span matSuffix>h</span>
-                  </mat-form-field>
-                  <mat-form-field appearance="outline">
-                    <mat-label>Pausen Minuten</mat-label>
-                    <input matInput type="number" step="1" min="-59" max="59"
-                           [(ngModel)]="editedConfigs.nacht_pfk.pausen_minuten"
-                           title="Kann negativ sein (z.B. -30 = 30 Min. Abzug)">
-                    <span matSuffix>min</span>
-                  </mat-form-field>
+                  <div class="time-row">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Pause Start</mat-label>
+                      <input matInput type="time"
+                             [(ngModel)]="editedConfigs.nacht_pfk.pausen_start">
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                      <mat-label>Pause Ende</mat-label>
+                      <input matInput type="time"
+                             [(ngModel)]="editedConfigs.nacht_pfk.pausen_ende">
+                    </mat-form-field>
+                  </div>
+                  <div class="pause-duration">
+                    = {{ calculatePauseDuration(editedConfigs.nacht_pfk.pausen_start, editedConfigs.nacht_pfk.pausen_ende) }} Minuten
+                  </div>
+                  <div class="modus-row">
+                    <label class="modus-label">Modus:</label>
+                    <mat-radio-group [(ngModel)]="editedConfigs.nacht_pfk.pausen_modus">
+                      <mat-radio-button value="abziehen">Abziehen</mat-radio-button>
+                      <mat-radio-button value="addieren">Addieren</mat-radio-button>
+                    </mat-radio-group>
+                  </div>
                 </div>
               </div>
             </div>
@@ -171,20 +192,28 @@ interface StationConfigValues {
                   Pausenzeiten aktivieren
                 </mat-slide-toggle>
                 <div class="pausen-fields" *ngIf="editedConfigs.tag_phk.pausen_aktiviert">
-                  <mat-form-field appearance="outline">
-                    <mat-label>Pausen Stunden</mat-label>
-                    <input matInput type="number" step="1"
-                           [(ngModel)]="editedConfigs.tag_phk.pausen_stunden"
-                           title="Kann negativ sein (z.B. -0:30 = 30 Min. Abzug)">
-                    <span matSuffix>h</span>
-                  </mat-form-field>
-                  <mat-form-field appearance="outline">
-                    <mat-label>Pausen Minuten</mat-label>
-                    <input matInput type="number" step="1" min="-59" max="59"
-                           [(ngModel)]="editedConfigs.tag_phk.pausen_minuten"
-                           title="Kann negativ sein (z.B. -30 = 30 Min. Abzug)">
-                    <span matSuffix>min</span>
-                  </mat-form-field>
+                  <div class="time-row">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Pause Start</mat-label>
+                      <input matInput type="time"
+                             [(ngModel)]="editedConfigs.tag_phk.pausen_start">
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                      <mat-label>Pause Ende</mat-label>
+                      <input matInput type="time"
+                             [(ngModel)]="editedConfigs.tag_phk.pausen_ende">
+                    </mat-form-field>
+                  </div>
+                  <div class="pause-duration">
+                    = {{ calculatePauseDuration(editedConfigs.tag_phk.pausen_start, editedConfigs.tag_phk.pausen_ende) }} Minuten
+                  </div>
+                  <div class="modus-row">
+                    <label class="modus-label">Modus:</label>
+                    <mat-radio-group [(ngModel)]="editedConfigs.tag_phk.pausen_modus">
+                      <mat-radio-button value="abziehen">Abziehen</mat-radio-button>
+                      <mat-radio-button value="addieren">Addieren</mat-radio-button>
+                    </mat-radio-group>
+                  </div>
                 </div>
               </div>
             </div>
@@ -212,20 +241,28 @@ interface StationConfigValues {
                   Pausenzeiten aktivieren
                 </mat-slide-toggle>
                 <div class="pausen-fields" *ngIf="editedConfigs.nacht_phk.pausen_aktiviert">
-                  <mat-form-field appearance="outline">
-                    <mat-label>Pausen Stunden</mat-label>
-                    <input matInput type="number" step="1"
-                           [(ngModel)]="editedConfigs.nacht_phk.pausen_stunden"
-                           title="Kann negativ sein (z.B. -0:30 = 30 Min. Abzug)">
-                    <span matSuffix>h</span>
-                  </mat-form-field>
-                  <mat-form-field appearance="outline">
-                    <mat-label>Pausen Minuten</mat-label>
-                    <input matInput type="number" step="1" min="-59" max="59"
-                           [(ngModel)]="editedConfigs.nacht_phk.pausen_minuten"
-                           title="Kann negativ sein (z.B. -30 = 30 Min. Abzug)">
-                    <span matSuffix>min</span>
-                  </mat-form-field>
+                  <div class="time-row">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Pause Start</mat-label>
+                      <input matInput type="time"
+                             [(ngModel)]="editedConfigs.nacht_phk.pausen_start">
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                      <mat-label>Pause Ende</mat-label>
+                      <input matInput type="time"
+                             [(ngModel)]="editedConfigs.nacht_phk.pausen_ende">
+                    </mat-form-field>
+                  </div>
+                  <div class="pause-duration">
+                    = {{ calculatePauseDuration(editedConfigs.nacht_phk.pausen_start, editedConfigs.nacht_phk.pausen_ende) }} Minuten
+                  </div>
+                  <div class="modus-row">
+                    <label class="modus-label">Modus:</label>
+                    <mat-radio-group [(ngModel)]="editedConfigs.nacht_phk.pausen_modus">
+                      <mat-radio-button value="abziehen">Abziehen</mat-radio-button>
+                      <mat-radio-button value="addieren">Addieren</mat-radio-button>
+                    </mat-radio-group>
+                  </div>
                 </div>
               </div>
             </div>
@@ -302,10 +339,38 @@ interface StationConfigValues {
     }
 
     .pausen-fields {
+      margin-top: 12px;
+    }
+
+    .time-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
-      margin-top: 12px;
+    }
+
+    .pause-duration {
+      text-align: center;
+      font-size: 14px;
+      color: #666;
+      margin: 8px 0;
+      font-weight: 500;
+    }
+
+    .modus-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 8px;
+
+      .modus-label {
+        font-weight: 500;
+        color: #333;
+      }
+
+      mat-radio-group {
+        display: flex;
+        gap: 16px;
+      }
     }
 
     .loading-container {
@@ -359,13 +424,14 @@ export class StationConfigEditDialogComponent {
 
   private initConfigValues(existing: StationConfigValues | null, schicht: 'tag' | 'nacht', kategorie: 'PFK' | 'PHK'): StationConfigValues {
     // Default values
-    const defaults = {
+    const defaults: StationConfigValues = {
       schicht_stunden: schicht === 'nacht' ? 8 : 16,
       phk_anteil_base: kategorie === 'PFK' ? 10 : null,
       pp_ratio_base: schicht === 'nacht' ? 20 : 10,
       pausen_aktiviert: false,
-      pausen_stunden: 0,
-      pausen_minuten: 0
+      pausen_start: '12:00',
+      pausen_ende: '12:30',
+      pausen_modus: 'abziehen'
     };
 
     if (existing) {
@@ -373,14 +439,35 @@ export class StationConfigEditDialogComponent {
       return {
         ...defaults,
         ...existing,
-        // Ensure pausenzeiten fields are always defined (default to 0 if undefined)
+        // Ensure pausenzeiten fields are always defined
         pausen_aktiviert: existing.pausen_aktiviert ?? false,
-        pausen_stunden: existing.pausen_stunden ?? 0,
-        pausen_minuten: existing.pausen_minuten ?? 0
+        pausen_start: existing.pausen_start ?? '12:00',
+        pausen_ende: existing.pausen_ende ?? '12:30',
+        pausen_modus: existing.pausen_modus ?? 'abziehen'
       };
     }
 
     return defaults;
+  }
+
+  /**
+   * Calculate pause duration in minutes from start and end time strings
+   */
+  calculatePauseDuration(start: string, end: string): number {
+    if (!start || !end) return 0;
+    
+    const [startH, startM] = start.split(':').map(Number);
+    const [endH, endM] = end.split(':').map(Number);
+    
+    let startMinutes = startH * 60 + startM;
+    let endMinutes = endH * 60 + endM;
+    
+    // Handle overnight pause (end time is next day)
+    if (endMinutes < startMinutes) {
+      endMinutes += 24 * 60;
+    }
+    
+    return endMinutes - startMinutes;
   }
 
   isValid(): boolean {
@@ -389,21 +476,17 @@ export class StationConfigEditDialogComponent {
         config.pp_ratio_base > 0 &&
         (config.phk_anteil_base === null || config.phk_anteil_base > 0);
       
-      // Pausenzeiten-Validierung: nur wenn aktiviert oder wenn Werte vorhanden sind
-      const pausenMinuten = config.pausen_minuten ?? 0;
-      const pausenStunden = config.pausen_stunden ?? 0;
+      // Validate time format if pausen is activated
+      const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
       const pausenValid = !config.pausen_aktiviert || (
-        // Allow negative values for subtraction
-        pausenMinuten >= -59 &&
-        pausenMinuten <= 59 &&
-        // Stunden können auch negativ sein, keine Beschränkung nötig
-        true
+        timeRegex.test(config.pausen_start) &&
+        timeRegex.test(config.pausen_ende) &&
+        ['addieren', 'abziehen'].includes(config.pausen_modus)
       );
       
       return basicValid && pausenValid;
     });
   }
-
 
   onCancel(): void {
     this.dialogRef.close(false);
@@ -443,8 +526,9 @@ export class StationConfigEditDialogComponent {
       phk_anteil_base: config.phk_anteil_base,
       pp_ratio_base: config.pp_ratio_base,
       pausen_aktiviert: config.pausen_aktiviert,
-      pausen_stunden: config.pausen_stunden,
-      pausen_minuten: config.pausen_minuten
+      pausen_start: config.pausen_start,
+      pausen_ende: config.pausen_ende,
+      pausen_modus: config.pausen_modus
     };
 
     if (schicht === 'nacht') {

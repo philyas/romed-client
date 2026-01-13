@@ -37,8 +37,10 @@ interface StationConfigValues {
   phk_anteil_base: number | null;
   pp_ratio_base: number;
   pausen_aktiviert?: boolean;
-  pausen_stunden?: number;
-  pausen_minuten?: number;
+  pausen_start?: string;
+  pausen_ende?: string;
+  pausen_modus?: 'addieren' | 'abziehen';
+  pausen_dauer_minuten?: number;
 }
 
 interface StationConfig {
@@ -432,8 +434,10 @@ export class Configuration implements OnInit {
             phk_anteil_base: tagPfkConfig.phk_anteil_base,
             pp_ratio_base: tagPfkConfig.pp_ratio_base,
             pausen_aktiviert: tagPfkConfig.pausen_aktiviert || false,
-            pausen_stunden: tagPfkConfig.pausen_stunden || 0,
-            pausen_minuten: tagPfkConfig.pausen_minuten || 0
+            pausen_start: tagPfkConfig.pausen_start || '12:00',
+            pausen_ende: tagPfkConfig.pausen_ende || '12:30',
+            pausen_modus: tagPfkConfig.pausen_modus || 'abziehen',
+            pausen_dauer_minuten: tagPfkConfig.pausen_dauer_minuten || 0
           };
         } else if (globalConfig) {
           config.tag_pfk = {
@@ -441,8 +445,10 @@ export class Configuration implements OnInit {
             phk_anteil_base: globalConfig.tag.phk_anteil_base,
             pp_ratio_base: globalConfig.tag.pp_ratio_base,
             pausen_aktiviert: false,
-            pausen_stunden: 0,
-            pausen_minuten: 0
+            pausen_start: '12:00',
+            pausen_ende: '12:30',
+            pausen_modus: 'abziehen',
+            pausen_dauer_minuten: 0
           };
         }
 
@@ -455,8 +461,10 @@ export class Configuration implements OnInit {
             phk_anteil_base: nachtPfkConfig.phk_anteil_base,
             pp_ratio_base: nachtPfkConfig.pp_ratio_base,
             pausen_aktiviert: nachtPfkConfig.pausen_aktiviert || false,
-            pausen_stunden: nachtPfkConfig.pausen_stunden || 0,
-            pausen_minuten: nachtPfkConfig.pausen_minuten || 0
+            pausen_start: nachtPfkConfig.pausen_start || '12:00',
+            pausen_ende: nachtPfkConfig.pausen_ende || '12:30',
+            pausen_modus: nachtPfkConfig.pausen_modus || 'abziehen',
+            pausen_dauer_minuten: nachtPfkConfig.pausen_dauer_minuten || 0
           };
         } else if (globalConfig) {
           config.nacht_pfk = {
@@ -464,8 +472,10 @@ export class Configuration implements OnInit {
             phk_anteil_base: globalConfig.nacht.phk_anteil_base,
             pp_ratio_base: globalConfig.nacht.pp_ratio_base,
             pausen_aktiviert: false,
-            pausen_stunden: 0,
-            pausen_minuten: 0
+            pausen_start: '12:00',
+            pausen_ende: '12:30',
+            pausen_modus: 'abziehen',
+            pausen_dauer_minuten: 0
           };
         }
 
@@ -478,8 +488,10 @@ export class Configuration implements OnInit {
             phk_anteil_base: null,
             pp_ratio_base: tagPhkConfig.pp_ratio_base,
             pausen_aktiviert: tagPhkConfig.pausen_aktiviert || false,
-            pausen_stunden: tagPhkConfig.pausen_stunden || 0,
-            pausen_minuten: tagPhkConfig.pausen_minuten || 0
+            pausen_start: tagPhkConfig.pausen_start || '12:00',
+            pausen_ende: tagPhkConfig.pausen_ende || '12:30',
+            pausen_modus: tagPhkConfig.pausen_modus || 'abziehen',
+            pausen_dauer_minuten: tagPhkConfig.pausen_dauer_minuten || 0
           };
         } else if (globalConfig) {
           config.tag_phk = {
@@ -487,8 +499,10 @@ export class Configuration implements OnInit {
             phk_anteil_base: null,
             pp_ratio_base: globalConfig.tag.pp_ratio_base,
             pausen_aktiviert: false,
-            pausen_stunden: 0,
-            pausen_minuten: 0
+            pausen_start: '12:00',
+            pausen_ende: '12:30',
+            pausen_modus: 'abziehen',
+            pausen_dauer_minuten: 0
           };
         }
 
@@ -501,8 +515,10 @@ export class Configuration implements OnInit {
             phk_anteil_base: null,
             pp_ratio_base: nachtPhkConfig.pp_ratio_base,
             pausen_aktiviert: nachtPhkConfig.pausen_aktiviert || false,
-            pausen_stunden: nachtPhkConfig.pausen_stunden || 0,
-            pausen_minuten: nachtPhkConfig.pausen_minuten || 0
+            pausen_start: nachtPhkConfig.pausen_start || '12:00',
+            pausen_ende: nachtPhkConfig.pausen_ende || '12:30',
+            pausen_modus: nachtPhkConfig.pausen_modus || 'abziehen',
+            pausen_dauer_minuten: nachtPhkConfig.pausen_dauer_minuten || 0
           };
         } else if (globalConfig) {
           config.nacht_phk = {
@@ -510,8 +526,10 @@ export class Configuration implements OnInit {
             phk_anteil_base: null,
             pp_ratio_base: globalConfig.nacht.pp_ratio_base,
             pausen_aktiviert: false,
-            pausen_stunden: 0,
-            pausen_minuten: 0
+            pausen_start: '12:00',
+            pausen_ende: '12:30',
+            pausen_modus: 'abziehen',
+            pausen_dauer_minuten: 0
           };
         }
 
@@ -545,8 +563,10 @@ export class Configuration implements OnInit {
         phk_anteil_base: tagPfk.phk_anteil_base,
         pp_ratio_base: tagPfk.pp_ratio_base,
         pausen_aktiviert: tagPfk.pausen_aktiviert || false,
-        pausen_stunden: tagPfk.pausen_stunden || 0,
-        pausen_minuten: tagPfk.pausen_minuten || 0
+        pausen_start: tagPfk.pausen_start || '12:00',
+        pausen_ende: tagPfk.pausen_ende || '12:30',
+        pausen_modus: tagPfk.pausen_modus || 'abziehen',
+        pausen_dauer_minuten: tagPfk.pausen_dauer_minuten || 0
       };
     } catch (err) {
       // Config doesn't exist, keep null
@@ -560,8 +580,10 @@ export class Configuration implements OnInit {
         phk_anteil_base: nachtPfk.phk_anteil_base,
         pp_ratio_base: nachtPfk.pp_ratio_base,
         pausen_aktiviert: nachtPfk.pausen_aktiviert || false,
-        pausen_stunden: nachtPfk.pausen_stunden || 0,
-        pausen_minuten: nachtPfk.pausen_minuten || 0
+        pausen_start: nachtPfk.pausen_start || '12:00',
+        pausen_ende: nachtPfk.pausen_ende || '12:30',
+        pausen_modus: nachtPfk.pausen_modus || 'abziehen',
+        pausen_dauer_minuten: nachtPfk.pausen_dauer_minuten || 0
       };
     } catch (err) {
       // Config doesn't exist, keep null
@@ -575,8 +597,10 @@ export class Configuration implements OnInit {
         phk_anteil_base: null, // PHK doesn't have this
         pp_ratio_base: tagPhk.pp_ratio_base,
         pausen_aktiviert: tagPhk.pausen_aktiviert || false,
-        pausen_stunden: tagPhk.pausen_stunden || 0,
-        pausen_minuten: tagPhk.pausen_minuten || 0
+        pausen_start: tagPhk.pausen_start || '12:00',
+        pausen_ende: tagPhk.pausen_ende || '12:30',
+        pausen_modus: tagPhk.pausen_modus || 'abziehen',
+        pausen_dauer_minuten: tagPhk.pausen_dauer_minuten || 0
       };
     } catch (err) {
       // Config doesn't exist, keep null
@@ -590,8 +614,10 @@ export class Configuration implements OnInit {
         phk_anteil_base: null, // PHK doesn't have this
         pp_ratio_base: nachtPhk.pp_ratio_base,
         pausen_aktiviert: nachtPhk.pausen_aktiviert || false,
-        pausen_stunden: nachtPhk.pausen_stunden || 0,
-        pausen_minuten: nachtPhk.pausen_minuten || 0
+        pausen_start: nachtPhk.pausen_start || '12:00',
+        pausen_ende: nachtPhk.pausen_ende || '12:30',
+        pausen_modus: nachtPhk.pausen_modus || 'abziehen',
+        pausen_dauer_minuten: nachtPhk.pausen_dauer_minuten || 0
       };
     } catch (err) {
       // Config doesn't exist, keep null
@@ -629,19 +655,14 @@ export class Configuration implements OnInit {
     if (!config || !config.pausen_aktiviert) {
       return 'Deaktiviert';
     }
-    const stunden = config.pausen_stunden ?? 0;
-    const minuten = config.pausen_minuten ?? 0;
     
-    if (stunden === 0 && minuten === 0) {
-      return '0:00';
-    }
+    const start = config.pausen_start || '12:00';
+    const ende = config.pausen_ende || '12:30';
+    const modus = config.pausen_modus || 'abziehen';
+    const dauer = config.pausen_dauer_minuten ?? 0;
     
-    // Format negative values correctly
-    const sign = (stunden < 0 || minuten < 0) ? '-' : '';
-    const absStunden = Math.abs(stunden);
-    const absMinuten = Math.abs(minuten);
-    
-    return `${sign}${absStunden}:${absMinuten.toString().padStart(2, '0')}`;
+    const modusIcon = modus === 'abziehen' ? '⊖' : '⊕';
+    return `${start}-${ende} ${modusIcon} (${dauer} Min)`;
   }
 
   hasPausenzeitenEnabled(config: StationConfig | null): boolean {

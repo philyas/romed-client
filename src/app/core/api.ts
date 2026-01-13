@@ -661,8 +661,10 @@ export class Api {
     phk_anteil_base: number | null;
     pp_ratio_base: number;
     pausen_aktiviert?: boolean;
-    pausen_stunden?: number;
-    pausen_minuten?: number;
+    pausen_start?: string;
+    pausen_ende?: string;
+    pausen_modus?: 'addieren' | 'abziehen';
+    pausen_dauer_minuten?: number;
     fromSnapshot: boolean;
     snapshotMonth?: number;
     snapshotYear?: number;
@@ -680,8 +682,10 @@ export class Api {
       phk_anteil_base: number | null;
       pp_ratio_base: number;
       pausen_aktiviert?: boolean;
-      pausen_stunden?: number;
-      pausen_minuten?: number;
+      pausen_start?: string;
+      pausen_ende?: string;
+      pausen_modus?: 'addieren' | 'abziehen';
+      pausen_dauer_minuten?: number;
       fromSnapshot: boolean;
       snapshotMonth?: number;
       snapshotYear?: number;
@@ -698,8 +702,9 @@ export class Api {
       phk_anteil_base: number | null; 
       pp_ratio_base: number;
       pausen_aktiviert?: boolean;
-      pausen_stunden?: number;
-      pausen_minuten?: number;
+      pausen_start?: string;
+      pausen_ende?: string;
+      pausen_modus?: 'addieren' | 'abziehen';
     }
   ): Observable<{ success: boolean; message: string }> {
     return this.http.put<{ success: boolean; message: string }>(
@@ -721,8 +726,10 @@ export class Api {
     phk_anteil_base: number | null;
     pp_ratio_base: number;
     pausen_aktiviert?: boolean;
-    pausen_stunden?: number;
-    pausen_minuten?: number;
+    pausen_start?: string;
+    pausen_ende?: string;
+    pausen_modus?: 'addieren' | 'abziehen';
+    pausen_dauer_minuten?: number;
     fromSnapshot: boolean;
     snapshotMonth?: number;
     snapshotYear?: number;
@@ -740,8 +747,10 @@ export class Api {
       phk_anteil_base: number | null;
       pp_ratio_base: number;
       pausen_aktiviert?: boolean;
-      pausen_stunden?: number;
-      pausen_minuten?: number;
+      pausen_start?: string;
+      pausen_ende?: string;
+      pausen_modus?: 'addieren' | 'abziehen';
+      pausen_dauer_minuten?: number;
       fromSnapshot: boolean;
       snapshotMonth?: number;
       snapshotYear?: number;
@@ -752,7 +761,15 @@ export class Api {
   updateStationConfigNacht(
     station: string,
     kategorie: string,
-    config: { schicht_stunden: number; phk_anteil_base: number | null; pp_ratio_base: number }
+    config: { 
+      schicht_stunden: number; 
+      phk_anteil_base: number | null; 
+      pp_ratio_base: number;
+      pausen_aktiviert?: boolean;
+      pausen_start?: string;
+      pausen_ende?: string;
+      pausen_modus?: 'addieren' | 'abziehen';
+    }
   ): Observable<{ success: boolean; message: string }> {
     return this.http.put<{ success: boolean; message: string }>(
       `${this.baseUrl}/manual-entry-nacht/station-config`,
@@ -778,8 +795,10 @@ export class Api {
           phk_anteil_base: number | null;
           pp_ratio_base: number;
           pausen_aktiviert: boolean;
-          pausen_stunden: number;
-          pausen_minuten: number;
+          pausen_start: string;
+          pausen_ende: string;
+          pausen_modus: 'addieren' | 'abziehen';
+          pausen_dauer_minuten: number;
           fromSnapshot: boolean;
         };
       };
@@ -801,8 +820,10 @@ export class Api {
             phk_anteil_base: number | null;
             pp_ratio_base: number;
             pausen_aktiviert: boolean;
-            pausen_stunden: number;
-            pausen_minuten: number;
+            pausen_start: string;
+            pausen_ende: string;
+            pausen_modus: 'addieren' | 'abziehen';
+            pausen_dauer_minuten: number;
             fromSnapshot: boolean;
           };
         };

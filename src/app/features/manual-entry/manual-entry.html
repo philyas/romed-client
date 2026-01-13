@@ -543,7 +543,7 @@
               <td class="input-cell">
                 <input 
                   type="number" 
-                  [value]="entry.pausen_stunden || 0"
+                  [value]="getPausenStunden(entry)"
                   (input)="updateEntry(i, 'pausen_stunden', $any($event.target).value)"
                   placeholder="0"
                   class="table-input pause-input"
@@ -555,7 +555,7 @@
                   type="number" 
                   min="-59"
                   max="59" 
-                  [value]="entry.pausen_minuten || 0"
+                  [value]="getPausenMinuten(entry)"
                   (input)="updateEntry(i, 'pausen_minuten', $any($event.target).value)"
                   placeholder="0"
                   class="table-input pause-input"

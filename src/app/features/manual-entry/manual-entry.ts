@@ -26,8 +26,7 @@ interface DayEntry {
   tag: number;
   stunden: number;
   minuten: number;
-  pausen_stunden?: number;
-  pausen_minuten?: number;
+  pausen_dauer_minuten?: number; // Pause duration in minutes (can be negative for subtraction)
   pfkNormal?: number;
   gesamtPfkPhk?: number;
   phkEnd?: number;
@@ -157,8 +156,7 @@ export class ManualEntry {
   // Station Config (für Pausenzeiten)
   stationConfig = signal<{
     pausen_aktiviert: boolean;
-    pausen_stunden: number;
-    pausen_minuten: number;
+    pausen_dauer_minuten: number; // Pause duration in minutes from config
   } | null>(null);
   
   // Available categories
@@ -295,20 +293,31 @@ export class ManualEntry {
     });
   }
 
+  // Helper functions to convert between minutes and hours/minutes
+  private minutesToHoursMinutes(totalMinutes: number): { stunden: number; minuten: number } {
+    const stunden = Math.floor(Math.abs(totalMinutes) / 60) * (totalMinutes < 0 ? -1 : 1);
+    const minuten = Math.abs(totalMinutes) % 60 * (totalMinutes < 0 ? -1 : 1);
+    return { stunden, minuten };
+  }
+  
+  private hoursMinutesToMinutes(stunden: number, minuten: number): number {
+    return (stunden * 60) + minuten;
+  }
+
   initializeEmptyEntries() {
     const days = this.daysInMonth();
     const entries: DayEntry[] = [];
     const pausenConfig = this.stationConfig();
     
     for (let i = 1; i <= days; i++) {
-      const pausenStunden = pausenConfig && pausenConfig.pausen_aktiviert ? pausenConfig.pausen_stunden : 0;
-      const pausenMinuten = pausenConfig && pausenConfig.pausen_aktiviert ? pausenConfig.pausen_minuten : 0;
+      const pausenDauerMinuten = pausenConfig && pausenConfig.pausen_aktiviert 
+        ? pausenConfig.pausen_dauer_minuten 
+        : 0;
       entries.push({ 
         tag: i, 
         stunden: 0, 
         minuten: 0,
-        pausen_stunden: pausenStunden,
-        pausen_minuten: pausenMinuten
+        pausen_dauer_minuten: pausenDauerMinuten
       });
     }
     this.dayEntries.set(entries);
@@ -410,14 +419,15 @@ export class ManualEntry {
               let normaleMinuten = gesamtMinuten;
               
               // Setze Pausenzeiten-Werte aus Config, wenn aktiviert
-              let pausenStunden = (pausenConfig && pausenConfig.pausen_aktiviert) ? pausenConfig.pausen_stunden : 0;
-              let pausenMinuten = (pausenConfig && pausenConfig.pausen_aktiviert) ? pausenConfig.pausen_minuten : 0;
+              let pausenDauerMinuten = (pausenConfig && pausenConfig.pausen_aktiviert) 
+                ? pausenConfig.pausen_dauer_minuten 
+                : 0;
               
               if (pausenConfig && pausenConfig.pausen_aktiviert) {
                 // Gesamtzeit in Minuten
                 const gesamtTotalMinutes = (gesamtStunden * 60) + gesamtMinuten;
                 // Pausenzeit in Minuten (kann negativ sein)
-                const pausenTotalMinutes = (pausenConfig.pausen_stunden * 60) + pausenConfig.pausen_minuten;
+                const pausenTotalMinutes = pausenConfig.pausen_dauer_minuten;
                 
                 // Normale Zeit = Gesamtzeit - Pausenzeit
                 // Wenn Pausenzeiten negativ sind, wird Zeit addiert (Gesamtzeit erhöht)
@@ -433,8 +443,7 @@ export class ManualEntry {
                 tag: i,
                 stunden: normaleStunden,
                 minuten: normaleMinuten,
-                pausen_stunden: pausenStunden,
-                pausen_minuten: pausenMinuten,
+                pausen_dauer_minuten: pausenDauerMinuten,
                 pfkNormal: existing.PFK_Normal,
                 gesamtPfkPhk: existing.Gesamt_PFK_PHK,
                 phkEnd: existing.PHK_End,
@@ -442,14 +451,14 @@ export class ManualEntry {
               });
             } else {
               // Initialize with default pausenzeiten if enabled
-              const pausenStunden = pausenConfig && pausenConfig.pausen_aktiviert ? pausenConfig.pausen_stunden : 0;
-              const pausenMinuten = pausenConfig && pausenConfig.pausen_aktiviert ? pausenConfig.pausen_minuten : 0;
+              const pausenDauerMinuten = pausenConfig && pausenConfig.pausen_aktiviert 
+                ? pausenConfig.pausen_dauer_minuten 
+                : 0;
               entries.push({ 
                 tag: i, 
                 stunden: 0, 
                 minuten: 0,
-                pausen_stunden: pausenStunden,
-                pausen_minuten: pausenMinuten
+                pausen_dauer_minuten: pausenDauerMinuten
               });
             }
           }
@@ -498,14 +507,13 @@ export class ManualEntry {
           const wasPausenEnabled = this.stationConfig()?.pausen_aktiviert || false;
           this.stationConfig.set({
             pausen_aktiviert: config.pausen_aktiviert || false,
-            pausen_stunden: config.pausen_stunden || 0,
-            pausen_minuten: config.pausen_minuten || 0
+            pausen_dauer_minuten: config.pausen_dauer_minuten || 0
           });
           
           // Wenn Pausenzeiten aktiviert sind, aktualisiere die Werte in den existierenden Einträgen
           const isPausenEnabled = config.pausen_aktiviert || false;
           if (isPausenEnabled && this.dayEntries().length > 0) {
-            this.updatePausenzeitenInEntries(config.pausen_stunden || 0, config.pausen_minuten || 0);
+            this.updatePausenzeitenInEntries(config.pausen_dauer_minuten || 0);
           }
           
           resolve();
@@ -514,8 +522,7 @@ export class ManualEntry {
           console.error('Error loading station config for pausenzeiten:', err);
           this.stationConfig.set({
             pausen_aktiviert: false,
-            pausen_stunden: 0,
-            pausen_minuten: 0
+            pausen_dauer_minuten: 0
           });
           resolve(); // Resolve auch bei Fehler, damit die Daten trotzdem geladen werden
         }
@@ -523,12 +530,11 @@ export class ManualEntry {
     });
   }
   
-  updatePausenzeitenInEntries(pausenStunden: number, pausenMinuten: number) {
+  updatePausenzeitenInEntries(pausenDauerMinuten: number) {
     const entries = this.dayEntries();
     const updatedEntries = entries.map(entry => ({
       ...entry,
-      pausen_stunden: pausenStunden,
-      pausen_minuten: pausenMinuten
+      pausen_dauer_minuten: pausenDauerMinuten
     }));
     this.dayEntries.set(updatedEntries);
   }
@@ -750,15 +756,43 @@ export class ManualEntry {
     // Validate - allow negative values for pausenzeiten (for subtraction)
     if (field === 'stunden' && numValue < 0) return;
     if (field === 'minuten' && (numValue < 0 || numValue >= 60)) return;
-    // Allow negative pausenzeiten: hours can be negative, minutes -59 to 59
-    if (field === 'pausen_minuten' && (numValue < -59 || numValue > 59)) return;
     
     this.dayEntries.update(entries => {
       const newEntries = [...entries];
-      newEntries[index] = {
-        ...newEntries[index],
-        [field]: numValue
-      };
+      const entry = newEntries[index];
+      
+      if (field === 'pausen_stunden' || field === 'pausen_minuten') {
+        // Convert hours/minutes to total minutes
+        const currentPausenMinuten = entry.pausen_dauer_minuten || 0;
+        const currentHours = Math.floor(Math.abs(currentPausenMinuten) / 60) * (currentPausenMinuten < 0 ? -1 : 1);
+        const currentMinutes = Math.abs(currentPausenMinuten) % 60 * (currentPausenMinuten < 0 ? -1 : 1);
+        
+        let newHours = currentHours;
+        let newMinutes = currentMinutes;
+        
+        if (field === 'pausen_stunden') {
+          newHours = numValue;
+        } else if (field === 'pausen_minuten') {
+          // Allow negative minutes: -59 to 59
+          if (numValue < -59 || numValue > 59) {
+            return entries; // Return original entries if validation fails
+          }
+          newMinutes = numValue;
+        }
+        
+        // Convert back to total minutes
+        const totalMinutes = (newHours * 60) + newMinutes;
+        newEntries[index] = {
+          ...entry,
+          pausen_dauer_minuten: totalMinutes
+        };
+      } else {
+        newEntries[index] = {
+          ...entry,
+          [field]: numValue
+        };
+      }
+      
       return newEntries;
     });
   }
@@ -767,7 +801,7 @@ export class ManualEntry {
   // Negative Pausenzeiten werden abgezogen
   getGesamtzeit(entry: DayEntry): { stunden: number; minuten: number } {
     const normaleTotalMinutes = (entry.stunden * 60) + entry.minuten;
-    const pausenTotalMinutes = ((entry.pausen_stunden || 0) * 60) + (entry.pausen_minuten || 0);
+    const pausenTotalMinutes = entry.pausen_dauer_minuten || 0;
     const gesamtTotalMinutes = normaleTotalMinutes + pausenTotalMinutes;
     // Clamp to 0 (can't have negative total time)
     const clampedMinutes = Math.max(0, gesamtTotalMinutes);
@@ -775,6 +809,17 @@ export class ManualEntry {
       stunden: Math.floor(clampedMinutes / 60),
       minuten: clampedMinutes % 60
     };
+  }
+  
+  // Get pause hours and minutes for display
+  getPausenStunden(entry: DayEntry): number {
+    const totalMinutes = entry.pausen_dauer_minuten || 0;
+    return Math.floor(Math.abs(totalMinutes) / 60) * (totalMinutes < 0 ? -1 : 1);
+  }
+  
+  getPausenMinuten(entry: DayEntry): number {
+    const totalMinutes = entry.pausen_dauer_minuten || 0;
+    return Math.abs(totalMinutes) % 60 * (totalMinutes < 0 ? -1 : 1);
   }
 
   saveData() {
