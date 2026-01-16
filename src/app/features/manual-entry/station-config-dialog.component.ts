@@ -98,6 +98,7 @@ export interface StationConfigDialogData {
                   [(ngModel)]="editedValues.schicht_stunden" 
                   step="0.1"
                   min="0.1"
+                  (input)="onNumberInput($event, 'schicht_stunden')"
                   (blur)="validateValue('schicht_stunden')">
                 <span matSuffix>h</span>
               </mat-form-field>
@@ -115,6 +116,7 @@ export interface StationConfigDialogData {
                   [(ngModel)]="editedValues.phk_anteil_base" 
                   step="0.1"
                   min="1"
+                  (input)="onNumberInput($event, 'phk_anteil_base')"
                   (blur)="validateValue('phk_anteil_base')">
               </mat-form-field>
             </div>
@@ -131,6 +133,7 @@ export interface StationConfigDialogData {
                   [(ngModel)]="editedValues.pp_ratio_base" 
                   step="0.1"
                   min="0.1"
+                  (input)="onNumberInput($event, 'pp_ratio_base')"
                   (blur)="validateValue('pp_ratio_base')">
               </mat-form-field>
             </div>
@@ -284,6 +287,16 @@ export interface StationConfigDialogData {
       display: none;
     }
 
+    .config-input-field input[type="number"]::-webkit-inner-spin-button,
+    .config-input-field input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .config-input-field input[type="number"] {
+      -moz-appearance: textfield;
+    }
+
     .config-item-header {
       display: flex;
       align-items: center;
@@ -417,6 +430,18 @@ export class StationConfigDialogComponent {
         };
       }
     });
+  }
+
+  onNumberInput(event: Event, field: string): void {
+    const input = event.target as HTMLInputElement;
+    if (input.value.includes(',')) {
+      input.value = input.value.replace(',', '.');
+      // Update the model value
+      const numValue = parseFloat(input.value);
+      if (!isNaN(numValue)) {
+        (this.editedValues as any)[field] = numValue;
+      }
+    }
   }
 
   validateValue(field: string): void {

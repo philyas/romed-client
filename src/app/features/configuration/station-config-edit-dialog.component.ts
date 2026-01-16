@@ -69,20 +69,23 @@ interface StationConfigValues {
               <mat-form-field appearance="outline">
                 <mat-label>Schichtstunden</mat-label>
                 <input matInput type="number" step="0.1" min="0.1"
-                       [(ngModel)]="editedConfigs.tag_pfk.schicht_stunden">
+                       [(ngModel)]="editedConfigs.tag_pfk.schicht_stunden"
+                       (input)="onNumberInput($event, 'tag_pfk', 'schicht_stunden')">
                 <span matSuffix>h</span>
               </mat-form-field>
 
               <mat-form-field appearance="outline">
                 <mat-label>%PHP Tag</mat-label>
                 <input matInput type="number" step="0.1" min="1"
-                       [(ngModel)]="editedConfigs.tag_pfk.phk_anteil_base">
+                       [(ngModel)]="editedConfigs.tag_pfk.phk_anteil_base"
+                       (input)="onNumberInput($event, 'tag_pfk', 'phk_anteil_base')">
               </mat-form-field>
 
               <mat-form-field appearance="outline">
                 <mat-label>P:P-Ratio Basis</mat-label>
                 <input matInput type="number" step="0.1" min="0.1"
-                       [(ngModel)]="editedConfigs.tag_pfk.pp_ratio_base">
+                       [(ngModel)]="editedConfigs.tag_pfk.pp_ratio_base"
+                       (input)="onNumberInput($event, 'tag_pfk', 'pp_ratio_base')">
               </mat-form-field>
 
               <div class="pausen-section">
@@ -136,20 +139,23 @@ interface StationConfigValues {
               <mat-form-field appearance="outline">
                 <mat-label>Schichtstunden</mat-label>
                 <input matInput type="number" step="0.1" min="0.1"
-                       [(ngModel)]="editedConfigs.nacht_pfk.schicht_stunden">
+                       [(ngModel)]="editedConfigs.nacht_pfk.schicht_stunden"
+                       (input)="onNumberInput($event, 'nacht_pfk', 'schicht_stunden')">
                 <span matSuffix>h</span>
               </mat-form-field>
 
               <mat-form-field appearance="outline">
                 <mat-label>%PHP Nacht</mat-label>
                 <input matInput type="number" step="0.1" min="1"
-                       [(ngModel)]="editedConfigs.nacht_pfk.phk_anteil_base">
+                       [(ngModel)]="editedConfigs.nacht_pfk.phk_anteil_base"
+                       (input)="onNumberInput($event, 'nacht_pfk', 'phk_anteil_base')">
               </mat-form-field>
 
               <mat-form-field appearance="outline">
                 <mat-label>P:P-Ratio Basis</mat-label>
                 <input matInput type="number" step="0.1" min="0.1"
-                       [(ngModel)]="editedConfigs.nacht_pfk.pp_ratio_base">
+                       [(ngModel)]="editedConfigs.nacht_pfk.pp_ratio_base"
+                       (input)="onNumberInput($event, 'nacht_pfk', 'pp_ratio_base')">
               </mat-form-field>
 
               <div class="pausen-section">
@@ -203,14 +209,16 @@ interface StationConfigValues {
               <mat-form-field appearance="outline">
                 <mat-label>Schichtstunden</mat-label>
                 <input matInput type="number" step="0.1" min="0.1"
-                       [(ngModel)]="editedConfigs.tag_phk.schicht_stunden">
+                       [(ngModel)]="editedConfigs.tag_phk.schicht_stunden"
+                       (input)="onNumberInput($event, 'tag_phk', 'schicht_stunden')">
                 <span matSuffix>h</span>
               </mat-form-field>
 
               <mat-form-field appearance="outline">
                 <mat-label>P:P-Ratio Basis</mat-label>
                 <input matInput type="number" step="0.1" min="0.1"
-                       [(ngModel)]="editedConfigs.tag_phk.pp_ratio_base">
+                       [(ngModel)]="editedConfigs.tag_phk.pp_ratio_base"
+                       (input)="onNumberInput($event, 'tag_phk', 'pp_ratio_base')">
               </mat-form-field>
 
               <div class="pausen-section">
@@ -264,14 +272,16 @@ interface StationConfigValues {
               <mat-form-field appearance="outline">
                 <mat-label>Schichtstunden</mat-label>
                 <input matInput type="number" step="0.1" min="0.1"
-                       [(ngModel)]="editedConfigs.nacht_phk.schicht_stunden">
+                       [(ngModel)]="editedConfigs.nacht_phk.schicht_stunden"
+                       (input)="onNumberInput($event, 'nacht_phk', 'schicht_stunden')">
                 <span matSuffix>h</span>
               </mat-form-field>
 
               <mat-form-field appearance="outline">
                 <mat-label>P:P-Ratio Basis</mat-label>
                 <input matInput type="number" step="0.1" min="0.1"
-                       [(ngModel)]="editedConfigs.nacht_phk.pp_ratio_base">
+                       [(ngModel)]="editedConfigs.nacht_phk.pp_ratio_base"
+                       (input)="onNumberInput($event, 'nacht_phk', 'pp_ratio_base')">
               </mat-form-field>
 
               <div class="pausen-section">
@@ -380,6 +390,16 @@ interface StationConfigValues {
       grid-template-columns: 1fr;
       gap: 12px;
       margin-top: 16px;
+    }
+
+    .config-form input[type="number"]::-webkit-inner-spin-button,
+    .config-form input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .config-form input[type="number"] {
+      -moz-appearance: textfield;
     }
 
     .pausen-section {
@@ -509,6 +529,18 @@ export class StationConfigEditDialogComponent {
     }
 
     return defaults;
+  }
+
+  onNumberInput(event: Event, configKey: keyof typeof this.editedConfigs, field: string): void {
+    const input = event.target as HTMLInputElement;
+    if (input.value.includes(',')) {
+      input.value = input.value.replace(',', '.');
+      // Update the model value
+      const numValue = parseFloat(input.value);
+      if (!isNaN(numValue)) {
+        (this.editedConfigs[configKey] as any)[field] = numValue;
+      }
+    }
   }
 
   /**
