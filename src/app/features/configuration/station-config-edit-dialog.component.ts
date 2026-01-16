@@ -12,6 +12,8 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSelectModule } from '@angular/material/select';
 import { MatRadioModule } from '@angular/material/radio';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 import { firstValueFrom } from 'rxjs';
 import { Api } from '../../core/api';
 
@@ -52,6 +54,8 @@ interface StationConfigValues {
     MatSlideToggleModule,
     MatSelectModule,
     MatRadioModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
   ],
   template: `
     <h2 mat-dialog-title>
@@ -97,12 +101,14 @@ interface StationConfigValues {
                     <mat-form-field appearance="outline">
                       <mat-label>Pause Start</mat-label>
                       <input matInput type="time"
-                             [(ngModel)]="editedConfigs.tag_pfk.pausen_start">
+                             [(ngModel)]="editedConfigs.tag_pfk.pausen_start"
+                             required>
                     </mat-form-field>
                     <mat-form-field appearance="outline">
                       <mat-label>Pause Ende</mat-label>
                       <input matInput type="time"
-                             [(ngModel)]="editedConfigs.tag_pfk.pausen_ende">
+                             [(ngModel)]="editedConfigs.tag_pfk.pausen_ende"
+                             required>
                     </mat-form-field>
                   </div>
                   <div class="pause-duration">
@@ -116,15 +122,28 @@ interface StationConfigValues {
                     </mat-radio-group>
                   </div>
                   <div class="date-range-row">
+                    <div class="date-range-label">Datumsbereich (optional)</div>
                     <mat-form-field appearance="outline">
-                      <mat-label>Von Datum (optional)</mat-label>
-                      <input matInput type="date"
-                             [(ngModel)]="editedConfigs.tag_pfk.pausen_von_datum">
+                      <mat-label>Von Datum</mat-label>
+                      <input matInput [matDatepicker]="tagPfkVonPicker"
+                             [value]="getDateValue('tag_pfk', 'pausen_von_datum')"
+                             (dateChange)="onDateChange($event, 'tag_pfk', 'pausen_von_datum')"
+                             (click)="tagPfkVonPicker.open()"
+                             placeholder="TT.MM.JJJJ"
+                             readonly>
+                      <mat-datepicker-toggle matSuffix [for]="tagPfkVonPicker"></mat-datepicker-toggle>
+                      <mat-datepicker #tagPfkVonPicker></mat-datepicker>
                     </mat-form-field>
                     <mat-form-field appearance="outline">
-                      <mat-label>Bis Datum (optional)</mat-label>
-                      <input matInput type="date"
-                             [(ngModel)]="editedConfigs.tag_pfk.pausen_bis_datum">
+                      <mat-label>Bis Datum</mat-label>
+                      <input matInput [matDatepicker]="tagPfkBisPicker"
+                             [value]="getDateValue('tag_pfk', 'pausen_bis_datum')"
+                             (dateChange)="onDateChange($event, 'tag_pfk', 'pausen_bis_datum')"
+                             (click)="tagPfkBisPicker.open()"
+                             placeholder="TT.MM.JJJJ"
+                             readonly>
+                      <mat-datepicker-toggle matSuffix [for]="tagPfkBisPicker"></mat-datepicker-toggle>
+                      <mat-datepicker #tagPfkBisPicker></mat-datepicker>
                     </mat-form-field>
                   </div>
                 </div>
@@ -167,12 +186,14 @@ interface StationConfigValues {
                     <mat-form-field appearance="outline">
                       <mat-label>Pause Start</mat-label>
                       <input matInput type="time"
-                             [(ngModel)]="editedConfigs.nacht_pfk.pausen_start">
+                             [(ngModel)]="editedConfigs.nacht_pfk.pausen_start"
+                             required>
                     </mat-form-field>
                     <mat-form-field appearance="outline">
                       <mat-label>Pause Ende</mat-label>
                       <input matInput type="time"
-                             [(ngModel)]="editedConfigs.nacht_pfk.pausen_ende">
+                             [(ngModel)]="editedConfigs.nacht_pfk.pausen_ende"
+                             required>
                     </mat-form-field>
                   </div>
                   <div class="pause-duration">
@@ -186,15 +207,28 @@ interface StationConfigValues {
                     </mat-radio-group>
                   </div>
                   <div class="date-range-row">
+                    <div class="date-range-label">Datumsbereich (optional)</div>
                     <mat-form-field appearance="outline">
-                      <mat-label>Von Datum (optional)</mat-label>
-                      <input matInput type="date"
-                             [(ngModel)]="editedConfigs.nacht_pfk.pausen_von_datum">
+                      <mat-label>Von Datum</mat-label>
+                      <input matInput [matDatepicker]="nachtPfkVonPicker"
+                             [value]="getDateValue('nacht_pfk', 'pausen_von_datum')"
+                             (dateChange)="onDateChange($event, 'nacht_pfk', 'pausen_von_datum')"
+                             (click)="nachtPfkVonPicker.open()"
+                             placeholder="TT.MM.JJJJ"
+                             readonly>
+                      <mat-datepicker-toggle matSuffix [for]="nachtPfkVonPicker"></mat-datepicker-toggle>
+                      <mat-datepicker #nachtPfkVonPicker></mat-datepicker>
                     </mat-form-field>
                     <mat-form-field appearance="outline">
-                      <mat-label>Bis Datum (optional)</mat-label>
-                      <input matInput type="date"
-                             [(ngModel)]="editedConfigs.nacht_pfk.pausen_bis_datum">
+                      <mat-label>Bis Datum</mat-label>
+                      <input matInput [matDatepicker]="nachtPfkBisPicker"
+                             [value]="getDateValue('nacht_pfk', 'pausen_bis_datum')"
+                             (dateChange)="onDateChange($event, 'nacht_pfk', 'pausen_bis_datum')"
+                             (click)="nachtPfkBisPicker.open()"
+                             placeholder="TT.MM.JJJJ"
+                             readonly>
+                      <mat-datepicker-toggle matSuffix [for]="nachtPfkBisPicker"></mat-datepicker-toggle>
+                      <mat-datepicker #nachtPfkBisPicker></mat-datepicker>
                     </mat-form-field>
                   </div>
                 </div>
@@ -230,12 +264,14 @@ interface StationConfigValues {
                     <mat-form-field appearance="outline">
                       <mat-label>Pause Start</mat-label>
                       <input matInput type="time"
-                             [(ngModel)]="editedConfigs.tag_phk.pausen_start">
+                             [(ngModel)]="editedConfigs.tag_phk.pausen_start"
+                             required>
                     </mat-form-field>
                     <mat-form-field appearance="outline">
                       <mat-label>Pause Ende</mat-label>
                       <input matInput type="time"
-                             [(ngModel)]="editedConfigs.tag_phk.pausen_ende">
+                             [(ngModel)]="editedConfigs.tag_phk.pausen_ende"
+                             required>
                     </mat-form-field>
                   </div>
                   <div class="pause-duration">
@@ -249,15 +285,28 @@ interface StationConfigValues {
                     </mat-radio-group>
                   </div>
                   <div class="date-range-row">
+                    <div class="date-range-label">Datumsbereich (optional)</div>
                     <mat-form-field appearance="outline">
-                      <mat-label>Von Datum (optional)</mat-label>
-                      <input matInput type="date"
-                             [(ngModel)]="editedConfigs.tag_phk.pausen_von_datum">
+                      <mat-label>Von Datum</mat-label>
+                      <input matInput [matDatepicker]="tagPhkVonPicker"
+                             [value]="getDateValue('tag_phk', 'pausen_von_datum')"
+                             (dateChange)="onDateChange($event, 'tag_phk', 'pausen_von_datum')"
+                             (click)="tagPhkVonPicker.open()"
+                             placeholder="TT.MM.JJJJ"
+                             readonly>
+                      <mat-datepicker-toggle matSuffix [for]="tagPhkVonPicker"></mat-datepicker-toggle>
+                      <mat-datepicker #tagPhkVonPicker></mat-datepicker>
                     </mat-form-field>
                     <mat-form-field appearance="outline">
-                      <mat-label>Bis Datum (optional)</mat-label>
-                      <input matInput type="date"
-                             [(ngModel)]="editedConfigs.tag_phk.pausen_bis_datum">
+                      <mat-label>Bis Datum</mat-label>
+                      <input matInput [matDatepicker]="tagPhkBisPicker"
+                             [value]="getDateValue('tag_phk', 'pausen_bis_datum')"
+                             (dateChange)="onDateChange($event, 'tag_phk', 'pausen_bis_datum')"
+                             (click)="tagPhkBisPicker.open()"
+                             placeholder="TT.MM.JJJJ"
+                             readonly>
+                      <mat-datepicker-toggle matSuffix [for]="tagPhkBisPicker"></mat-datepicker-toggle>
+                      <mat-datepicker #tagPhkBisPicker></mat-datepicker>
                     </mat-form-field>
                   </div>
                 </div>
@@ -293,12 +342,14 @@ interface StationConfigValues {
                     <mat-form-field appearance="outline">
                       <mat-label>Pause Start</mat-label>
                       <input matInput type="time"
-                             [(ngModel)]="editedConfigs.nacht_phk.pausen_start">
+                             [(ngModel)]="editedConfigs.nacht_phk.pausen_start"
+                             required>
                     </mat-form-field>
                     <mat-form-field appearance="outline">
                       <mat-label>Pause Ende</mat-label>
                       <input matInput type="time"
-                             [(ngModel)]="editedConfigs.nacht_phk.pausen_ende">
+                             [(ngModel)]="editedConfigs.nacht_phk.pausen_ende"
+                             required>
                     </mat-form-field>
                   </div>
                   <div class="pause-duration">
@@ -312,15 +363,28 @@ interface StationConfigValues {
                     </mat-radio-group>
                   </div>
                   <div class="date-range-row">
+                    <div class="date-range-label">Datumsbereich (optional)</div>
                     <mat-form-field appearance="outline">
-                      <mat-label>Von Datum (optional)</mat-label>
-                      <input matInput type="date"
-                             [(ngModel)]="editedConfigs.nacht_phk.pausen_von_datum">
+                      <mat-label>Von Datum</mat-label>
+                      <input matInput [matDatepicker]="nachtPhkVonPicker"
+                             [value]="getDateValue('nacht_phk', 'pausen_von_datum')"
+                             (dateChange)="onDateChange($event, 'nacht_phk', 'pausen_von_datum')"
+                             (click)="nachtPhkVonPicker.open()"
+                             placeholder="TT.MM.JJJJ"
+                             readonly>
+                      <mat-datepicker-toggle matSuffix [for]="nachtPhkVonPicker"></mat-datepicker-toggle>
+                      <mat-datepicker #nachtPhkVonPicker></mat-datepicker>
                     </mat-form-field>
                     <mat-form-field appearance="outline">
-                      <mat-label>Bis Datum (optional)</mat-label>
-                      <input matInput type="date"
-                             [(ngModel)]="editedConfigs.nacht_phk.pausen_bis_datum">
+                      <mat-label>Bis Datum</mat-label>
+                      <input matInput [matDatepicker]="nachtPhkBisPicker"
+                             [value]="getDateValue('nacht_phk', 'pausen_bis_datum')"
+                             (dateChange)="onDateChange($event, 'nacht_phk', 'pausen_bis_datum')"
+                             (click)="nachtPhkBisPicker.open()"
+                             placeholder="TT.MM.JJJJ"
+                             readonly>
+                      <mat-datepicker-toggle matSuffix [for]="nachtPhkBisPicker"></mat-datepicker-toggle>
+                      <mat-datepicker #nachtPhkBisPicker></mat-datepicker>
                     </mat-form-field>
                   </div>
                 </div>
@@ -450,6 +514,62 @@ interface StationConfigValues {
       margin-top: 12px;
     }
 
+    .date-range-label {
+      grid-column: 1 / -1;
+      font-size: 12px;
+      color: #666;
+      font-style: italic;
+      margin-bottom: -8px;
+    }
+
+    .date-range-row mat-form-field {
+      min-width: 0; /* Allow fields to shrink but not overflow */
+      width: 100%; /* Ensure full width within grid cell */
+    }
+
+    .date-range-row mat-form-field ::ng-deep .mat-mdc-text-field-wrapper {
+      min-width: 0;
+      width: 100%;
+    }
+
+    .date-range-row mat-form-field ::ng-deep .mat-mdc-form-field-flex {
+      min-width: 0;
+      width: 100%;
+    }
+
+    .date-range-row mat-form-field ::ng-deep input {
+      min-width: 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .date-range-row mat-form-field ::ng-deep .mat-mdc-form-field-input-control {
+      width: 100%;
+    }
+
+    /* Responsive: Stack date fields vertically on smaller screens */
+    @media (max-width: 900px) {
+      .date-range-row {
+        grid-template-columns: 1fr;
+      }
+
+      .date-range-label {
+        grid-column: 1;
+      }
+    }
+
+    /* Ensure date fields don't get squished in narrow config sections */
+    @media (max-width: 500px) {
+      .config-section {
+        min-width: 0;
+      }
+
+      .date-range-row {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+    }
+
     .loading-container {
       display: flex;
       flex-direction: column;
@@ -471,6 +591,17 @@ interface StationConfigValues {
       button {
         margin-left: 8px;
       }
+    }
+
+    /* Datepicker Toggle Button fix */
+    mat-datepicker-toggle {
+      position: relative;
+      z-index: 1;
+    }
+
+    mat-datepicker-toggle ::ng-deep .mat-mdc-icon-button {
+      cursor: pointer !important;
+      pointer-events: auto !important;
     }
   `]
 })
@@ -540,6 +671,25 @@ export class StationConfigEditDialogComponent {
       if (!isNaN(numValue)) {
         (this.editedConfigs[configKey] as any)[field] = numValue;
       }
+    }
+  }
+
+  getDateValue(configKey: keyof typeof this.editedConfigs, field: 'pausen_von_datum' | 'pausen_bis_datum'): Date | null {
+    const dateString = this.editedConfigs[configKey][field];
+    if (!dateString) return null;
+    return new Date(dateString);
+  }
+
+  onDateChange(event: any, configKey: keyof typeof this.editedConfigs, field: 'pausen_von_datum' | 'pausen_bis_datum'): void {
+    const date = event.value;
+    if (date && date instanceof Date) {
+      // Convert Date to YYYY-MM-DD string format
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      (this.editedConfigs[configKey] as any)[field] = `${year}-${month}-${day}`;
+    } else {
+      (this.editedConfigs[configKey] as any)[field] = null;
     }
   }
 

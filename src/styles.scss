@@ -1305,6 +1305,42 @@ pre {
   margin-bottom: 32px;
 }
 
+// Datepicker Overlay - ensure it appears above dialogs (z-index 1000+)
+.cdk-overlay-container {
+  z-index: 1050 !important;
+}
+
+// Datepicker specific - must be higher than dialog (usually 1000)
+.mat-datepicker-content {
+  z-index: 1100 !important;
+  background: #ffffff !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
+}
+
+.mat-datepicker-content-container {
+  z-index: 1100 !important;
+}
+
+// Target the overlay pane containing datepicker
+.cdk-overlay-connected-position-bounding-box {
+  z-index: 1100 !important;
+}
+
+// Ensure datepicker toggle button is clickable
+.mat-datepicker-toggle {
+  pointer-events: auto !important;
+  
+  .mat-mdc-icon-button {
+    pointer-events: auto !important;
+  }
+}
+
+// Fix for datepicker in dialogs - ensure backdrop doesn't block
+.mat-datepicker-content .mat-calendar {
+  background: #ffffff !important;
+}
+
 // Snackbar Styles for Upload Feedback
 .success-snackbar {
   background: #4caf50 !important;
