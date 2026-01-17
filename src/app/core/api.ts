@@ -752,7 +752,14 @@ export class Api {
   updateStationConfigNacht(
     station: string,
     kategorie: string,
-    config: { schicht_stunden: number; phk_anteil_base: number | null; pp_ratio_base: number }
+    config: { 
+      schicht_stunden: number; 
+      phk_anteil_base: number | null; 
+      pp_ratio_base: number;
+      pausen_aktiviert?: boolean;
+      pausen_stunden?: number;
+      pausen_minuten?: number;
+    }
   ): Observable<{ success: boolean; message: string }> {
     return this.http.put<{ success: boolean; message: string }>(
       `${this.baseUrl}/manual-entry-nacht/station-config`,
