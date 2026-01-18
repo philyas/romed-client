@@ -490,7 +490,7 @@
                   (input)="updateEntry(i, 'pausen_stunden', $any($event.target).value)"
                   placeholder="0"
                   class="table-input pause-input"
-                  [disabled]="!stationConfig()?.pausen_aktiviert"
+                  [disabled]="!shouldApplyPausenzeiten()"
                   title="Kann negativ sein (z.B. -0:30 = 30 Min. Abzug)">
               </td>
               <td class="input-cell">
@@ -502,7 +502,7 @@
                   (input)="updateEntry(i, 'pausen_minuten', $any($event.target).value)"
                   placeholder="0"
                   class="table-input pause-input"
-                  [disabled]="!stationConfig()?.pausen_aktiviert"
+                  [disabled]="!shouldApplyPausenzeiten()"
                   title="Kann negativ sein (z.B. -30 = 30 Min. Abzug)">
               </td>
               

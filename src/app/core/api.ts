@@ -679,6 +679,8 @@ export class Api {
     pausen_aktiviert?: boolean;
     pausen_stunden?: number;
     pausen_minuten?: number;
+    pausen_jahr?: number | null;
+    pausen_monate?: number[] | null;
     fromSnapshot: boolean;
     snapshotMonth?: number;
     snapshotYear?: number;
@@ -698,6 +700,8 @@ export class Api {
       pausen_aktiviert?: boolean;
       pausen_stunden?: number;
       pausen_minuten?: number;
+      pausen_jahr?: number | null;
+      pausen_monate?: number[] | null;
       fromSnapshot: boolean;
       snapshotMonth?: number;
       snapshotYear?: number;
@@ -716,6 +720,8 @@ export class Api {
       pausen_aktiviert?: boolean;
       pausen_stunden?: number;
       pausen_minuten?: number;
+      pausen_jahr?: number | null;
+      pausen_monate?: number[] | null;
     }
   ): Observable<{ success: boolean; message: string }> {
     return this.http.put<{ success: boolean; message: string }>(
@@ -739,6 +745,8 @@ export class Api {
     pausen_aktiviert?: boolean;
     pausen_stunden?: number;
     pausen_minuten?: number;
+    pausen_jahr?: number | null;
+    pausen_monate?: number[] | null;
     fromSnapshot: boolean;
     snapshotMonth?: number;
     snapshotYear?: number;
@@ -758,6 +766,8 @@ export class Api {
       pausen_aktiviert?: boolean;
       pausen_stunden?: number;
       pausen_minuten?: number;
+      pausen_jahr?: number | null;
+      pausen_monate?: number[] | null;
       fromSnapshot: boolean;
       snapshotMonth?: number;
       snapshotYear?: number;
@@ -775,6 +785,8 @@ export class Api {
       pausen_aktiviert?: boolean;
       pausen_stunden?: number;
       pausen_minuten?: number;
+      pausen_jahr?: number | null;
+      pausen_monate?: number[] | null;
     }
   ): Observable<{ success: boolean; message: string }> {
     return this.http.put<{ success: boolean; message: string }>(
@@ -803,6 +815,8 @@ export class Api {
           pausen_aktiviert: boolean;
           pausen_stunden: number;
           pausen_minuten: number;
+          pausen_jahr?: number | null;
+          pausen_monate?: number[] | null;
           fromSnapshot: boolean;
         };
       };
@@ -826,6 +840,8 @@ export class Api {
             pausen_aktiviert: boolean;
             pausen_stunden: number;
             pausen_minuten: number;
+            pausen_jahr?: number | null;
+            pausen_monate?: number[] | null;
             fromSnapshot: boolean;
           };
         };

@@ -159,6 +159,8 @@ export class ManualEntry {
     pausen_aktiviert: boolean;
     pausen_stunden: number;
     pausen_minuten: number;
+    pausen_jahr: number | null;
+    pausen_monate: number[] | null;
   } | null>(null);
   
   // Available categories
@@ -398,6 +400,8 @@ export class ManualEntry {
           
           // Get station config for pausenzeiten
           const pausenConfig = this.stationConfig();
+          // Prüfe ob Pausenzeiten für diesen Monat/Jahr gelten sollen
+          const applyPausen = this.shouldApplyPausenzeiten();
           
           for (let i = 1; i <= days; i++) {
             const existing = dataEntries.find(d => d.Tag === i);
@@ -409,11 +413,11 @@ export class ManualEntry {
               let normaleStunden = gesamtStunden;
               let normaleMinuten = gesamtMinuten;
               
-              // Setze Pausenzeiten-Werte aus Config, wenn aktiviert
-              let pausenStunden = (pausenConfig && pausenConfig.pausen_aktiviert) ? pausenConfig.pausen_stunden : 0;
-              let pausenMinuten = (pausenConfig && pausenConfig.pausen_aktiviert) ? pausenConfig.pausen_minuten : 0;
+              // Setze Pausenzeiten-Werte aus Config, wenn aktiviert UND für diesen Monat/Jahr gültig
+              let pausenStunden = (pausenConfig && applyPausen) ? pausenConfig.pausen_stunden : 0;
+              let pausenMinuten = (pausenConfig && applyPausen) ? pausenConfig.pausen_minuten : 0;
               
-              if (pausenConfig && pausenConfig.pausen_aktiviert) {
+              if (pausenConfig && applyPausen) {
                 // Gesamtzeit in Minuten
                 const gesamtTotalMinutes = (gesamtStunden * 60) + gesamtMinuten;
                 // Pausenzeit in Minuten (kann negativ sein)
@@ -441,9 +445,9 @@ export class ManualEntry {
                 phkAnrechenbar: existing.PHK_Anrechenbar_Stunden
               });
             } else {
-              // Initialize with default pausenzeiten if enabled
-              const pausenStunden = pausenConfig && pausenConfig.pausen_aktiviert ? pausenConfig.pausen_stunden : 0;
-              const pausenMinuten = pausenConfig && pausenConfig.pausen_aktiviert ? pausenConfig.pausen_minuten : 0;
+              // Initialize with default pausenzeiten if enabled AND for this month/year
+              const pausenStunden = pausenConfig && applyPausen ? pausenConfig.pausen_stunden : 0;
+              const pausenMinuten = pausenConfig && applyPausen ? pausenConfig.pausen_minuten : 0;
               entries.push({ 
                 tag: i, 
                 stunden: 0, 
@@ -499,12 +503,14 @@ export class ManualEntry {
           this.stationConfig.set({
             pausen_aktiviert: config.pausen_aktiviert || false,
             pausen_stunden: config.pausen_stunden || 0,
-            pausen_minuten: config.pausen_minuten || 0
+            pausen_minuten: config.pausen_minuten || 0,
+            pausen_jahr: config.pausen_jahr || null,
+            pausen_monate: config.pausen_monate || null
           });
           
-          // Wenn Pausenzeiten aktiviert sind, aktualisiere die Werte in den existierenden Einträgen
+          // Wenn Pausenzeiten aktiviert sind UND für den aktuellen Monat gelten, aktualisiere die Werte
           const isPausenEnabled = config.pausen_aktiviert || false;
-          if (isPausenEnabled && this.dayEntries().length > 0) {
+          if (isPausenEnabled && this.dayEntries().length > 0 && this.shouldApplyPausenzeiten()) {
             this.updatePausenzeitenInEntries(config.pausen_stunden || 0, config.pausen_minuten || 0);
           }
           
@@ -515,7 +521,9 @@ export class ManualEntry {
           this.stationConfig.set({
             pausen_aktiviert: false,
             pausen_stunden: 0,
-            pausen_minuten: 0
+            pausen_minuten: 0,
+            pausen_jahr: null,
+            pausen_monate: null
           });
           resolve(); // Resolve auch bei Fehler, damit die Daten trotzdem geladen werden
         }
@@ -763,11 +771,48 @@ export class ManualEntry {
     });
   }
   
+  // Prüft, ob die Pausenzeiten für den aktuellen Monat/Jahr gelten sollen
+  shouldApplyPausenzeiten(): boolean {
+    const config = this.stationConfig();
+    if (!config || !config.pausen_aktiviert) {
+      return false;
+    }
+    
+    const pausenJahr = config.pausen_jahr;
+    const pausenMonate = config.pausen_monate;
+    const targetJahr = this.selectedYear();
+    const targetMonat = this.selectedMonth();
+    
+    // If no restrictions, apply to all
+    if (!pausenJahr && (!pausenMonate || pausenMonate.length === 0)) {
+      return true;
+    }
+    
+    // If year is set but doesn't match, don't apply
+    if (pausenJahr && pausenJahr !== targetJahr) {
+      return false;
+    }
+    
+    // If months are set, check if target month is in the list
+    if (pausenMonate && pausenMonate.length > 0) {
+      return pausenMonate.includes(targetMonat);
+    }
+    
+    // Year matches and no month restriction
+    return true;
+  }
+
   // Berechne Gesamtzeit für einen Eintrag
-  // Negative Pausenzeiten werden abgezogen
+  // Negative Pausenzeiten werden abgezogen, aber nur wenn sie für den aktuellen Monat/Jahr gelten
   getGesamtzeit(entry: DayEntry): { stunden: number; minuten: number } {
     const normaleTotalMinutes = (entry.stunden * 60) + entry.minuten;
-    const pausenTotalMinutes = ((entry.pausen_stunden || 0) * 60) + (entry.pausen_minuten || 0);
+    
+    // Nur Pausenzeiten hinzufügen, wenn sie für den aktuellen Monat/Jahr gelten
+    let pausenTotalMinutes = 0;
+    if (this.shouldApplyPausenzeiten()) {
+      pausenTotalMinutes = ((entry.pausen_stunden || 0) * 60) + (entry.pausen_minuten || 0);
+    }
+    
     const gesamtTotalMinutes = normaleTotalMinutes + pausenTotalMinutes;
     // Clamp to 0 (can't have negative total time)
     const clampedMinutes = Math.max(0, gesamtTotalMinutes);

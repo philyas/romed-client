@@ -10,6 +10,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatSelectModule } from '@angular/material/select';
+import { MatChipsModule } from '@angular/material/chips';
 import { firstValueFrom } from 'rxjs';
 import { Api } from '../../core/api';
 
@@ -28,6 +30,8 @@ interface StationConfigValues {
   pausen_aktiviert: boolean;
   pausen_stunden: number;
   pausen_minuten: number;
+  pausen_jahr: number | null;
+  pausen_monate: number[] | null;
 }
 
 @Component({
@@ -45,6 +49,8 @@ interface StationConfigValues {
     MatProgressSpinnerModule,
     MatSnackBarModule,
     MatSlideToggleModule,
+    MatSelectModule,
+    MatChipsModule,
   ],
   template: `
     <h2 mat-dialog-title>
@@ -98,6 +104,22 @@ interface StationConfigValues {
                     <span matSuffix>min</span>
                   </mat-form-field>
                 </div>
+                <div class="pausen-zeitraum" *ngIf="editedConfigs.tag_pfk.pausen_aktiviert">
+                  <p class="zeitraum-label">Gültig für (leer = alle Jahre/Monate):</p>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Jahr</mat-label>
+                    <mat-select [(ngModel)]="editedConfigs.tag_pfk.pausen_jahr">
+                      <mat-option [value]="null">Alle Jahre</mat-option>
+                      <mat-option *ngFor="let year of availableYears" [value]="year">{{ year }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Monate</mat-label>
+                    <mat-select [(ngModel)]="editedConfigs.tag_pfk.pausen_monate" multiple>
+                      <mat-option *ngFor="let month of months" [value]="month.value">{{ month.name }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
               </div>
             </div>
           </div>
@@ -145,6 +167,22 @@ interface StationConfigValues {
                     <span matSuffix>min</span>
                   </mat-form-field>
                 </div>
+                <div class="pausen-zeitraum" *ngIf="editedConfigs.nacht_pfk.pausen_aktiviert">
+                  <p class="zeitraum-label">Gültig für (leer = alle Jahre/Monate):</p>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Jahr</mat-label>
+                    <mat-select [(ngModel)]="editedConfigs.nacht_pfk.pausen_jahr">
+                      <mat-option [value]="null">Alle Jahre</mat-option>
+                      <mat-option *ngFor="let year of availableYears" [value]="year">{{ year }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Monate</mat-label>
+                    <mat-select [(ngModel)]="editedConfigs.nacht_pfk.pausen_monate" multiple>
+                      <mat-option *ngFor="let month of months" [value]="month.value">{{ month.name }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
               </div>
             </div>
           </div>
@@ -186,6 +224,22 @@ interface StationConfigValues {
                     <span matSuffix>min</span>
                   </mat-form-field>
                 </div>
+                <div class="pausen-zeitraum" *ngIf="editedConfigs.tag_phk.pausen_aktiviert">
+                  <p class="zeitraum-label">Gültig für (leer = alle Jahre/Monate):</p>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Jahr</mat-label>
+                    <mat-select [(ngModel)]="editedConfigs.tag_phk.pausen_jahr">
+                      <mat-option [value]="null">Alle Jahre</mat-option>
+                      <mat-option *ngFor="let year of availableYears" [value]="year">{{ year }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Monate</mat-label>
+                    <mat-select [(ngModel)]="editedConfigs.tag_phk.pausen_monate" multiple>
+                      <mat-option *ngFor="let month of months" [value]="month.value">{{ month.name }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
               </div>
             </div>
           </div>
@@ -225,6 +279,22 @@ interface StationConfigValues {
                            [(ngModel)]="editedConfigs.nacht_phk.pausen_minuten"
                            title="Kann negativ sein (z.B. -30 = 30 Min. Abzug)">
                     <span matSuffix>min</span>
+                  </mat-form-field>
+                </div>
+                <div class="pausen-zeitraum" *ngIf="editedConfigs.nacht_phk.pausen_aktiviert">
+                  <p class="zeitraum-label">Gültig für (leer = alle Jahre/Monate):</p>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Jahr</mat-label>
+                    <mat-select [(ngModel)]="editedConfigs.nacht_phk.pausen_jahr">
+                      <mat-option [value]="null">Alle Jahre</mat-option>
+                      <mat-option *ngFor="let year of availableYears" [value]="year">{{ year }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Monate</mat-label>
+                    <mat-select [(ngModel)]="editedConfigs.nacht_phk.pausen_monate" multiple>
+                      <mat-option *ngFor="let month of months" [value]="month.value">{{ month.name }}</mat-option>
+                    </mat-select>
                   </mat-form-field>
                 </div>
               </div>
@@ -308,6 +378,22 @@ interface StationConfigValues {
       margin-top: 12px;
     }
 
+    .pausen-zeitraum {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px dashed #ccc;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+
+      .zeitraum-label {
+        grid-column: 1 / -1;
+        margin: 0 0 8px 0;
+        font-size: 12px;
+        color: #666;
+      }
+    }
+
     .loading-container {
       display: flex;
       flex-direction: column;
@@ -340,6 +426,25 @@ export class StationConfigEditDialogComponent {
   loading = false;
   saving = false;
 
+  // Available years for selection (current year - 1 to current year + 2)
+  availableYears: number[] = [];
+  
+  // Months for selection
+  months = [
+    { value: 1, name: 'Januar' },
+    { value: 2, name: 'Februar' },
+    { value: 3, name: 'März' },
+    { value: 4, name: 'April' },
+    { value: 5, name: 'Mai' },
+    { value: 6, name: 'Juni' },
+    { value: 7, name: 'Juli' },
+    { value: 8, name: 'August' },
+    { value: 9, name: 'September' },
+    { value: 10, name: 'Oktober' },
+    { value: 11, name: 'November' },
+    { value: 12, name: 'Dezember' }
+  ];
+
   editedConfigs: {
     tag_pfk: StationConfigValues;
     nacht_pfk: StationConfigValues;
@@ -348,6 +453,9 @@ export class StationConfigEditDialogComponent {
   };
 
   constructor(@Inject(MAT_DIALOG_DATA) public data: { stationConfig: StationConfig }) {
+    // Initialize available years
+    const currentYear = new Date().getFullYear();
+    this.availableYears = [currentYear - 1, currentYear, currentYear + 1, currentYear + 2];
     // Initialize with existing values or defaults
     this.editedConfigs = {
       tag_pfk: this.initConfigValues(data.stationConfig.tag_pfk, 'tag', 'PFK'),
@@ -359,13 +467,15 @@ export class StationConfigEditDialogComponent {
 
   private initConfigValues(existing: StationConfigValues | null, schicht: 'tag' | 'nacht', kategorie: 'PFK' | 'PHK'): StationConfigValues {
     // Default values
-    const defaults = {
+    const defaults: StationConfigValues = {
       schicht_stunden: schicht === 'nacht' ? 8 : 16,
       phk_anteil_base: kategorie === 'PFK' ? 10 : null,
       pp_ratio_base: schicht === 'nacht' ? 20 : 10,
       pausen_aktiviert: false,
       pausen_stunden: 0,
-      pausen_minuten: 0
+      pausen_minuten: 0,
+      pausen_jahr: null,
+      pausen_monate: null
     };
 
     if (existing) {
@@ -376,7 +486,9 @@ export class StationConfigEditDialogComponent {
         // Ensure pausenzeiten fields are always defined (default to 0 if undefined)
         pausen_aktiviert: existing.pausen_aktiviert ?? false,
         pausen_stunden: existing.pausen_stunden ?? 0,
-        pausen_minuten: existing.pausen_minuten ?? 0
+        pausen_minuten: existing.pausen_minuten ?? 0,
+        pausen_jahr: existing.pausen_jahr ?? null,
+        pausen_monate: existing.pausen_monate ?? null
       };
     }
 
@@ -444,7 +556,9 @@ export class StationConfigEditDialogComponent {
       pp_ratio_base: config.pp_ratio_base,
       pausen_aktiviert: config.pausen_aktiviert,
       pausen_stunden: config.pausen_stunden,
-      pausen_minuten: config.pausen_minuten
+      pausen_minuten: config.pausen_minuten,
+      pausen_jahr: config.pausen_jahr,
+      pausen_monate: config.pausen_monate
     };
 
     if (schicht === 'nacht') {
