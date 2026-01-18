@@ -1283,7 +1283,7 @@ export class ManualEntry {
     dailyMap.forEach((dayData, tag) => {
       // Tag = MiTa, Nacht = MiNa
       const value = schicht === 'tag' ? dayData.mita : dayData.mina;
-      if (value !== null && !isNaN(value)) {
+      if (value !== null && !isNaN(value) && ppRatioBase > 0) {
         const ppugNachPfk = value / ppRatioBase;
         sum += ppugNachPfk;
         count++;
@@ -1519,7 +1519,10 @@ export class ManualEntry {
     const value = schicht === 'tag' ? dayData.mita : dayData.mina;
     const ppRatioBase = schicht === 'tag' ? this.ppRatioTagBase() : this.ppRatioNachtBase();
     
-    if (value !== null && !isNaN(value) && ppRatioBase > 0) {
+    if (value !== null && !isNaN(value) && ppRatioBase >= 0) {
+      if (ppRatioBase === 0) {
+        return '0.00';
+      }
       // PpUG nach PFK = MiTa/MiNa / pp_ratio_base
       const result = value / ppRatioBase;
       return result.toFixed(2);
@@ -1538,7 +1541,10 @@ export class ManualEntry {
     const ppRatioBase = schicht === 'tag' ? this.ppRatioTagBase() : this.ppRatioNachtBase();
     const schichtStunden = schicht === 'tag' ? this.schichtStundenTag() : this.schichtStundenNacht();
     
-    if (value !== null && !isNaN(value) && ppRatioBase > 0) {
+    if (value !== null && !isNaN(value) && ppRatioBase >= 0) {
+      if (ppRatioBase === 0) {
+        return '0.00';
+      }
       // PpUG nach PFK in Std. = (MiTa/MiNa / pp_ratio_base) × Schichtstunden
       // = MiTa/MiNa × Schichtstunden / pp_ratio_base
       const result = (value * schichtStunden) / ppRatioBase;
@@ -1721,6 +1727,9 @@ export class ManualEntry {
     }
     
     const ppRatioBase = schicht === 'tag' ? this.ppRatioTagBase() : this.ppRatioNachtBase();
+    if (ppRatioBase === 0) {
+      return '-';
+    }
     const ppugNachPfk = value / ppRatioBase;
     
     // Prüfe: Exam. Pflege >= PpUG nach PFK

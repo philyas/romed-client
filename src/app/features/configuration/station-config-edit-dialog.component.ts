@@ -68,13 +68,13 @@ interface StationConfigValues {
 
               <mat-form-field appearance="outline">
                 <mat-label>%PHP Tag</mat-label>
-                <input matInput type="number" step="0.1" min="1"
+                <input matInput type="number" step="0.1" min="0"
                        [(ngModel)]="editedConfigs.tag_pfk.phk_anteil_base">
               </mat-form-field>
 
               <mat-form-field appearance="outline">
                 <mat-label>P:P-Ratio Basis</mat-label>
-                <input matInput type="number" step="0.1" min="0.1"
+                <input matInput type="number" step="0.1" min="0"
                        [(ngModel)]="editedConfigs.tag_pfk.pp_ratio_base">
               </mat-form-field>
 
@@ -115,13 +115,13 @@ interface StationConfigValues {
 
               <mat-form-field appearance="outline">
                 <mat-label>%PHP Nacht</mat-label>
-                <input matInput type="number" step="0.1" min="1"
+                <input matInput type="number" step="0.1" min="0"
                        [(ngModel)]="editedConfigs.nacht_pfk.phk_anteil_base">
               </mat-form-field>
 
               <mat-form-field appearance="outline">
                 <mat-label>P:P-Ratio Basis</mat-label>
-                <input matInput type="number" step="0.1" min="0.1"
+                <input matInput type="number" step="0.1" min="0"
                        [(ngModel)]="editedConfigs.nacht_pfk.pp_ratio_base">
               </mat-form-field>
 
@@ -162,7 +162,7 @@ interface StationConfigValues {
 
               <mat-form-field appearance="outline">
                 <mat-label>P:P-Ratio Basis</mat-label>
-                <input matInput type="number" step="0.1" min="0.1"
+                <input matInput type="number" step="0.1" min="0"
                        [(ngModel)]="editedConfigs.tag_phk.pp_ratio_base">
               </mat-form-field>
 
@@ -203,7 +203,7 @@ interface StationConfigValues {
 
               <mat-form-field appearance="outline">
                 <mat-label>P:P-Ratio Basis</mat-label>
-                <input matInput type="number" step="0.1" min="0.1"
+                <input matInput type="number" step="0.1" min="0"
                        [(ngModel)]="editedConfigs.nacht_phk.pp_ratio_base">
               </mat-form-field>
 
@@ -386,8 +386,8 @@ export class StationConfigEditDialogComponent {
   isValid(): boolean {
     return Object.values(this.editedConfigs).every(config => {
       const basicValid = config.schicht_stunden > 0 &&
-        config.pp_ratio_base > 0 &&
-        (config.phk_anteil_base === null || config.phk_anteil_base > 0);
+        (config.pp_ratio_base !== null && config.pp_ratio_base !== undefined && !isNaN(config.pp_ratio_base) && config.pp_ratio_base >= 0) &&
+        (config.phk_anteil_base === null || (config.phk_anteil_base !== undefined && !isNaN(config.phk_anteil_base) && config.phk_anteil_base >= 0));
       
       // Pausenzeiten-Validierung: nur wenn aktiviert oder wenn Werte vorhanden sind
       const pausenMinuten = config.pausen_minuten ?? 0;

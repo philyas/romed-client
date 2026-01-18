@@ -719,6 +719,9 @@ export class ManualEntryNacht {
     if (dayData && dayData.mina !== null) {
       // PpUG nach PFK = MiNa / pp_ratio_nacht_base
       const ppRatioBase = this.ppRatioNachtBase();
+      if (ppRatioBase === 0) {
+        return '0.00';
+      }
       const result = dayData.mina / ppRatioBase;
       return result.toFixed(2);
     }
@@ -732,6 +735,9 @@ export class ManualEntryNacht {
       // PpUG nach PFK in Std. = (MiNa / pp_ratio_nacht_base) × Schichtstunden Nacht
       // = MiNa × Schichtstunden Nacht / pp_ratio_nacht_base
       const ppRatioBase = this.ppRatioNachtBase();
+      if (ppRatioBase === 0) {
+        return '0.00';
+      }
       const schichtStunden = this.schichtStundenNacht();
       const result = (dayData.mina * schichtStunden) / ppRatioBase;
       return result.toFixed(2);
@@ -753,6 +759,9 @@ export class ManualEntryNacht {
     
     // Berechne PpUG nach PFK
     const ppRatioBase = this.ppRatioNachtBase();
+    if (ppRatioBase === 0) {
+      return '-';
+    }
     const ppugNachPfk = dayData.mina / ppRatioBase;
     
     // PFK Normal aus entry
@@ -791,6 +800,9 @@ export class ManualEntryNacht {
     }
     
     const ppRatioBase = this.ppRatioNachtBase();
+    if (ppRatioBase === 0) {
+      return '-';
+    }
     const ppugNachPfk = dayData.mina / ppRatioBase;
     
     // Prüfe: Exam. Pflege >= PpUG nach PFK

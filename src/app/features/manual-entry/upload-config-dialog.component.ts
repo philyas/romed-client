@@ -122,7 +122,7 @@ export interface UploadConfigDialogData {
                   type="number" 
                   [(ngModel)]="editedValues.phk_anteil_base" 
                   step="0.1"
-                  min="1"
+                  min="0"
                   (blur)="validateValue('phk_anteil_base')">
               </mat-form-field>
             </div>
@@ -138,7 +138,7 @@ export interface UploadConfigDialogData {
                   type="number" 
                   [(ngModel)]="editedValues.pp_ratio_base" 
                   step="0.1"
-                  min="0.1"
+                  min="0"
                   (blur)="validateValue('pp_ratio_base')">
               </mat-form-field>
             </div>
@@ -440,7 +440,7 @@ export class UploadConfigDialogComponent {
 
   validateValue(field: string): void {
     const value = this.editedValues[field as keyof typeof this.editedValues];
-    if (value === null || value === undefined || (typeof value === 'number' && (isNaN(value) || value <= 0))) {
+    if (value === null || value === undefined || (typeof value === 'number' && isNaN(value))) {
       // Reset to original value if invalid
       if (field === 'schicht_stunden') {
         this.editedValues.schicht_stunden = this.data.schicht === 'nacht' ? 8 : 16;
@@ -449,13 +449,22 @@ export class UploadConfigDialogComponent {
       } else if (field === 'pp_ratio_base') {
         this.editedValues.pp_ratio_base = this.data.schicht === 'nacht' ? 20 : 10;
       }
+    } else if (typeof value === 'number') {
+      // Special validation: pp_ratio_base can be 0, but schicht_stunden and phk_anteil_base must be > 0
+      if (field === 'schicht_stunden' && value <= 0) {
+        this.editedValues.schicht_stunden = this.data.schicht === 'nacht' ? 8 : 16;
+      } else if (field === 'phk_anteil_base' && value < 0) {
+        this.editedValues.phk_anteil_base = 10;
+      } else if (field === 'pp_ratio_base' && value < 0) {
+        this.editedValues.pp_ratio_base = this.data.schicht === 'nacht' ? 20 : 10;
+      }
     }
   }
 
   isValid(): boolean {
     return this.editedValues.schicht_stunden > 0 &&
-           (this.editedValues.phk_anteil_base === null || this.editedValues.phk_anteil_base > 0) &&
-           this.editedValues.pp_ratio_base > 0;
+           (this.editedValues.phk_anteil_base === null || (this.editedValues.phk_anteil_base !== undefined && !isNaN(this.editedValues.phk_anteil_base) && this.editedValues.phk_anteil_base >= 0)) &&
+           (this.editedValues.pp_ratio_base !== null && this.editedValues.pp_ratio_base !== undefined && !isNaN(this.editedValues.pp_ratio_base) && this.editedValues.pp_ratio_base >= 0);
   }
 
   onCancel(): void {
