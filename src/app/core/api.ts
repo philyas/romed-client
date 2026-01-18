@@ -19,6 +19,16 @@ export interface UploadFileResult {
   schemaName?: string;
   values?: Record<string, unknown>[];
   error?: string;
+  rowCount?: number;
+}
+
+export interface GeneratedFile {
+  standort: string;
+  standortName: string;
+  filename: string;
+  kostenstellenCount: number;
+  personalCount: number;
+  downloadUrl: string;
 }
 
 export interface UploadRecord {
@@ -212,12 +222,12 @@ export class Api {
     return this.http.get<StatisticsResponse>(`${this.baseUrl}/data/statistics`);
   }
 
-  uploadFiles(schemaId: string, files: File[]): Observable<{ uploadId: string; files: UploadFileResult[] }> {
+  uploadFiles(schemaId: string, files: File[]): Observable<{ uploadId: string; files: UploadFileResult[]; generatedFiles?: GeneratedFile[]; totalKostenstellen?: number; totalPersonal?: number; month?: number; year?: number; uploadedAt?: string; schemaId?: string; schemaName?: string }> {
     const form = new FormData();
     for (const file of files) {
       form.append('files', file);
     }
-    return this.http.post<{ uploadId: string; files: UploadFileResult[] }>(`${this.baseUrl}/upload/${schemaId}`, form);
+    return this.http.post<{ uploadId: string; files: UploadFileResult[]; generatedFiles?: GeneratedFile[]; totalKostenstellen?: number; totalPersonal?: number; month?: number; year?: number; uploadedAt?: string; schemaId?: string; schemaName?: string }>(`${this.baseUrl}/upload/${schemaId}`, form);
   }
 
   getMitternachtsstatistik(month?: string, location?: string): Observable<MitternachtsstatistikResponse> {
@@ -602,6 +612,12 @@ export class Api {
 
   downloadUploadedFile(storedName: string): Observable<Blob> {
     return this.http.get(`${this.baseUrl}/upload/file/${encodeURIComponent(storedName)}`, {
+      responseType: 'blob'
+    });
+  }
+
+  downloadStammdatenFile(uploadId: string, filename: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/upload/stammdaten/${encodeURIComponent(uploadId)}/${encodeURIComponent(filename)}`, {
       responseType: 'blob'
     });
   }

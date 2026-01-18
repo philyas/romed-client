@@ -38,7 +38,7 @@ export class Upload {
   dragOver = signal<boolean>(false);
 
   // Nur diese Schemas sollen im Dropdown erscheinen
-  private allowedSchemas = ['mitternachtsstatistik', 'co_entlass_aufnahmezeiten', 'ppugv_bestaende', 'pflegestufenstatistik', 'salden_zeitkonten', 'mitteilungen_betten', 'ausfallstatistik'];
+  private allowedSchemas = ['mitternachtsstatistik', 'co_entlass_aufnahmezeiten', 'ppugv_bestaende', 'pflegestufenstatistik', 'salden_zeitkonten', 'mitteilungen_betten', 'ausfallstatistik', 'stammdaten_personal'];
 
   // Gefilterte Schemas für das Dropdown
   get filteredSchemas(): SchemaDef[] {
@@ -70,6 +70,8 @@ export class Upload {
         return 'Die Excel-Datei sollte Mitteilungen gem. § 5 Abs. 3 PpUGV enthalten. Dateiname-Format: <strong>Mitteilung+gem.+Paragraph+5+PpUGV_[IK-NUMMER].xlsx</strong><br>Beispiele: <em>Mitteilung+gem.+Paragraph+5+PpUGV_260911945.xlsx</em> (BAB), <em>260912194.xlsx</em> (WAS), <em>260910637.xlsx</em> (ROS/PRI)<br><br>📊 Das System extrahiert:<br>✅ Jahr aus der Datei<br>✅ Betten pro Station<br>✅ Standort-Zuordnung (IK-Nummer + Standortnummer)<br>✅ Aggregation für BAB, WAS, ROS und PRI';
       case 'ausfallstatistik':
         return 'Die Textdatei sollte eine Statistik nach Kostenstellen enthalten. Dateiname-Format: <strong>testppr [Monat]-[Jahr].txt</strong><br>Beispiel: <em>testppr 9-2025.txt</em><br><br>📊 Das System verarbeitet:<br>✅ Soll/Ist-Arbeitszeit-Vergleiche<br>✅ Lohnarten (KR = Krankenstand, FT = Urlaub/Feiertage, FB = Freizeitausgleich)<br>✅ Kostenstellen-Statistiken<br>✅ Monat und Jahr aus Dateinamen';
+      case 'stammdaten_personal':
+        return 'Die CSV-Datei sollte Personalstammdaten nach Kostenstellen enthalten. Dateiname-Format: <strong>stamm [Monat]-[Jahr].csv</strong>, <strong>stamm[Monat]-[Jahr].csv</strong> oder <strong>stamm_[Monat]-[Jahr].csv</strong><br>Beispiele: <em>stamm 12-2025.csv</em>, <em>stamm12-2025.csv</em> oder <em>stamm_12-2025.csv</em><br><br>📊 Das System verarbeitet:<br>✅ Personalanzahl pro Kostenstelle<br>✅ Spalten: Zeilenbeschriftungen (Kostenstelle), Anzahl von Personalnummer<br>✅ Automatische Generierung von 4 Standort-CSVs (BAB, WAS, PRI, ROS) nach Upload';
       default:
         return null;
     }
@@ -80,6 +82,9 @@ export class Upload {
     if (schemaId === 'ausfallstatistik') {
       return '.txt';
     }
+    if (schemaId === 'stammdaten_personal') {
+      return '.csv';
+    }
     return '.xls,.xlsx,.xlsm,.csv';
   }
 
@@ -87,6 +92,9 @@ export class Upload {
     const schemaId = this.selectedSchemaId();
     if (schemaId === 'ausfallstatistik') {
       return 'Unterstützt: .txt';
+    }
+    if (schemaId === 'stammdaten_personal') {
+      return 'Unterstützt: .csv';
     }
     return 'Unterstützt: .xlsx, .xls, .xlsm, .csv';
   }
@@ -129,6 +137,11 @@ export class Upload {
           max: 0, // 0 = unbegrenzt
           description: 'Sie können mehrere Textdateien gleichzeitig hochladen (z.B. verschiedene Monate).'
         };
+      case 'stammdaten_personal':
+        return {
+          max: 1,
+          description: 'Es kann nur eine CSV-Datei pro Upload hochgeladen werden. Nach Upload werden automatisch 4 Standort-CSVs (BAB, WAS, PRI, ROS) generiert und zum Download bereitgestellt.'
+        };
       default:
         return {
           max: 0,
@@ -141,6 +154,9 @@ export class Upload {
     const schemaId = this.selectedSchemaId();
     if (schemaId === 'ausfallstatistik') {
       return ['.txt'];
+    }
+    if (schemaId === 'stammdaten_personal') {
+      return ['.csv'];
     }
     return ['.xlsx', '.xls', '.xlsm', '.csv'];
   }
@@ -203,6 +219,11 @@ export class Upload {
         return fileName.endsWith('.txt');
       }
       
+      // For stammdaten_personal, allow only .csv files
+      if (schemaId === 'stammdaten_personal') {
+        return fileName.endsWith('.csv');
+      }
+      
       // For other schemas, allow Excel and CSV files
       const validTypes = ['.xlsx', '.xls', '.xlsm', '.csv'];
       return validTypes.some(type => fileName.endsWith(type));
@@ -212,6 +233,8 @@ export class Upload {
       const schemaId = this.selectedSchemaId();
       if (schemaId === 'ausfallstatistik') {
         alert('Einige Dateien wurden ignoriert. Nur Textdateien (.txt) sind erlaubt.');
+      } else if (schemaId === 'stammdaten_personal') {
+        alert('Einige Dateien wurden ignoriert. Nur CSV-Dateien (.csv) sind erlaubt.');
       } else {
         alert('Einige Dateien wurden ignoriert. Nur Excel-Dateien (.xlsx, .xls, .xlsm) und CSV-Dateien sind erlaubt.');
       }
@@ -319,7 +342,7 @@ export class Upload {
     });
   }
 
-  private handleUploadSuccess(response: { uploadId: string; files: UploadFileResult[]; uploadedAt?: string; schemaId?: string; schemaName?: string }) {
+  private handleUploadSuccess(response: { uploadId: string; files: UploadFileResult[]; uploadedAt?: string; schemaId?: string; schemaName?: string; generatedFiles?: any[]; totalKostenstellen?: number; totalPersonal?: number }) {
     this.lastResponse.set(response);
     
     // Calculate summary
@@ -345,7 +368,9 @@ export class Upload {
     
     // Show modal instead of snackbar
     const dialogRef = this.dialog.open(UploadResultDialog, {
-      width: '600px',
+      width: '90vw',
+      maxWidth: '900px',
+      maxHeight: '90vh',
       disableClose: false,
       data: {
         type: dialogType,
@@ -359,6 +384,9 @@ export class Upload {
         files: response.files,
         uploadId: response.uploadId,
         uploadedAt: response.uploadedAt,
+        generatedFiles: response.generatedFiles || [],
+        totalKostenstellen: response.totalKostenstellen,
+        totalPersonal: response.totalPersonal,
         // Add error message if all files failed
         errorMessage: dialogType === 'error' && failedFiles.length > 0 
           ? failedFiles.map(file => file.error).join('\n\n') 
@@ -416,7 +444,9 @@ export class Upload {
     
     // Show error modal instead of snackbar
     const dialogRef = this.dialog.open(UploadResultDialog, {
-      width: '600px',
+      width: '90vw',
+      maxWidth: '900px',
+      maxHeight: '90vh',
       disableClose: false,
       data: {
         type: 'error',
@@ -489,7 +519,10 @@ export class Upload {
                   <div class="file-name">{{ file.originalName }}</div>
                   <div class="file-meta" *ngIf="!file.error">
                     <span class="file-size" *ngIf="file.size">({{ (file.size / 1024) | number:'1.0-1' }} KB)</span>
-                    <span class="file-rows" *ngIf="file.values && file.values.length">
+                    <span class="file-rows" *ngIf="file.rowCount">
+                      {{ file.rowCount }} Zeilen verarbeitet
+                    </span>
+                    <span class="file-rows" *ngIf="file.values && file.values.length && !file.rowCount">
                       {{ file.values.length }} Zeilen verarbeitet
                     </span>
                   </div>
@@ -497,6 +530,56 @@ export class Upload {
                     <span class="error-text">{{ file.error }}</span>
                   </div>
                 </div>
+              </mat-list-item>
+            </mat-list>
+          </div>
+
+          <!-- Generated Files (Stammdaten) -->
+          <div *ngIf="data.generatedFiles && data.generatedFiles.length > 0" class="generated-files-section">
+            <div class="generated-files-header">
+              <h4>
+                <mat-icon class="success-icon">file_download</mat-icon>
+                Generierte Standort-CSVs ({{ data.generatedFiles.length }} Dateien)
+              </h4>
+              <button mat-raised-button 
+                      color="primary" 
+                      (click)="downloadAllGeneratedFiles()"
+                      [disabled]="downloadingAll()"
+                      class="download-all-button">
+                <mat-icon *ngIf="!downloadingAll()">download</mat-icon>
+                <mat-spinner *ngIf="downloadingAll()" diameter="16"></mat-spinner>
+                <span>{{ downloadingAll() ? 'Wird heruntergeladen...' : 'Alle herunterladen' }}</span>
+              </button>
+            </div>
+            <div class="generated-files-info" *ngIf="data.totalKostenstellen || data.totalPersonal">
+              <span *ngIf="data.totalKostenstellen">
+                <strong>{{ data.totalKostenstellen }}</strong> Kostenstellen
+              </span>
+              <span *ngIf="data.totalPersonal">
+                <strong>{{ data.totalPersonal }}</strong> Personal gesamt
+              </span>
+            </div>
+            <mat-list class="file-list generated-files-list">
+              <mat-list-item *ngFor="let genFile of data.generatedFiles">
+                <mat-icon class="success-icon">description</mat-icon>
+                <div class="file-info">
+                  <div class="file-name">{{ genFile.filename }}</div>
+                  <div class="file-meta">
+                    <span class="file-standort">{{ genFile.standortName }} ({{ genFile.standort }})</span>
+                    <span class="file-stats">
+                      {{ genFile.kostenstellenCount }} Kostenstellen, {{ genFile.personalCount }} Personal
+                    </span>
+                  </div>
+                </div>
+                <button mat-icon-button 
+                        (click)="downloadGeneratedFile(genFile)"
+                        [disabled]="downloadingFile() === genFile.filename || downloadingAll()"
+                        matTooltip="Datei herunterladen"
+                        color="primary"
+                        class="download-button">
+                  <mat-icon *ngIf="downloadingFile() !== genFile.filename">download</mat-icon>
+                  <mat-spinner *ngIf="downloadingFile() === genFile.filename" diameter="20"></mat-spinner>
+                </button>
               </mat-list-item>
             </mat-list>
           </div>
@@ -529,7 +612,7 @@ export class Upload {
       <button mat-raised-button color="primary" (click)="onClose()">Schließen</button>
     </mat-dialog-actions>
   `,
-  imports: [MatDialogModule, MatButtonModule, MatIconModule, MatListModule, CommonModule],
+  imports: [MatDialogModule, MatButtonModule, MatIconModule, MatListModule, MatProgressSpinnerModule, MatTooltipModule, CommonModule],
   standalone: true,
   styles: [`
     h2 {
@@ -544,8 +627,14 @@ export class Upload {
     .warning-icon { color: #ff9800; }
     .error-icon { color: #f44336; }
     
+    mat-dialog-content {
+      max-height: calc(90vh - 120px);
+      overflow-y: auto;
+      padding: 24px !important;
+    }
+    
     .upload-result-content {
-      min-width: 500px;
+      min-width: 100%;
     }
     
     .upload-summary {
@@ -603,18 +692,33 @@ export class Upload {
       margin-bottom: 0;
     }
     
+    .file-details {
+      margin-top: 20px;
+    }
+    
     .file-details h4 {
-      margin: 16px 0 12px 0;
+      margin: 0 0 12px 0;
       color: #333;
       font-weight: 600;
+      font-size: 16px;
     }
     
     .file-list {
       background: #fff;
       border-radius: 8px;
       border: 1px solid #e0e0e0;
-      max-height: 300px;
+      max-height: 250px;
       overflow-y: auto;
+      overflow-x: hidden;
+    }
+    
+    .file-list mat-list-item {
+      padding: 12px 16px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .file-list mat-list-item:last-child {
+      border-bottom: none;
     }
     
     .file-info {
@@ -628,10 +732,12 @@ export class Upload {
     
     .file-meta {
       display: flex;
+      flex-wrap: wrap;
       gap: 12px;
       font-size: 12px;
       color: #666;
       margin-top: 4px;
+      align-items: center;
     }
     
     .file-rows {
@@ -663,9 +769,134 @@ export class Upload {
       white-space: pre-line;
       line-height: 1.5;
     }
+
+    .generated-files-section {
+      margin-top: 24px;
+      padding: 20px;
+      background: #f0f7ff;
+      border-radius: 8px;
+      border-left: 3px solid #4caf50;
+    }
+
+    .generated-files-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    
+    .generated-files-header h4 {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .generated-files-section h4 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+      color: #333;
+      font-weight: 600;
+    }
+
+    .generated-files-section h4 mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+
+    .download-all-button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .generated-files-info {
+      margin-bottom: 12px;
+      font-size: 13px;
+      color: #666;
+      display: flex;
+      gap: 16px;
+    }
+
+    .generated-files-info strong {
+      color: #0066cc;
+    }
+
+    .generated-files-list {
+      margin-top: 12px;
+      max-height: 400px;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .generated-files-list mat-list-item {
+      padding: 12px 16px;
+      border-bottom: 1px solid #e0e0e0;
+      min-height: 64px;
+      height: auto;
+    }
+    
+    .generated-files-list mat-list-item:last-child {
+      border-bottom: none;
+    }
+    
+    .generated-files-list .file-info {
+      flex: 1;
+      min-width: 0;
+      padding-right: 12px;
+    }
+
+    .file-standort {
+      color: #0066cc;
+      font-weight: 500;
+      margin-right: 12px;
+      white-space: nowrap;
+    }
+
+    .file-stats {
+      color: #666;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .download-button {
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+    
+    .file-name {
+      word-break: break-word;
+      overflow-wrap: break-word;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .generated-files-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .download-all-button {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .file-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+      }
+    }
   `]
 })
 export class UploadResultDialog {
+  private api = inject(Api);
+  downloadingFile = signal<string | null>(null);
+  downloadingAll = signal<boolean>(false);
+
   constructor(
     public dialogRef: MatDialogRef<UploadResultDialog>,
     @Inject(MAT_DIALOG_DATA) public data: {
@@ -677,6 +908,9 @@ export class UploadResultDialog {
       schemaId?: string;
       schemaName?: string;
       errorMessage?: string;
+      generatedFiles?: any[];
+      totalKostenstellen?: number;
+      totalPersonal?: number;
     }
   ) {}
 
@@ -707,6 +941,78 @@ export class UploadResultDialog {
       });
     } catch {
       return dateString;
+    }
+  }
+
+  async downloadGeneratedFile(genFile: any) {
+    if (!this.data.uploadId) return;
+    
+    this.downloadingFile.set(genFile.filename);
+    
+    try {
+      const blob = await firstValueFrom(
+        this.api.downloadStammdatenFile(this.data.uploadId, genFile.filename)
+      );
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = genFile.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      console.error('Error downloading generated file:', err);
+      alert('Fehler beim Herunterladen der Datei: ' + (err.error?.error || err.message || 'Unbekannter Fehler'));
+    } finally {
+      this.downloadingFile.set(null);
+    }
+  }
+
+  async downloadAllGeneratedFiles() {
+    if (!this.data.uploadId || !this.data.generatedFiles || this.data.generatedFiles.length === 0) return;
+    
+    this.downloadingAll.set(true);
+    
+    try {
+      // Download all files sequentially with a small delay to avoid browser blocking
+      for (let i = 0; i < this.data.generatedFiles.length; i++) {
+        const genFile = this.data.generatedFiles[i];
+        this.downloadingFile.set(genFile.filename);
+        
+        try {
+          const blob = await firstValueFrom(
+            this.api.downloadStammdatenFile(this.data.uploadId!, genFile.filename)
+          );
+          
+          // Create download link
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = genFile.filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+          
+          // Small delay between downloads to avoid browser blocking multiple downloads
+          if (i < this.data.generatedFiles.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 300));
+          }
+        } catch (err: any) {
+          console.error(`Error downloading ${genFile.filename}:`, err);
+          // Continue with next file even if one fails
+        } finally {
+          this.downloadingFile.set(null);
+        }
+      }
+    } catch (err: any) {
+      console.error('Error downloading all files:', err);
+      alert('Fehler beim Herunterladen der Dateien: ' + (err.error?.error || err.message || 'Unbekannter Fehler'));
+    } finally {
+      this.downloadingAll.set(false);
     }
   }
 
