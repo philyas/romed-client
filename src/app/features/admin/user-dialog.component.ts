@@ -71,7 +71,7 @@ export interface UserDialogData {
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Rolle</mat-label>
           <mat-select formControlName="role" required>
-            <mat-option value="viewer">Betrachter</mat-option>
+            <mat-option value="viewer">Benutzer</mat-option>
             <mat-option value="admin">Administrator</mat-option>
           </mat-select>
           <mat-icon matPrefix>security</mat-icon>

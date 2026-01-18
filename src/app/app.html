@@ -40,7 +40,7 @@
                     </div>
                     <div class="user-role" [class.admin]="isAdmin()">
                       <mat-icon class="role-icon">{{ currentUser()?.role === 'admin' ? 'admin_panel_settings' : 'visibility' }}</mat-icon>
-                      <span>{{ currentUser()?.role === 'admin' ? 'Administrator' : 'Betrachter' }}</span>
+                      <span>{{ currentUser()?.role === 'admin' ? 'Administrator' : 'Benutzer' }}</span>
                     </div>
                   </div>
                 </div>

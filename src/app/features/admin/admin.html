@@ -45,7 +45,7 @@
               <th mat-header-cell *matHeaderCellDef>Rolle</th>
               <td mat-cell *matCellDef="let user">
                 <mat-chip [class.admin-chip]="user.role === 'admin'">
-                  {{ user.role === 'admin' ? 'Administrator' : 'Betrachter' }}
+                  {{ user.role === 'admin' ? 'Administrator' : 'Benutzer' }}
                 </mat-chip>
               </td>
             </ng-container>
