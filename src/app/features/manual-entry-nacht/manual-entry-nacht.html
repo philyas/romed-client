@@ -221,129 +221,7 @@
   <mat-card class="stats-card" *ngIf="selectedStation() && !loading()">
     <mat-card-content>
       <div class="stats-row">
-        <div class="stat-item">
-          <mat-icon>access_time</mat-icon>
-          <div class="stat-content">
-            <span class="stat-label">Gesamt</span>
-            <span class="stat-value">{{ getTotalHours() }} Stunden</span>
-          </div>
-          <button mat-icon-button class="stat-info-button" (click)="openStatInfoModal('gesamt')" matTooltip="Berechnung anzeigen">
-            <mat-icon>info</mat-icon>
-          </button>
-        </div>
-        
-        <div class="stat-item">
-          <mat-icon>avg_pace</mat-icon>
-          <div class="stat-content">
-            <span class="stat-label">Durchschnitt {{ selectedKategorie() }}</span>
-            <span class="stat-value">{{ getAverageHoursPerDay() }} Stunden/Tag</span>
-          </div>
-          <button mat-icon-button class="stat-info-button" (click)="openStatInfoModal('durchschnitt')" matTooltip="Berechnung anzeigen">
-            <mat-icon>info</mat-icon>
-          </button>
-        </div>
-
-        <div class="stat-item">
-          <mat-icon>calendar_month</mat-icon>
-          <div class="stat-content">
-            <span class="stat-label">Tage im Monat</span>
-            <span class="stat-value">{{ daysInMonth() }} Tage</span>
-          </div>
-          <button mat-icon-button class="stat-info-button" (click)="openStatInfoModal('tageImMonat')" matTooltip="Berechnung anzeigen">
-            <mat-icon>info</mat-icon>
-          </button>
-        </div>
-
-        <!-- %PHP-Faktor (nur PFK) -->
-        <div class="stat-item" *ngIf="selectedKategorie() === 'PFK'">
-          <mat-icon>percent</mat-icon>
-          <div class="stat-content">
-            <span class="stat-label">%PHP-Faktor (Nacht)</span>
-            <span class="stat-value">{{ getPhkAnteilPercent() }}</span>
-          </div>
-          <button mat-icon-button class="stat-info-button" (click)="openStatInfoModal('phkAnteil')" matTooltip="Berechnung anzeigen">
-            <mat-icon>info</mat-icon>
-          </button>
-        </div>
-
-        <div class="stat-item phk-stat" *ngIf="selectedKategorie() === 'PFK' && durchschnittPhkAnrechenbar() !== null">
-          <mat-icon>trending_up</mat-icon>
-          <div class="stat-content">
-            <span class="stat-label">⌀ Anrechenbare AZ PHK</span>
-            <span class="stat-value highlight">{{ durchschnittPhkAnrechenbar()?.toFixed(2) }} h/Tag</span>
-          </div>
-          <button mat-icon-button class="stat-info-button" (click)="openStatInfoModal('phkAnrechenbar')" matTooltip="Berechnung anzeigen">
-            <mat-icon>info</mat-icon>
-          </button>
-        </div>
-
-        <div class="stat-item gesamt-stat" *ngIf="selectedKategorie() === 'PFK' && getGesamtAnrechenbar() !== null">
-          <mat-icon>calculate</mat-icon>
-          <div class="stat-content">
-            <span class="stat-label">⌀ Gesamt Anrechenbar</span>
-            <span class="stat-value gesamt-highlight">{{ getGesamtAnrechenbar() }} h/Tag</span>
-          </div>
-          <button mat-icon-button class="stat-info-button" (click)="openStatInfoModal('gesamtAnrechenbar')" matTooltip="Berechnung anzeigen">
-            <mat-icon>info</mat-icon>
-          </button>
-        </div>
-
-        <div class="stat-item exam-stat" *ngIf="selectedKategorie() === 'PFK' && getExamPflege() !== null">
-          <mat-icon>school</mat-icon>
-          <div class="stat-content">
-            <span class="stat-label">Exam. Pflege</span>
-            <span class="stat-value exam-highlight">{{ getExamPflegeFormatted() }}</span>
-          </div>
-          <button mat-icon-button class="stat-info-button" (click)="openStatInfoModal('examPflege')" matTooltip="Berechnung anzeigen">
-            <mat-icon>info</mat-icon>
-          </button>
-        </div>
-
-        <div class="stat-item patienten-stat" *ngIf="selectedKategorie() === 'PFK' && getPatientenProPflegekraft() !== null">
-          <mat-icon>groups</mat-icon>
-          <div class="stat-content">
-            <span class="stat-label">Patienten/Pflegekraft</span>
-            <span class="stat-value patienten-highlight">{{ getPatientenProPflegekraft() }}</span>
-          </div>
-          <button mat-icon-button class="stat-info-button" (click)="openStatInfoModal('patientenProPflegekraft')" matTooltip="Berechnung anzeigen">
-            <mat-icon>info</mat-icon>
-          </button>
-        </div>
-
-        <div class="stat-item ppugv-prozent-stat" *ngIf="selectedKategorie() === 'PFK' && getPpugvErfuelltNeinProzent() !== null">
-          <mat-icon>check_circle</mat-icon>
-          <div class="stat-content">
-            <span class="stat-label">PpUG erfüllt %</span>
-            <span class="stat-value ppugv-prozent-highlight">{{ getPpugvErfuelltNeinProzent()!.toFixed(2) }}%</span>
-          </div>
-          <button mat-icon-button class="stat-info-button" (click)="openStatInfoModal('ppugvErfuelltProzent')" matTooltip="Berechnung anzeigen">
-            <mat-icon>info</mat-icon>
-          </button>
-        </div>
-
-        <div class="stat-item delta-soll-ist-stat" *ngIf="selectedKategorie() === 'PFK' && getDeltaSollIstPflegfachkraft() !== null">
-          <mat-icon>trending_up</mat-icon>
-          <div class="stat-content">
-            <span class="stat-label">Delta Soll-Ist Pflegfachkraft</span>
-            <span class="stat-value delta-highlight">{{ getDeltaSollIstPflegfachkraft()!.toFixed(4) }}</span>
-          </div>
-          <button mat-icon-button class="stat-info-button" (click)="openStatInfoModal('deltaSollIst')" matTooltip="Berechnung anzeigen">
-            <mat-icon>info</mat-icon>
-          </button>
-        </div>
-
-        <div class="stat-item pp-ratio-stat" *ngIf="selectedKategorie() === 'PFK' && getPPRatio() !== null">
-          <mat-icon>calculate</mat-icon>
-          <div class="stat-content">
-            <span class="stat-label">P:P</span>
-            <span class="stat-value pp-ratio-highlight">{{ getPPRatio()!.toFixed(2) }}</span>
-          </div>
-          <button mat-icon-button class="stat-info-button" (click)="openStatInfoModal('ppRatio')" matTooltip="Berechnung anzeigen">
-            <mat-icon>info</mat-icon>
-          </button>
-        </div>
-
-        <!-- Stats aus header-calculations -->
+        <!-- Card 1: MiNa Bestände-Ø Station -->
         <div class="stat-item" *ngIf="selectedKategorie() === 'PFK' && belegteBettenKonstante() !== null">
           <mat-icon>bed</mat-icon>
           <div class="stat-content">
@@ -355,10 +233,23 @@
           </button>
         </div>
 
+        <!-- Card 2: AZ (was Durchschnitt PFK) -->
+        <div class="stat-item" *ngIf="selectedKategorie() === 'PFK'">
+          <mat-icon>avg_pace</mat-icon>
+          <div class="stat-content">
+            <span class="stat-label">AZ</span>
+            <span class="stat-value">{{ getAverageHoursPerDay() }} Stunden/Tag</span>
+          </div>
+          <button mat-icon-button class="stat-info-button" (click)="openStatInfoModal('durchschnitt')" matTooltip="Berechnung anzeigen">
+            <mat-icon>info</mat-icon>
+          </button>
+        </div>
+
+        <!-- Card 3: Soll PFK (was PpUG nach PFK Ø) -->
         <div class="stat-item" *ngIf="selectedKategorie() === 'PFK' && getDurchschnittPpugNachPfk() !== null">
           <mat-icon>trending_up</mat-icon>
           <div class="stat-content">
-            <span class="stat-label">PpUG nach PFK Ø</span>
+            <span class="stat-label">Soll PFK</span>
             <span class="stat-value">{{ getDurchschnittPpugNachPfk() }}</span>
           </div>
           <button mat-icon-button class="stat-info-button" (click)="openStatInfoModal('ppugNachPfkDurchschnitt')" matTooltip="Berechnung anzeigen">
@@ -366,6 +257,7 @@
           </button>
         </div>
 
+        <!-- Card 4: Ergibt PFK Ø -->
         <div class="stat-item" *ngIf="selectedKategorie() === 'PFK' && getDurchschnittPfkNormal() !== null">
           <mat-icon>person</mat-icon>
           <div class="stat-content">
@@ -377,10 +269,11 @@
           </button>
         </div>
 
+        <!-- Card 5: PHK anrechenbar (was ⌀ Tatsächlich Anrechenbar) -->
         <div class="stat-item" *ngIf="selectedKategorie() === 'PFK' && getDurchschnittTatsaechlichAnrechenbar() !== null">
           <mat-icon>check_circle</mat-icon>
           <div class="stat-content">
-            <span class="stat-label">⌀ Tatsächlich Anrechenbar</span>
+            <span class="stat-label">PHK anrechenbar</span>
             <span class="stat-value">{{ getDurchschnittTatsaechlichAnrechenbar() }}</span>
           </div>
           <button mat-icon-button class="stat-info-button" (click)="openStatInfoModal('tatsaechlichAnrechenbar')" matTooltip="Berechnung anzeigen">
@@ -388,24 +281,74 @@
           </button>
         </div>
 
-        <div class="stat-item" *ngIf="selectedKategorie() === 'PFK' && getAnzahlPpugvErfuelltNein() !== null">
-          <mat-icon>cancel</mat-icon>
+        <!-- Card 6: Ist gesamt (was Exam. Pflege) -->
+        <div class="stat-item exam-stat" *ngIf="selectedKategorie() === 'PFK' && getExamPflege() !== null">
+          <mat-icon>school</mat-icon>
           <div class="stat-content">
-            <span class="stat-label">PpUG erfüllt Nein</span>
-            <span class="stat-value">{{ getAnzahlPpugvErfuelltNein() }}</span>
+            <span class="stat-label">Ist gesamt</span>
+            <span class="stat-value exam-highlight">{{ getExamPflegeFormatted() }}</span>
           </div>
-          <button mat-icon-button class="stat-info-button" (click)="openStatInfoModal('ppugvErfuelltNein')" matTooltip="Berechnung anzeigen">
+          <button mat-icon-button class="stat-info-button" (click)="openStatInfoModal('examPflege')" matTooltip="Berechnung anzeigen">
             <mat-icon>info</mat-icon>
           </button>
         </div>
 
-        <div class="stat-item geleistete-phk-stat" *ngIf="selectedKategorie() === 'PFK' && geleistetePhkStunden() !== null">
-          <mat-icon>work</mat-icon>
+        <!-- Card 7: P:P -->
+        <div class="stat-item pp-ratio-stat" *ngIf="selectedKategorie() === 'PFK' && getPPRatio() !== null">
+          <mat-icon>calculate</mat-icon>
           <div class="stat-content">
-            <span class="stat-label">⌀ Geleistete AZ PHK</span>
-            <span class="stat-value geleistete-phk-highlight">{{ getGeleistetePhkStundenFormatted() }}</span>
+            <span class="stat-label">P:P</span>
+            <span class="stat-value pp-ratio-highlight">{{ getPPRatio()!.toFixed(2) }}</span>
           </div>
-          <button mat-icon-button class="stat-info-button" (click)="openStatInfoModal('geleistetePhk')" matTooltip="Berechnung anzeigen">
+          <button mat-icon-button class="stat-info-button" (click)="openStatInfoModal('ppRatio')" matTooltip="Berechnung anzeigen">
+            <mat-icon>info</mat-icon>
+          </button>
+        </div>
+
+        <!-- Card 8: PpUG erfüllt % -->
+        <div class="stat-item ppugv-prozent-stat" *ngIf="selectedKategorie() === 'PFK' && getPpugvErfuelltNeinProzent() !== null">
+          <mat-icon>check_circle</mat-icon>
+          <div class="stat-content">
+            <span class="stat-label">PpUG erfüllt %</span>
+            <span class="stat-value ppugv-prozent-highlight">{{ getPpugvErfuelltNeinProzent()!.toFixed(2) }}%</span>
+          </div>
+          <button mat-icon-button class="stat-info-button" (click)="openStatInfoModal('ppugvErfuelltProzent')" matTooltip="Berechnung anzeigen">
+            <mat-icon>info</mat-icon>
+          </button>
+        </div>
+
+        <!-- Card 9: Delta Soll-Ist Pflegfachkraft -->
+        <div class="stat-item delta-soll-ist-stat" *ngIf="selectedKategorie() === 'PFK' && getDeltaSollIstPflegfachkraft() !== null">
+          <mat-icon>trending_up</mat-icon>
+          <div class="stat-content">
+            <span class="stat-label">Delta Soll-Ist Pflegfachkraft</span>
+            <span class="stat-value delta-highlight">{{ getDeltaSollIstPflegfachkraft()!.toFixed(4) }}</span>
+          </div>
+          <button mat-icon-button class="stat-info-button" (click)="openStatInfoModal('deltaSollIst')" matTooltip="Berechnung anzeigen">
+            <mat-icon>info</mat-icon>
+          </button>
+        </div>
+
+        <!-- Card 10: Patient/ PK Tag bzw. Nacht (was Patienten/Pflegekraft) -->
+        <div class="stat-item patienten-stat" *ngIf="selectedKategorie() === 'PFK' && getPatientenProPflegekraft() !== null">
+          <mat-icon>groups</mat-icon>
+          <div class="stat-content">
+            <span class="stat-label">Patient/ PK Tag bzw. Nacht</span>
+            <span class="stat-value patienten-highlight">{{ getPatientenProPflegekraft() }}</span>
+          </div>
+          <button mat-icon-button class="stat-info-button" (click)="openStatInfoModal('patientenProPflegekraft')" matTooltip="Berechnung anzeigen">
+            <mat-icon>info</mat-icon>
+          </button>
+        </div>
+
+        <!-- Card 11: PpUGV erfüllt Nein -->
+        <div class="stat-item" *ngIf="selectedKategorie() === 'PFK' && getAnzahlPpugvErfuelltNein() !== null">
+          <mat-icon>cancel</mat-icon>
+          <div class="stat-content">
+            <span class="stat-label">PpUGV erfüllt Nein</span>
+            <span class="stat-value">{{ getAnzahlPpugvErfuelltNein() }}</span>
+          </div>
+          <button mat-icon-button class="stat-info-button" (click)="openStatInfoModal('ppugvErfuelltNein')" matTooltip="Berechnung anzeigen">
             <mat-icon>info</mat-icon>
           </button>
         </div>
