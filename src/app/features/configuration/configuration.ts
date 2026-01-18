@@ -41,6 +41,7 @@ interface StationConfigValues {
   pausen_minuten?: number;
   pausen_jahr?: number | null;
   pausen_monate?: number[] | null;
+  pausen_ist_abzug?: boolean;
 }
 
 interface StationConfig {
@@ -437,7 +438,8 @@ export class Configuration implements OnInit {
             pausen_stunden: tagPfkConfig.pausen_stunden || 0,
             pausen_minuten: tagPfkConfig.pausen_minuten || 0,
             pausen_jahr: tagPfkConfig.pausen_jahr || null,
-            pausen_monate: tagPfkConfig.pausen_monate || null
+            pausen_monate: tagPfkConfig.pausen_monate || null,
+            pausen_ist_abzug: tagPfkConfig.pausen_ist_abzug !== undefined ? tagPfkConfig.pausen_ist_abzug : true
           };
         } else if (globalConfig) {
           config.tag_pfk = {
@@ -448,7 +450,8 @@ export class Configuration implements OnInit {
             pausen_stunden: 0,
             pausen_minuten: 0,
             pausen_jahr: null,
-            pausen_monate: null
+            pausen_monate: null,
+            pausen_ist_abzug: true
           };
         }
 
@@ -464,7 +467,8 @@ export class Configuration implements OnInit {
             pausen_stunden: nachtPfkConfig.pausen_stunden || 0,
             pausen_minuten: nachtPfkConfig.pausen_minuten || 0,
             pausen_jahr: nachtPfkConfig.pausen_jahr || null,
-            pausen_monate: nachtPfkConfig.pausen_monate || null
+            pausen_monate: nachtPfkConfig.pausen_monate || null,
+            pausen_ist_abzug: nachtPfkConfig.pausen_ist_abzug !== undefined ? nachtPfkConfig.pausen_ist_abzug : true
           };
         } else if (globalConfig) {
           config.nacht_pfk = {
@@ -475,7 +479,8 @@ export class Configuration implements OnInit {
             pausen_stunden: 0,
             pausen_minuten: 0,
             pausen_jahr: null,
-            pausen_monate: null
+            pausen_monate: null,
+            pausen_ist_abzug: true
           };
         }
 
@@ -491,7 +496,8 @@ export class Configuration implements OnInit {
             pausen_stunden: tagPhkConfig.pausen_stunden || 0,
             pausen_minuten: tagPhkConfig.pausen_minuten || 0,
             pausen_jahr: tagPhkConfig.pausen_jahr || null,
-            pausen_monate: tagPhkConfig.pausen_monate || null
+            pausen_monate: tagPhkConfig.pausen_monate || null,
+            pausen_ist_abzug: tagPhkConfig.pausen_ist_abzug !== undefined ? tagPhkConfig.pausen_ist_abzug : true
           };
         } else if (globalConfig) {
           config.tag_phk = {
@@ -502,7 +508,8 @@ export class Configuration implements OnInit {
             pausen_stunden: 0,
             pausen_minuten: 0,
             pausen_jahr: null,
-            pausen_monate: null
+            pausen_monate: null,
+            pausen_ist_abzug: true
           };
         }
 
@@ -518,7 +525,8 @@ export class Configuration implements OnInit {
             pausen_stunden: nachtPhkConfig.pausen_stunden || 0,
             pausen_minuten: nachtPhkConfig.pausen_minuten || 0,
             pausen_jahr: nachtPhkConfig.pausen_jahr || null,
-            pausen_monate: nachtPhkConfig.pausen_monate || null
+            pausen_monate: nachtPhkConfig.pausen_monate || null,
+            pausen_ist_abzug: nachtPhkConfig.pausen_ist_abzug !== undefined ? nachtPhkConfig.pausen_ist_abzug : true
           };
         } else if (globalConfig) {
           config.nacht_phk = {
@@ -529,7 +537,8 @@ export class Configuration implements OnInit {
             pausen_stunden: 0,
             pausen_minuten: 0,
             pausen_jahr: null,
-            pausen_monate: null
+            pausen_monate: null,
+            pausen_ist_abzug: true
           };
         }
 

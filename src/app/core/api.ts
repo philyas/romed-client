@@ -681,6 +681,7 @@ export class Api {
     pausen_minuten?: number;
     pausen_jahr?: number | null;
     pausen_monate?: number[] | null;
+    pausen_ist_abzug?: boolean;
     fromSnapshot: boolean;
     snapshotMonth?: number;
     snapshotYear?: number;
@@ -722,6 +723,7 @@ export class Api {
       pausen_minuten?: number;
       pausen_jahr?: number | null;
       pausen_monate?: number[] | null;
+      pausen_ist_abzug?: boolean;
     }
   ): Observable<{ success: boolean; message: string }> {
     return this.http.put<{ success: boolean; message: string }>(
@@ -747,6 +749,7 @@ export class Api {
     pausen_minuten?: number;
     pausen_jahr?: number | null;
     pausen_monate?: number[] | null;
+    pausen_ist_abzug?: boolean;
     fromSnapshot: boolean;
     snapshotMonth?: number;
     snapshotYear?: number;
@@ -787,6 +790,7 @@ export class Api {
       pausen_minuten?: number;
       pausen_jahr?: number | null;
       pausen_monate?: number[] | null;
+      pausen_ist_abzug?: boolean;
     }
   ): Observable<{ success: boolean; message: string }> {
     return this.http.put<{ success: boolean; message: string }>(
@@ -817,6 +821,7 @@ export class Api {
           pausen_minuten: number;
           pausen_jahr?: number | null;
           pausen_monate?: number[] | null;
+          pausen_ist_abzug?: boolean;
           fromSnapshot: boolean;
         };
       };

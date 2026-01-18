@@ -161,6 +161,7 @@ export class ManualEntry {
     pausen_minuten: number;
     pausen_jahr: number | null;
     pausen_monate: number[] | null;
+    pausen_ist_abzug: boolean;
   } | null>(null);
   
   // Available categories
@@ -505,7 +506,8 @@ export class ManualEntry {
             pausen_stunden: config.pausen_stunden || 0,
             pausen_minuten: config.pausen_minuten || 0,
             pausen_jahr: config.pausen_jahr || null,
-            pausen_monate: config.pausen_monate || null
+            pausen_monate: config.pausen_monate || null,
+            pausen_ist_abzug: config.pausen_ist_abzug !== undefined ? config.pausen_ist_abzug : true
           });
           
           // Wenn Pausenzeiten aktiviert sind UND für den aktuellen Monat gelten, aktualisiere die Werte
@@ -523,7 +525,8 @@ export class ManualEntry {
             pausen_stunden: 0,
             pausen_minuten: 0,
             pausen_jahr: null,
-            pausen_monate: null
+            pausen_monate: null,
+            pausen_ist_abzug: true
           });
           resolve(); // Resolve auch bei Fehler, damit die Daten trotzdem geladen werden
         }
@@ -803,14 +806,17 @@ export class ManualEntry {
   }
 
   // Berechne Gesamtzeit für einen Eintrag
-  // Negative Pausenzeiten werden abgezogen, aber nur wenn sie für den aktuellen Monat/Jahr gelten
+  // Pausenzeiten werden abgezogen oder hinzugefügt, je nach pausen_ist_abzug Flag
   getGesamtzeit(entry: DayEntry): { stunden: number; minuten: number } {
     const normaleTotalMinutes = (entry.stunden * 60) + entry.minuten;
     
-    // Nur Pausenzeiten hinzufügen, wenn sie für den aktuellen Monat/Jahr gelten
+    // Nur Pausenzeiten berücksichtigen, wenn sie für den aktuellen Monat/Jahr gelten
     let pausenTotalMinutes = 0;
     if (this.shouldApplyPausenzeiten()) {
-      pausenTotalMinutes = ((entry.pausen_stunden || 0) * 60) + (entry.pausen_minuten || 0);
+      const config = this.stationConfig();
+      const pausenMinutes = ((entry.pausen_stunden || 0) * 60) + (entry.pausen_minuten || 0);
+      // Wenn pausen_ist_abzug true ist, abziehen (negativ), sonst hinzufügen (positiv)
+      pausenTotalMinutes = config?.pausen_ist_abzug !== false ? -pausenMinutes : pausenMinutes;
     }
     
     const gesamtTotalMinutes = normaleTotalMinutes + pausenTotalMinutes;

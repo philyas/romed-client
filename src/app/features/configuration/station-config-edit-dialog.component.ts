@@ -32,6 +32,7 @@ interface StationConfigValues {
   pausen_minuten: number;
   pausen_jahr: number | null;
   pausen_monate: number[] | null;
+  pausen_ist_abzug: boolean;
 }
 
 @Component({
@@ -89,18 +90,23 @@ interface StationConfigValues {
                   Pausenzeiten aktivieren
                 </mat-slide-toggle>
                 <div class="pausen-fields" *ngIf="editedConfigs.tag_pfk.pausen_aktiviert">
-                  <mat-form-field appearance="outline">
+                  <mat-form-field appearance="outline" class="pausen-typ-field">
+                    <mat-label>Pausenzeiten-Typ</mat-label>
+                    <mat-select [(ngModel)]="editedConfigs.tag_pfk.pausen_ist_abzug">
+                      <mat-option [value]="true">Abzug</mat-option>
+                      <mat-option [value]="false">Hinzurechnen</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="pausen-stunden-field">
                     <mat-label>Pausen Stunden</mat-label>
-                    <input matInput type="number" step="1"
-                           [(ngModel)]="editedConfigs.tag_pfk.pausen_stunden"
-                           title="Kann negativ sein (z.B. -0:30 = 30 Min. Abzug)">
+                    <input matInput type="number" step="1" min="0"
+                           [(ngModel)]="editedConfigs.tag_pfk.pausen_stunden">
                     <span matSuffix>h</span>
                   </mat-form-field>
-                  <mat-form-field appearance="outline">
+                  <mat-form-field appearance="outline" class="pausen-minuten-field">
                     <mat-label>Pausen Minuten</mat-label>
-                    <input matInput type="number" step="1" min="-59" max="59"
-                           [(ngModel)]="editedConfigs.tag_pfk.pausen_minuten"
-                           title="Kann negativ sein (z.B. -30 = 30 Min. Abzug)">
+                    <input matInput type="number" step="1" min="0" max="59"
+                           [(ngModel)]="editedConfigs.tag_pfk.pausen_minuten">
                     <span matSuffix>min</span>
                   </mat-form-field>
                 </div>
@@ -152,18 +158,23 @@ interface StationConfigValues {
                   Pausenzeiten aktivieren
                 </mat-slide-toggle>
                 <div class="pausen-fields" *ngIf="editedConfigs.nacht_pfk.pausen_aktiviert">
-                  <mat-form-field appearance="outline">
+                  <mat-form-field appearance="outline" class="pausen-typ-field">
+                    <mat-label>Pausenzeiten-Typ</mat-label>
+                    <mat-select [(ngModel)]="editedConfigs.nacht_pfk.pausen_ist_abzug">
+                      <mat-option [value]="true">Abzug</mat-option>
+                      <mat-option [value]="false">Hinzurechnen</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="pausen-stunden-field">
                     <mat-label>Pausen Stunden</mat-label>
-                    <input matInput type="number" step="1"
-                           [(ngModel)]="editedConfigs.nacht_pfk.pausen_stunden"
-                           title="Kann negativ sein (z.B. -0:30 = 30 Min. Abzug)">
+                    <input matInput type="number" step="1" min="0"
+                           [(ngModel)]="editedConfigs.nacht_pfk.pausen_stunden">
                     <span matSuffix>h</span>
                   </mat-form-field>
-                  <mat-form-field appearance="outline">
+                  <mat-form-field appearance="outline" class="pausen-minuten-field">
                     <mat-label>Pausen Minuten</mat-label>
-                    <input matInput type="number" step="1" min="-59" max="59"
-                           [(ngModel)]="editedConfigs.nacht_pfk.pausen_minuten"
-                           title="Kann negativ sein (z.B. -30 = 30 Min. Abzug)">
+                    <input matInput type="number" step="1" min="0" max="59"
+                           [(ngModel)]="editedConfigs.nacht_pfk.pausen_minuten">
                     <span matSuffix>min</span>
                   </mat-form-field>
                 </div>
@@ -209,18 +220,23 @@ interface StationConfigValues {
                   Pausenzeiten aktivieren
                 </mat-slide-toggle>
                 <div class="pausen-fields" *ngIf="editedConfigs.tag_phk.pausen_aktiviert">
-                  <mat-form-field appearance="outline">
+                  <mat-form-field appearance="outline" class="pausen-typ-field">
+                    <mat-label>Pausenzeiten-Typ</mat-label>
+                    <mat-select [(ngModel)]="editedConfigs.tag_phk.pausen_ist_abzug">
+                      <mat-option [value]="true">Abzug</mat-option>
+                      <mat-option [value]="false">Hinzurechnen</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="pausen-stunden-field">
                     <mat-label>Pausen Stunden</mat-label>
-                    <input matInput type="number" step="1"
-                           [(ngModel)]="editedConfigs.tag_phk.pausen_stunden"
-                           title="Kann negativ sein (z.B. -0:30 = 30 Min. Abzug)">
+                    <input matInput type="number" step="1" min="0"
+                           [(ngModel)]="editedConfigs.tag_phk.pausen_stunden">
                     <span matSuffix>h</span>
                   </mat-form-field>
-                  <mat-form-field appearance="outline">
+                  <mat-form-field appearance="outline" class="pausen-minuten-field">
                     <mat-label>Pausen Minuten</mat-label>
-                    <input matInput type="number" step="1" min="-59" max="59"
-                           [(ngModel)]="editedConfigs.tag_phk.pausen_minuten"
-                           title="Kann negativ sein (z.B. -30 = 30 Min. Abzug)">
+                    <input matInput type="number" step="1" min="0" max="59"
+                           [(ngModel)]="editedConfigs.tag_phk.pausen_minuten">
                     <span matSuffix>min</span>
                   </mat-form-field>
                 </div>
@@ -266,18 +282,23 @@ interface StationConfigValues {
                   Pausenzeiten aktivieren
                 </mat-slide-toggle>
                 <div class="pausen-fields" *ngIf="editedConfigs.nacht_phk.pausen_aktiviert">
-                  <mat-form-field appearance="outline">
+                  <mat-form-field appearance="outline" class="pausen-typ-field">
+                    <mat-label>Pausenzeiten-Typ</mat-label>
+                    <mat-select [(ngModel)]="editedConfigs.nacht_phk.pausen_ist_abzug">
+                      <mat-option [value]="true">Abzug</mat-option>
+                      <mat-option [value]="false">Hinzurechnen</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="pausen-stunden-field">
                     <mat-label>Pausen Stunden</mat-label>
-                    <input matInput type="number" step="1"
-                           [(ngModel)]="editedConfigs.nacht_phk.pausen_stunden"
-                           title="Kann negativ sein (z.B. -0:30 = 30 Min. Abzug)">
+                    <input matInput type="number" step="1" min="0"
+                           [(ngModel)]="editedConfigs.nacht_phk.pausen_stunden">
                     <span matSuffix>h</span>
                   </mat-form-field>
-                  <mat-form-field appearance="outline">
+                  <mat-form-field appearance="outline" class="pausen-minuten-field">
                     <mat-label>Pausen Minuten</mat-label>
-                    <input matInput type="number" step="1" min="-59" max="59"
-                           [(ngModel)]="editedConfigs.nacht_phk.pausen_minuten"
-                           title="Kann negativ sein (z.B. -30 = 30 Min. Abzug)">
+                    <input matInput type="number" step="1" min="0" max="59"
+                           [(ngModel)]="editedConfigs.nacht_phk.pausen_minuten">
                     <span matSuffix>min</span>
                   </mat-form-field>
                 </div>
@@ -373,9 +394,18 @@ interface StationConfigValues {
 
     .pausen-fields {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1fr 1fr;
       gap: 12px;
       margin-top: 12px;
+
+      .pausen-typ-field {
+        grid-column: 1 / -1;
+      }
+
+      .pausen-stunden-field,
+      .pausen-minuten-field {
+        grid-column: span 1;
+      }
     }
 
     .pausen-zeitraum {
@@ -475,7 +505,8 @@ export class StationConfigEditDialogComponent {
       pausen_stunden: 0,
       pausen_minuten: 0,
       pausen_jahr: null,
-      pausen_monate: null
+      pausen_monate: null,
+      pausen_ist_abzug: true
     };
 
     if (existing) {
@@ -488,7 +519,8 @@ export class StationConfigEditDialogComponent {
         pausen_stunden: existing.pausen_stunden ?? 0,
         pausen_minuten: existing.pausen_minuten ?? 0,
         pausen_jahr: existing.pausen_jahr ?? null,
-        pausen_monate: existing.pausen_monate ?? null
+        pausen_monate: existing.pausen_monate ?? null,
+        pausen_ist_abzug: existing.pausen_ist_abzug ?? true
       };
     }
 
@@ -558,7 +590,8 @@ export class StationConfigEditDialogComponent {
       pausen_stunden: config.pausen_stunden,
       pausen_minuten: config.pausen_minuten,
       pausen_jahr: config.pausen_jahr,
-      pausen_monate: config.pausen_monate
+      pausen_monate: config.pausen_monate,
+      pausen_ist_abzug: config.pausen_ist_abzug
     };
 
     if (schicht === 'nacht') {
