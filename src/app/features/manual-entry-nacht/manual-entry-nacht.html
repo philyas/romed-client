@@ -233,11 +233,11 @@
           </button>
         </div>
 
-        <!-- Card 2: AZ (was Durchschnitt PFK) -->
+        <!-- Card 2: Durchschnitt AZ (was Durchschnitt PFK) -->
         <div class="stat-item" *ngIf="selectedKategorie() === 'PFK'">
           <mat-icon>avg_pace</mat-icon>
           <div class="stat-content">
-            <span class="stat-label">AZ</span>
+            <span class="stat-label">Durchschnitt AZ</span>
             <span class="stat-value">{{ getAverageHoursPerDay() }} Stunden/Tag</span>
           </div>
           <button mat-icon-button class="stat-info-button" (click)="openStatInfoModal('durchschnitt')" matTooltip="Berechnung anzeigen">
